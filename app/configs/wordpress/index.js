@@ -1,13 +1,20 @@
-var _ = require('underscore');
+var defaults = {
+  wpcfm : false
+};
 
-module.exports = function(defaults) {
-  return [{
-    type: 'confirm',
-    name: 'wpcfm',
-    message: 'Does it use the WP-CFM plugin?',
-    default: _.has(defaults, 'wpcfm') ? defaults.wpcfm : false,
-    when: function(answers) {
-      return (answers.platform == 'wordpress');
-    }
-  }];
+module.exports = {
+  getDefaults : function() {
+    return defaults;
+  },
+  getPrompts : function(config) {
+    return [{
+      type: 'confirm',
+      name: 'wpcfm',
+      message: 'Does it use the WP-CFM plugin?',
+      default: config.wpcfm,
+      when: function(answers) {
+        return (answers.platform == 'wordpress');
+      }
+    }];
+  };
 }
