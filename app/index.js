@@ -2,6 +2,8 @@
 var generators = require('yeoman-generator');
 var _ = require('underscore');
 var git = require('gitty');
+var updateNotifier = require('update-notifier');
+var path = require('path');
 
 // Configs
 var basic_config = require('./configs/basic');
@@ -21,6 +23,17 @@ module.exports = generators.Base.extend({
   engine : require('yeoman-hoganjs-engine'),
 
   promptTask : function() {
+    
+    var package_path = path.join(this.sourceRoot(), '../../package.json');
+    var pkg = require(package_path);
+    
+    var notifier = updateNotifier({
+      packageName: pkg.name,
+      packageVersion: pkg.version
+    });
+
+    notifier.notify();
+    
     var repo = git(this.destinationRoot());
     var remotes = {};
     
