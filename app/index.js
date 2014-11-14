@@ -1,122 +1,114 @@
 'use strict';
-var util = require('util');
-var path = require('path');
-var yeoman = require('yeoman-generator');
-var globby = require('globby');
-var handlebarsEngine = require('yeoman-handlebars-engine');
+var generators = require('yeoman-generator');
 var _ = require('underscore');
+var git = require('gitty');
 
-var puppetTemplateFiles = [
-  'puppet/manifests/init.pp',
-  'puppet/manifests/hieradata/sites/localhost.localdomain.yaml'
-];
+// Configs
+var basic_config = require('./configs/basic');
+var drupal_config = require('./configs/drupal');
+var wordpress_config = require('./configs/wordpress');
+var javascript_config = require('./configs/javascript');
+var puppet_config = require('./configs/puppet');
 
-var WebStarterGenerator = module.exports = function WebStarterGenerator(args, options, config) {
-  options.engine = handlebarsEngine;
-  
-  yeoman.generators.Base.apply(this, arguments);
-
-  this.on('end', function () {
-    this.installDependencies({ skipInstall: options['skip-install'] });
-  });
-
-  this.pkg = JSON.parse(this.readFileAsString(path.join(__dirname, '../package.json')));
+var template_files = {
+  'puppet/manifests/_init.pp' : 'puppet/manifests/init.pp',
+  'puppet/manifests/hieradata/sites/_localhost.localdomain.yaml' : 'puppet/manifests/hieradata/sites/localhost.localdomain.yaml',
+  '_Gruntfile.js' : 'Gruntfile.js',
+  '_package.json' : 'package.json'
 };
 
-util.inherits(WebStarterGenerator, yeoman.generators.Base);
+module.exports = generators.Base.extend({
+  engine : require('yeoman-hoganjs-engine'),
 
-WebStarterGenerator.prototype.askFor = function askFor() {
-  var cb = this.async();
-  var defaults = this.config.getAll();
-  
-  console.log(defaults);
-  
-  // have Yeoman greet the user.
-  console.log(this.yeoman);
-
-  var prompts = [{
-    type: 'input',
-    name: 'name',
-    message: 'Your project name',
-    default: _.has(defaults, 'name') ? defaults.name : this.appname
-  },
-  {
-    type: 'list',
-    name: 'platform',
-    message: 'Project type',
-    choices: ['drupal', 'wordpress', 'javascript'],
-    default: _.has(defaults, 'platform') ? defaults.platform : 'drupal'
-  },
-  {
-    type: 'confirm',
-    name: 'puppet',
-    message: 'Do you want to configure Puppet?',
-    default: _.has(defaults, 'puppet') ? defaults.puppet : true
-  },
-  // Puppet questions
-  {
-    type: 'input',
-    name: 'host',
-    message: 'Host configuration to use',
-    default: _.has(defaults, 'host') ? defaults.host : 'f1dev',
-    when: function(answers) {
-      return answers.puppet;
-    }
-  },
-  // Drupal CM questions
-  {
-    type: 'confirm',
-    name: 'features',
-    message: 'Does it use the Features module?',
-    default: _.has(defaults, 'features') ? defaults.features : true,
-    when: function(answers) {
-      return (answers.platform == 'drupal');
-    }
-  },
-  {
-    type: 'confirm',
-    name: 'cmi',
-    message: 'Does it use the Configuration module?',
-    default: _.has(defaults, 'cmi') ? defaults.cmi : false,
-    when: function(answers) {
-      return (answers.platform == 'drupal');
-    }
-  },
-  // Wordpress CM question
-  {
-    type: 'confirm',
-    name: 'wpcfm',
-    message: 'Does it use the WP-CFM plugin?',
-    default: _.has(defaults, 'wpcfm') ? defaults.wpcfm : false,
-    when: function(answers) {
-      return (answers.platform == 'wordpress');
-    }
-  }];
-  
-  this.prompt(prompts, function (props) {
-    var that = this;
+  promptTask : function() {
+    var repo = git(this.destinationRoot());
+    var remotes = {};
     
-    _.extend(this, props);
+    try {
+      remotes = repo.getRemotesSync();
+    } catch (e) {
+      // If we're not in a repo it will cause an exception, we can trap this silently
+    }
     
-    _.each(props, function(val, key) {
-      that.config.set(key, val);
-    });
-    cb();
-  }.bind(this));
-};
+    var defaults = {
+      name : this.appname,
+      repository : _.has(remotes, 'origin') ? remotes.origin : ''
+    };
 
-WebStarterGenerator.prototype.app = function app() {
-  var that = this;
-  
-  this.remote('forumone', 'web-starter', '1.1.x', function(err, remote) {
-    remote.directory('.', '.');
-    if (that.puppet) {
-      _.each(puppetTemplateFiles, function(file) {
-        remote.template(file, file, that);
+    var config = _.extend(defaults, basic_config.getDefaults(), drupal_config.getDefaults(), puppet_config
+        .getDefaults(), this.config.getAll());
+
+    var prompts = [].concat(basic_config.getPrompts(config), drupal_config.getPrompts(config), puppet_config
+        .getPrompts(config));
+
+    var done = this.async();
+
+    this.prompt(prompts, function(props) {
+      _.extend(this, config, props);
+      // Check to see if we should be using SASS / Compass
+      // TODO: Make this less manual
+      this.use_compass = (_.has(this, 'drupal_use_compass') && this.drupal_use_compass)
+          || (_.has(this, 'wordpress_use_compass') && this.wordpress_use_compass);
+
+      var that = this;
+
+      _.each(props, function(val, key) {
+        that.config.set(key, val);
       });
-    }
-  });
-};
 
-WebStarterGenerator.prototype.projectfiles = function projectfiles() {
-};
+      // Set variables for platform
+      // TODO: Fix duplication of labels
+      that.is_drupal = (that.platform == 'drupal');
+      that.is_wordpress = (that.platform == 'wordpress');
+      that.is_javascript = (that.platform == 'javascript');
+
+      done();
+    }.bind(this));
+  },
+  app : function() {
+    var that = this;
+    var done = this.async();
+
+    this.remote('forumone', 'web-starter', that.refspec, function(err, remote) {
+      if (err) {
+        done.err(err);
+      } else {
+        // Make sure we don't transfer either the templates or their expanded
+        // files
+        var files = that.expandFiles('**', {
+          cwd : remote.src._base,
+          dot : true
+        });
+        var templates = _.keys(template_files);
+        var dest_files = _.values(template_files);
+        var transfer_files = _.difference(files, templates, dest_files);
+
+        // Copy files to the current
+        _.each(transfer_files, function(file) {
+          remote.copy(file, file);
+        });
+
+        // Process template files
+        _.each(template_files, function(dest, source) {
+          remote.template(source, dest, that);
+        });
+
+        done();
+      }
+    }, true);
+  },
+  end : function() {
+    var done = this.async();
+    var npm_packages = [ 'grunt', 'grunt-contrib-concat', 'grunt-contrib-cssmin', 'grunt-contrib-jshint',
+        'grunt-contrib-nodeunit', 'grunt-contrib-uglify', 'grunt-contrib-watch', 'grunt-shell', 'grunt-simple-watch',
+        'grunt-contrib-coffee' ];
+
+    if (this.use_compass) {
+      npm_packages.push('grunt-contrib-compass');
+    }
+
+    this.npmInstall(npm_packages, {
+      'saveDev' : true
+    }, done);
+  }
+});
