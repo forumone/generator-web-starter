@@ -16,5 +16,5 @@ module.exports = {
         return (answers.platform == 'wordpress');
       }
     }];
-  };
+  }
 }
