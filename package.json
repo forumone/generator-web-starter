@@ -1,6 +1,6 @@
 {
   "name": "generator-web-starter",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "description": "A generator for Yeoman",
   "keywords": [
     "yeoman-generator"
@@ -25,7 +25,8 @@
     "underscore": "^1.7.0",
     "update-notifier": "^0.2.2",
     "yeoman-generator": "~0.17.6",
-    "yeoman-hoganjs-engine": "0.0.5"
+    "yeoman-hoganjs-engine": "0.0.5",
+    "yosay": "^1.0.0"
   },
   "devDependencies": {
     "mocha": "~1.12.0"

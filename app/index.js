@@ -4,6 +4,7 @@ var _ = require('underscore');
 var git = require('gitty');
 var updateNotifier = require('update-notifier');
 var path = require('path');
+var yosay = require('yosay');
 
 // Configs
 var basic_config = require('./configs/basic');
@@ -11,48 +12,58 @@ var drupal_config = require('./configs/drupal');
 var wordpress_config = require('./configs/wordpress');
 var javascript_config = require('./configs/javascript');
 var puppet_config = require('./configs/puppet');
+var capistrano_config = require('./configs/capistrano');
 
 var template_files = {
   'puppet/manifests/_init.pp' : 'puppet/manifests/init.pp',
   'puppet/manifests/hieradata/sites/_localhost.localdomain.yaml' : 'puppet/manifests/hieradata/sites/localhost.localdomain.yaml',
   '_Gruntfile.js' : 'Gruntfile.js',
-  '_package.json' : 'package.json'
+  '_package.json' : 'package.json',
+  'config/_deploy.rb' : 'config/deploy.rb'
 };
 
 module.exports = generators.Base.extend({
   engine : require('yeoman-hoganjs-engine'),
 
-  promptTask : function() {
-    
+  start : function() {
     var package_path = path.join(this.sourceRoot(), '../../package.json');
     var pkg = require(package_path);
-    
+
     var notifier = updateNotifier({
-      packageName: pkg.name,
-      packageVersion: pkg.version
+      packageName : pkg.name,
+      packageVersion : pkg.version,
+      updateCheckInterval : 1
     });
 
-    notifier.notify();
-    
+    if (notifier.update && notifier.update.latest != notifier.update.current) {
+      console.log(yosay('Update available: ' + notifier.update.latest + ' (current: ' + notifier.update.current + ')'
+          + '\n\nRun npm update -g ' + pkg.name));
+    }
+
+    var done = this.async();
+    done();
+  },
+  promptTask : function() {
     var repo = git(this.destinationRoot());
     var remotes = {};
-    
+
     try {
       remotes = repo.getRemotesSync();
     } catch (e) {
-      // If we're not in a repo it will cause an exception, we can trap this silently
+      // If we're not in a repo it will cause an exception, we can trap this
+      // silently
     }
-    
+
     var defaults = {
       name : this.appname,
       repository : _.has(remotes, 'origin') ? remotes.origin : ''
     };
 
     var config = _.extend(defaults, basic_config.getDefaults(), drupal_config.getDefaults(), puppet_config
-        .getDefaults(), this.config.getAll());
+        .getDefaults(), capistrano_config.getDefaults(), this.config.getAll());
 
     var prompts = [].concat(basic_config.getPrompts(config), drupal_config.getPrompts(config), puppet_config
-        .getPrompts(config));
+        .getPrompts(config), capistrano_config.getPrompts(config));
 
     var done = this.async();
 
