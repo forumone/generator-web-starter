@@ -33,7 +33,7 @@ module.exports = generators.Base.extend({
     var notifier = updateNotifier({
       packageName : pkg.name,
       packageVersion : pkg.version,
-      updateCheckInterval : 1
+      updateCheckInterval : 1000 * 60 * 60 * 24 // daily
     });
 
     if (notifier.update && notifier.update.latest != notifier.update.current) {
