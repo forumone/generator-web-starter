@@ -49,7 +49,7 @@ var defaults = {
       },
       {
         type: 'input',
-        name: 'drupal_use_compass',
+        name: 'drupal_theme',
         message: 'Theme name',
         default: config.drupal_theme,
         when: function(answers) {

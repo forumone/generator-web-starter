@@ -14,6 +14,7 @@ var javascript_config = require('./configs/javascript');
 var puppet_config = require('./configs/puppet');
 var capistrano_config = require('./configs/capistrano');
 
+// FIXME: There's almost certainly a better way of doing this, probably through globbing for _*
 var template_files = {
   'puppet/manifests/_init.pp' : 'puppet/manifests/init.pp',
   'puppet/manifests/hieradata/sites/_localhost.localdomain.yaml' : 'puppet/manifests/hieradata/sites/localhost.localdomain.yaml',
@@ -92,6 +93,7 @@ module.exports = generators.Base.extend({
   app : function() {
     var that = this;
     var done = this.async();
+    var config = this.config.getAll();
 
     this.remote('forumone', 'web-starter', that.refspec, function(err, remote) {
       if (err) {
@@ -103,10 +105,25 @@ module.exports = generators.Base.extend({
           cwd : remote.src._base,
           dot : true
         });
-        var templates = _.keys(template_files);
-        var dest_files = _.values(template_files);
-        var transfer_files = _.difference(files, templates, dest_files);
 
+        // Remove files
+        var dest_files = _.values(template_files);
+        var transfer_files = _.difference(files, dest_files);
+
+        // Remove all template files
+        transfer_files = _.reject(transfer_files, function(val) {
+          // If it starts with an underscore or contains an underscore as the first character of the file
+          // FIXME: There has to be a better way
+          return (val.substring(0, 1) == '_' || val.indexOf('/_') != -1);
+        });
+        
+        // Remove stages if they are defined in configuration
+        if (_.has(config, 'stages')) {
+          _.each(config.stages, function(value, key) {
+            transfer_files = _.difference(transfer_files, [ 'config/deploy/' + key + '.rb' ]);
+          });
+        }
+        
         // Copy files to the current
         _.each(transfer_files, function(file) {
           remote.copy(file, file);
@@ -120,6 +137,22 @@ module.exports = generators.Base.extend({
         done();
       }
     }, true);
+  },
+  setStages : function() {
+    var config = this.config.getAll();
+    var done = this.async();
+    var that = this;
+
+    this.remote('forumone', 'web-starter', that.refspec, function(err, remote) {
+      // Set stage files from configuration 
+      var stages = _.has(config, 'stages') ? config.stages : {};
+      _.each(stages, function(value, key) {
+        value.name = key;
+        remote.template('config/deploy/_stage.rb', 'config/deploy/' + key + '.rb', value);
+      });
+
+      done();
+    });
   },
   end : function() {
     var done = this.async();

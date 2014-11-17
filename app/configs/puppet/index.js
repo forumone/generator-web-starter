@@ -3,7 +3,8 @@ var defaults = {
     host : 'f1dev',
     app_webroot : 'public',
     db_name : 'web',
-    db_user : 'web'
+    db_user : 'web',
+    php_prefix : 'php54'
   };
 
   module.exports = {
@@ -50,6 +51,16 @@ var defaults = {
         message: 'Database user',
         default: config.db_user,
         when: function(answers) {
+          return (answers.puppet && answers.install_type == 'advanced');
+        }
+      },
+      {
+        type: 'list',
+        name: 'php_prefix',
+        message: 'PHP version',
+        choices: ['php', 'php54', 'php55'],
+        default: config.php_prefix,
+        when : function(answers) {
           return (answers.puppet && answers.install_type == 'advanced');
         }
       }];
