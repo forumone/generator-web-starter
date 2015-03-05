@@ -158,7 +158,7 @@ module.exports = generators.Base.extend({
     var done = this.async();
     var npm_packages = [ 'grunt', 'grunt-contrib-concat', 'grunt-contrib-cssmin', 'grunt-contrib-jshint',
         'grunt-contrib-nodeunit', 'grunt-contrib-uglify', 'grunt-contrib-watch', 'grunt-shell', 'grunt-simple-watch',
-        'grunt-contrib-coffee' 'load-grunt-tasks' ];
+        'grunt-contrib-coffee', 'load-grunt-tasks' ];
 
     if (this.use_compass) {
       npm_packages.push('grunt-contrib-compass');
