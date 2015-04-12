@@ -14,15 +14,6 @@ var javascript_config = require('./configs/javascript');
 var puppet_config = require('./configs/puppet');
 var capistrano_config = require('./configs/capistrano');
 
-// FIXME: There's almost certainly a better way of doing this, probably through globbing for _*
-var template_files = {
-  'puppet/manifests/_init.pp' : 'puppet/manifests/init.pp',
-  'puppet/manifests/hieradata/sites/_localhost.localdomain.yaml' : 'puppet/manifests/hieradata/sites/localhost.localdomain.yaml',
-  '_Gruntfile.js' : 'Gruntfile.js',
-  '_package.json' : 'package.json',
-  'config/_deploy.rb' : 'config/deploy.rb'
-};
-
 module.exports = generators.Base.extend({
   engine : require('yeoman-hoganjs-engine'),
 
@@ -99,24 +90,24 @@ module.exports = generators.Base.extend({
       if (err) {
         done.err(err);
       } else {
-        // Make sure we don't transfer either the templates or their expanded
-        // files
+        // Build a map of template and target files
+        var template_map = {};
+        var templates = that.expand('**/_*', {
+          cwd : remote.src._base
+        });
+        _.each(templates, function(template) {
+          template_map[template] = path.dirname(template) + '/' + path.basename(template).substring(1);
+        }));
+
+        // Get list of all files to transfer
         var files = that.expandFiles('**', {
           cwd : remote.src._base,
           dot : true
         });
 
-        // Remove files
-        var dest_files = _.values(template_files);
-        var transfer_files = _.difference(files, dest_files);
+        // Exclude templates and targets from general transfer
+        var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
 
-        // Remove all template files
-        transfer_files = _.reject(transfer_files, function(val) {
-          // If it starts with an underscore or contains an underscore as the first character of the file
-          // FIXME: There has to be a better way
-          return (val.substring(0, 1) == '_' || val.indexOf('/_') != -1);
-        });
-        
         // Remove stages if they are defined in configuration
         if (_.has(config, 'stages')) {
           _.each(config.stages, function(value, key) {
@@ -130,7 +121,7 @@ module.exports = generators.Base.extend({
         });
 
         // Process template files
-        _.each(template_files, function(dest, source) {
+        _.each(template_map, function(dest, source) {
           remote.template(source, dest, that);
         });
 
