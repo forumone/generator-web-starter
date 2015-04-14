@@ -97,7 +97,7 @@ module.exports = generators.Base.extend({
         });
         _.each(templates, function(template) {
           template_map[template] = path.dirname(template) + '/' + path.basename(template).substring(1);
-        }));
+        });
 
         // Get list of all files to transfer
         var files = that.expandFiles('**', {
