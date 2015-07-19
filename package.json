@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "gitty": "^3.1.1",
-    "underscore": "^1.7.0",
+    "lodash": "^3.10.0",
     "update-notifier": "^0.2.2",
     "yeoman-generator": "~0.17.6",
     "yeoman-hoganjs-engine": "0.0.5",

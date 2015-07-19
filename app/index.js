@@ -1,18 +1,18 @@
 'use strict';
 var generators = require('yeoman-generator');
-var _ = require('underscore');
+var _ = require('lodash');
 var git = require('gitty');
 var updateNotifier = require('update-notifier');
 var path = require('path');
 var yosay = require('yosay');
 
 // Configs
-var basic_config = require('./configs/basic');
-var drupal_config = require('./configs/drupal');
-var wordpress_config = require('./configs/wordpress');
-var javascript_config = require('./configs/javascript');
-var puppet_config = require('./configs/puppet');
-var capistrano_config = require('./configs/capistrano');
+var configs = {};
+configs.basic_config = require('./configs/basic');
+configs.drupal_config = require('./configs/drupal');
+configs.wordpress_config = require('./configs/wordpress');
+configs.puppet_config = require('./configs/puppet');
+configs.capistrano_config = require('./configs/capistrano');
 
 module.exports = generators.Base.extend({
   engine : require('yeoman-hoganjs-engine'),
@@ -51,16 +51,24 @@ module.exports = generators.Base.extend({
       repository : _.has(remotes, 'origin') ? remotes.origin : ''
     };
 
-    var config = _.extend(defaults, basic_config.getDefaults(), drupal_config.getDefaults(), puppet_config
-        .getDefaults(), capistrano_config.getDefaults(), this.config.getAll());
+    var defaultValues = _.chain(configs).map(function(config) {
+      return config.getDefaults();
+    })
+    .reduce(function(result, n, key) {
+      return _.merge(result, n);
+    })
+    .value();
 
-    var prompts = [].concat(basic_config.getPrompts(config), drupal_config.getPrompts(config), puppet_config
-        .getPrompts(config), capistrano_config.getPrompts(config));
-
+    var prompts = _.chain(configs).map(function(config) {
+      return config.getPrompts(defaultValues);
+    })
+    .flatten()
+    .value();
+    
     var done = this.async();
 
     this.prompt(prompts, function(props) {
-      _.extend(this, config, props);
+      _.extend(this, defaultValues, props);
       // Check to see if we should be using SASS / Compass
       // TODO: Make this less manual
       this.use_compass = (_.has(this, 'drupal_use_compass') && this.drupal_use_compass)
