@@ -1,6 +1,6 @@
 'use strict';
 var generators = require('yeoman-generator');
-var _ = require('underscore');
+var _ = require('lodash');
 
 module.exports = generators.NamedBase.extend({
   engine : require('yeoman-hoganjs-engine'),
