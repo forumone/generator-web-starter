@@ -13,6 +13,7 @@ configs.drupal_config = require('./configs/drupal');
 configs.wordpress_config = require('./configs/wordpress');
 configs.puppet_config = require('./configs/puppet');
 configs.capistrano_config = require('./configs/capistrano');
+configs.compass = require('./configs/compass');
 
 module.exports = generators.Base.extend({
   engine : require('yeoman-hoganjs-engine'),
@@ -57,6 +58,7 @@ module.exports = generators.Base.extend({
     .reduce(function(result, n, key) {
       return _.merge(result, n);
     })
+    .extend(this.config.getAll())
     .value();
 
     var prompts = _.chain(configs).map(function(config) {
@@ -69,10 +71,6 @@ module.exports = generators.Base.extend({
 
     this.prompt(prompts, function(props) {
       _.extend(this, defaultValues, props);
-      // Check to see if we should be using SASS / Compass
-      // TODO: Make this less manual
-      this.use_compass = (_.has(this, 'drupal_use_compass') && this.drupal_use_compass)
-          || (_.has(this, 'wordpress_use_compass') && this.wordpress_use_compass);
 
       var that = this;
 

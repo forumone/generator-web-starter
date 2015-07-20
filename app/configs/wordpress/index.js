@@ -4,7 +4,7 @@ var defaults = {
   wordpress_use_compass : true
 };
 
-var npmPackages = [ 'grunt-contrib-compass' ];
+var npmPackages = [ ];
 
 module.exports = {
   getNpmPackages : function(config) {
@@ -19,15 +19,6 @@ module.exports = {
       name: 'wpcfm',
       message: 'Does it use the WP-CFM plugin?',
       default: config.wpcfm,
-      when: function(answers) {
-        return (answers.platform == 'wordpress');
-      }
-    },
-    {
-      type: 'confirm',
-      name: 'wordpress_use_compass',
-      message: 'Does it use SASS / Compass?',
-      default: config.wordpress_use_compass,
       when: function(answers) {
         return (answers.platform == 'wordpress');
       }

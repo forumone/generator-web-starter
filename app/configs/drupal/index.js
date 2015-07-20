@@ -3,10 +3,9 @@ var defaults = {
   cmi : false,
   solr : true,
   drupal_theme : 'gesso',
-  drupal_use_compass : true
 };
 
-var npmPackages = [ 'grunt-contrib-compass' ];
+var npmPackages = [ ];
 
 module.exports = {
   getNpmPackages : function(config) {
@@ -41,15 +40,6 @@ module.exports = {
       default: config.solr,
       when: function(answers) {
         return (answers.platform == 'drupal' && answers.install_type == 'advanced');
-      }
-    },
-    {
-      type: 'confirm',
-      name: 'drupal_use_compass',
-      message: 'Does it use SASS / Compass?',
-      default: config.drupal_use_compass,
-      when: function(answers) {
-        return (answers.platform == 'drupal');
       }
     },
     {
