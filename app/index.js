@@ -7,13 +7,7 @@ var path = require('path');
 var yosay = require('yosay');
 
 // Configs
-var configs = {};
-configs.basic_config = require('./configs/basic');
-configs.drupal_config = require('./configs/drupal');
-configs.wordpress_config = require('./configs/wordpress');
-configs.puppet_config = require('./configs/puppet');
-configs.capistrano_config = require('./configs/capistrano');
-configs.compass = require('./configs/compass');
+var configs = require('./configs');
 
 module.exports = generators.Base.extend({
   engine : require('yeoman-hoganjs-engine'),
