@@ -4,7 +4,12 @@ var defaults = {
   wordpress_use_compass : true
 };
 
+var npmPackages = [ 'grunt-contrib-compass' ];
+
 module.exports = {
+  getNpmPackages : function(config) {
+    return npmPackages;
+  },
   getDefaults : function() {
     return defaults;
   },

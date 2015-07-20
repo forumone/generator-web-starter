@@ -4,7 +4,12 @@ var defaults = {
     keep_releases : 3
   };
 
+var npmPackages = [ ];
+
   module.exports = {
+    getNpmPackages : function(config) {
+      return npmPackages;
+    },
     getDefaults : function() {
       return defaults;
     },

@@ -1,5 +1,10 @@
 var _ = require('underscore');
 
-module.exports = function(defaults) {
-  return [];
+module.exports = {
+  getNpmPackages : function(config) {
+    return npmPackages;
+  },
+  getDefaults : function() {
+    
+  }
 }

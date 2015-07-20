@@ -154,15 +154,15 @@ module.exports = generators.Base.extend({
     });
   },
   end : function() {
+    var config = this.config.getAll();
     var done = this.async();
-    var npm_packages = [ 'grunt', 'grunt-contrib-concat', 'grunt-contrib-cssmin', 'grunt-contrib-jshint',
-        'grunt-contrib-nodeunit', 'grunt-contrib-uglify', 'grunt-contrib-watch', 'grunt-shell', 'grunt-simple-watch',
-        'grunt-contrib-coffee', 'load-grunt-tasks' ];
-
-    if (this.use_compass) {
-      npm_packages.push('grunt-contrib-compass');
-    }
-
+    var npm_packages = _.chain(configs).map(function(config) {
+      return config.getNpmPackages(config);
+    })
+    .flatten()
+    .uniq()
+    .value();
+    
     this.npmInstall(npm_packages, {
       'saveDev' : true
     }, done);

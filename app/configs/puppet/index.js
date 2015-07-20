@@ -7,7 +7,12 @@ var defaults = {
     php_prefix : 'php54'
   };
 
+var npmPackages = [ 'grunt-contrib-compass' ];
+
   module.exports = {
+    getNpmPackages : function(config) {
+      return npmPackages;
+    },
     getDefaults : function() {
       return defaults;
     },

@@ -7,7 +7,12 @@ var defaults = {
   repository : ''
 };
 
+var npmPackages = [ 'grunt', 'grunt-contrib-watch', 'grunt-simple-watch', 'load-grunt-tasks', 'include-all' ];
+
 module.exports = {
+  getNpmPackages : function(config) {
+    return npmPackages;
+  },
   getDefaults : function() {
     return defaults;
   },
