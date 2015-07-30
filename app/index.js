@@ -45,8 +45,14 @@ module.exports = generators.Base.extend({
         default : config.refspec
       }], function (answers) {
         this.config.set(answers);
+        this.answers = answers;
+        
         _.each(answers.plugins, function(plugin) {
-          that.composeWith(plugin, {}, {});
+          that.composeWith(plugin, {
+            options : {
+              parent : that
+            }
+          }, {});
           done();
         });
       }.bind(this));
