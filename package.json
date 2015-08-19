@@ -28,7 +28,8 @@
     "yeoman-generator": "~0.18",
     "yeoman-hoganjs-engine": "0.0.5",
     "yosay": "^1.0.0",
-    "generator-web-starter-drupal": "forumone/generator-web-starter-drupal"
+    "generator-web-starter-drupal": "forumone/generator-web-starter-drupal",
+    "generator-web-starter-puppet": "forumone/generator-web-starter-puppet"
   },
   "devDependencies": {
     "mocha": "~1.12.0"
