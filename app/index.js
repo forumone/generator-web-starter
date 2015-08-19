@@ -45,6 +45,7 @@ module.exports = generators.Base.extend({
         default : config.refspec
       }], function (answers) {
         this.config.set(answers);
+
         this.answers = answers;
         
         _.each(answers.plugins, function(plugin) {
@@ -53,8 +54,9 @@ module.exports = generators.Base.extend({
               parent : that
             }
           }, {});
-          done();
         });
+        
+        done();
       }.bind(this));
     }
   },
