@@ -32,6 +32,18 @@ module.exports = generators.Base.extend({
       }, this.config.getAll());
       
       this.prompt([{
+        type    : 'input',
+        name    : 'name',
+        message : 'Project name',
+        default : config.name
+      },
+      {
+        type    : 'input',
+        name    : 'repository',
+        message : 'Repository clone URL',
+        default : config.repository
+      },
+      {
         type    : 'checkbox',
         name    : 'plugins',
         message : 'Select plugins',
@@ -72,7 +84,7 @@ module.exports = generators.Base.extend({
         } else {
           // Build a map of template and target files
           var templates = that.expand('**/_*', {
-            cwd : remote.src._base
+            cwd : remote.cachePath
           });
           
           var template_map = _.each(templates, function(template) {
@@ -81,16 +93,20 @@ module.exports = generators.Base.extend({
 
           // Get list of all files to transfer
           var files = that.expandFiles('**', {
-            cwd : remote.src._base,
+            cwd : remote.cachePath,
             dot : true
           });
 
           // Exclude templates and targets from general transfer
           var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
-
           // Copy files to the current
           _.each(transfer_files, function(file) {
-            remote.copy(file, file);
+            that.fs.copyTpl(
+              remote.cachePath + '/' + file,
+              that.destinationPath(file),
+              {},
+              { delimiter: '$' }
+            );
           });
           
           done();
