@@ -2,7 +2,9 @@
 var generators = require('yeoman-generator'),
   _ = require('lodash'),
   yeoman = require('yeoman-environment'),
-  path = require('path');
+  path = require('path'),
+  fs = require('fs'),
+  inquirer = require('inquirer');
 
 var plugins = [];
 
@@ -12,13 +14,41 @@ module.exports = generators.Base.extend({
     plugins : function() {
       var env = yeoman.createEnv();
       env.lookup(function () {
-        plugins = _.chain(env.getGeneratorsMeta())
+        var plugin_vals = _.chain(env.getGeneratorsMeta())
         .map(function(meta, key) {
+          var val = '';
+          
+          var pkg_path = path.dirname(meta.resolved);
+          var pkg = JSON.parse(fs.readFileSync(path.join(pkg_path, '..', 'package.json'), 'utf8'));
+          
           var namespaces = key.split(':');
-          return (2 == namespaces.length && 'web-starter' == namespaces[1]) ? key : ''; 
+          
+          if (2 == namespaces.length && 'web-starter' == namespaces[1]) {
+            // Make sure we have appropriate keys
+            val = _.extend({ 
+              category : 'Other', 
+              name : key, 
+              value : key 
+            }, (_.has(pkg, 'webStarter')) ? pkg.webStarter : {});
+          }
+            
+          return val;
         })
         .compact()
+        .sortBy('label')
+        .sortBy('category')
         .value();
+        
+        // Convert into correct Inquirer format with separators
+        plugin_vals.forEach(function(item, idx) {
+          if (0 == idx || (item.category != plugin_vals[idx - 1].category)) {
+            plugins.push(new inquirer.Separator(item.category));
+          }
+          plugins.push({
+            name : item.name,
+            value : item.value
+          });
+        });
       });
     }
   },

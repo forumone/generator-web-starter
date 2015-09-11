@@ -21,15 +21,16 @@
     "test": "mocha"
   },
   "dependencies": {
+    "generator-web-starter-drupal": "forumone/generator-web-starter-drupal",
+    "generator-web-starter-puppet": "forumone/generator-web-starter-puppet",
     "gitty": "^3.1.1",
+    "inquirer": "^0.9.0",
     "lodash": "^3.10.0",
     "update-notifier": "^0.2.2",
     "yeoman-environment": "^1.2.7",
     "yeoman-generator": "~0.20",
     "yeoman-hoganjs-engine": "0.0.5",
-    "yosay": "^1.0.0",
-    "generator-web-starter-drupal": "forumone/generator-web-starter-drupal",
-    "generator-web-starter-puppet": "forumone/generator-web-starter-puppet"
+    "yosay": "^1.0.0"
   },
   "devDependencies": {
     "mocha": "~1.12.0"
