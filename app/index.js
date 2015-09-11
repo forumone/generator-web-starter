@@ -90,7 +90,7 @@ module.exports = generators.Base.extend({
           var template_map = _.each(templates, function(template) {
             return path.dirname(template) + '/' + path.basename(template).substring(1);
           });
-
+          
           // Get list of all files to transfer
           var files = that.expandFiles('**', {
             cwd : remote.cachePath,
@@ -99,6 +99,7 @@ module.exports = generators.Base.extend({
 
           // Exclude templates and targets from general transfer
           var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
+          
           // Copy files to the current
           _.each(transfer_files, function(file) {
             that.fs.copyTpl(
@@ -112,6 +113,21 @@ module.exports = generators.Base.extend({
           done();
         }
       }, true);
+    },
+    
+    gemfile : function() {
+      var done = this.async();
+      
+      // Get current system config
+      var config = this.answers;
+      
+      this.fs.copyTpl(
+        this.templatePath('Gemfile'),
+        this.destinationPath('Gemfile'),
+        config
+      );
+      
+      done();
     }
   }
 });
