@@ -29,7 +29,6 @@
     "update-notifier": "^0.2.2",
     "yeoman-environment": "^1.2.7",
     "yeoman-generator": "~0.20",
-    "yeoman-hoganjs-engine": "0.0.5",
     "yosay": "^1.0.0"
   },
   "devDependencies": {

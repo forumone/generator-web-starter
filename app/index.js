@@ -9,7 +9,6 @@ var generators = require('yeoman-generator'),
 var plugins = [];
 
 module.exports = generators.Base.extend({
-  engine : require('yeoman-hoganjs-engine'),
   initializing : {
     plugins : function() {
       var env = yeoman.createEnv();
