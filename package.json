@@ -1,6 +1,6 @@
 {
   "name": "generator-web-starter",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A generator for Yeoman",
   "keywords": [
     "yeoman-generator"
@@ -12,7 +12,6 @@
     "email": "support@forumone.com",
     "url": "https://github.com/forumone"
   },
-  "main": "app/index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/forumone/generator-web-starter.git"
@@ -21,10 +20,10 @@
     "test": "mocha"
   },
   "dependencies": {
-    "generator-web-starter-drupal": "~0.0.1",
-    "generator-web-starter-puppet": "~0.0.1",
-    "generator-web-starter-capistrano": "~0.0.1",
-    "generator-web-starter-wordpress": "~0.0.1",
+    "generator-web-starter-drupal": "~0.1.0",
+    "generator-web-starter-puppet": "~0.1.0",
+    "generator-web-starter-capistrano": "~0.1.0",
+    "generator-web-starter-wordpress": "~0.1.0",
     "gitty": "^3.1.1",
     "inquirer": "^0.9.0",
     "lodash": "^3.10.0",
@@ -49,6 +48,7 @@
     }
   ],
   "files": [
-    "app"
+    "app",
+    "stage"
   ]
 }
