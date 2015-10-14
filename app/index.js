@@ -1,18 +1,45 @@
 'use strict';
 var generators = require('yeoman-generator'),
   _ = require('lodash'),
-  yeoman = require('yeoman-environment'),
   path = require('path'),
   fs = require('fs'),
-  inquirer = require('inquirer');
+  inquirer = require('inquirer'),
+  globby = require('globby');
 
 var plugins = [];
 
 module.exports = generators.Base.extend({
   initializing : {
     plugins : function() {
-      var env = yeoman.createEnv();
+      var env = this.env;
       env.lookup(function () {
+        // Add local dependencies
+        var dependencies = path.join(__dirname, '..', 'node_modules');
+        var localGenerators = env.findGeneratorsIn([dependencies]);
+        var patterns = [];
+        
+        // Copied liberally from Yeoman resolver
+        env.lookups.forEach(function (lookup) {
+          localGenerators.forEach(function (modulePath) {
+            patterns.push(path.join(modulePath, lookup));
+          });
+        });
+        
+        patterns.forEach(function (pattern) {
+          globby.sync('*/index.js', { cwd: pattern }).forEach(function (filename) {
+            var generatorReference = path.join(pattern, filename);
+            var namespace;
+            
+            var realPath = fs.realpathSync(generatorReference);
+            
+            if (realPath !== generatorReference) {
+              namespace = env.namespace(generatorReference);
+            }
+            
+            env.register(realPath, namespace);
+          }, env);
+        }, env);
+        
         var plugin_vals = _.chain(env.getGeneratorsMeta())
         .map(function(meta, key) {
           var val = '';
