@@ -1,6 +1,6 @@
 {
   "name": "generator-web-starter",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "A generator for Yeoman",
   "keywords": [
     "yeoman-generator"
@@ -20,7 +20,7 @@
     "test": "mocha"
   },
   "dependencies": {
-    "generator-web-starter-capistrano": "~0.1.0",
+    "generator-web-starter-capistrano": "~0.1.1",
     "generator-web-starter-drupal": "~0.1.0",
     "generator-web-starter-puppet": "~0.1.0",
     "generator-web-starter-wordpress": "~0.1.0",
