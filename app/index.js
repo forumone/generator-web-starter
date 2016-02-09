@@ -171,6 +171,7 @@ module.exports = generators.Base.extend({
       }, true);
     },
     
+    // Template Gemfile
     gemfile : function() {
       var done = this.async();
       
@@ -180,6 +181,22 @@ module.exports = generators.Base.extend({
       this.fs.copyTpl(
         this.templatePath('Gemfile'),
         this.destinationPath('Gemfile'),
+        config
+      );
+      
+      done();
+    },
+    
+    // Template package.json file
+    package : function() {
+      var done = this.async();
+      
+      // Get current system config
+      var config = this.answers;
+      
+      this.fs.copyTpl(
+        this.templatePath('package.json'),
+        this.destinationPath('package.json'),
         config
       );
       
