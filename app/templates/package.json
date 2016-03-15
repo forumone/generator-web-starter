@@ -5,7 +5,7 @@
     "type": "git",
     "url": "<%- repository %>"
   },
-  "themePath": "<%- theme_gemfile %>",
+  "themePath": "<%- theme_path %>",
   "devDependencies": {
     "grunt": "^0.4.1",
     "grunt-contrib-coffee": "^0.13.0",
