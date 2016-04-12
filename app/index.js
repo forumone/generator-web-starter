@@ -4,7 +4,9 @@ var generators = require('yeoman-generator'),
   path = require('path'),
   fs = require('fs'),
   inquirer = require('inquirer'),
-  globby = require('globby');
+  globby = require('globby'),
+  GruntfileEditor = require('gruntfile-editor'),
+  pkg = require('../package.json');
 
 var plugins = [];
 
@@ -90,6 +92,8 @@ module.exports = generators.Base.extend({
       var config = _.extend({
         plugins : [],
         refspec : '1.1.x',
+        theme_path : '',
+        package_file : { devDependencies : { 'generator-web-starter' : pkg.version } }
       }, this.config.getAll());
       
       this.prompt([{
@@ -119,7 +123,7 @@ module.exports = generators.Base.extend({
       }], function (answers) {
         this.config.set(answers);
 
-        this.answers = answers;
+        this.answers = _.extend(config, answers);
         
         _.each(answers.plugins, function(plugin) {
           that.composeWith(plugin, {
@@ -191,13 +195,16 @@ module.exports = generators.Base.extend({
       
       done();
     },
-    
     // Template package.json file
     package : function() {
       var done = this.async();
       
       // Get current system config
       var config = this.answers;
+      
+      // Set package.json attributes
+      var package_file_string = JSON.stringify(config.package_file, null, 2);
+      config.package_file = package_file_string.substring(1, (package_file_string.length - 2));
       
       this.fs.copyTpl(
         this.templatePath('package.json'),
