@@ -95,7 +95,7 @@ module.exports = generators.Base.extend({
       this.prompt([{
         type    : 'input',
         name    : 'name',
-        message : 'Project name',
+        message : 'Project name (machine name)',
         default : config.name
       },
       {
