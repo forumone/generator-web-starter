@@ -16,7 +16,9 @@ module.exports = generators.Base.extend({
         // Add local dependencies
         var dependencies = path.join(__dirname, '..', 'node_modules');
         var localGenerators = env.findGeneratorsIn([dependencies]);
+
         var patterns = [];
+        var namespaces = env.namespaces();
         
         // Copied liberally from Yeoman resolver
         env.lookups.forEach(function (lookup) {
@@ -36,10 +38,13 @@ module.exports = generators.Base.extend({
               namespace = env.namespace(generatorReference);
             }
             
-            env.register(realPath, namespace);
+            // Ensure we don't add a global module if a local one exists
+            if (-1 === _.indexOf(namespaces, namespace)) {
+              env.register(realPath, namespace);
+            }
           }, env);
         }, env);
-        
+
         var plugin_vals = _.chain(env.getGeneratorsMeta())
         .map(function(meta, key) {
           var val = '';
