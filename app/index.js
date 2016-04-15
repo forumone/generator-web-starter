@@ -146,7 +146,8 @@ module.exports = generators.Base.extend({
             options : {
               parent : that,
               getPlugins : getPlugins,
-              addPlugin : addPlugin
+              addPlugin : addPlugin,
+              getPlugin : getPlugin
             }
           }, {});
         });
