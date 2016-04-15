@@ -8,7 +8,23 @@ var generators = require('yeoman-generator'),
   GruntfileEditor = require('gruntfile-editor'),
   pkg = require('../package.json');
 
-var plugins = [];
+var plugins = {};
+var sub_generators = [];
+
+function getPlugins() {
+  return plugins;
+}
+
+/**
+ * Returns the functionality exposed by a plugin
+ */
+function getPlugin(name) {
+  return plugins.hasOwnProperty(name) ? plugins[name] : null; 
+}
+
+function addPlugin(name, value) {
+  plugins[plugin] = value;
+}
 
 module.exports = generators.Base.extend({
   initializing : {
@@ -75,9 +91,9 @@ module.exports = generators.Base.extend({
         // Convert into correct Inquirer format with separators
         plugin_vals.forEach(function(item, idx) {
           if (0 == idx || (item.category != plugin_vals[idx - 1].category)) {
-            plugins.push(new inquirer.Separator(item.category));
+            sub_generators.push(new inquirer.Separator(item.category));
           }
-          plugins.push({
+          sub_generators.push({
             name : item.name,
             value : item.value
           });
@@ -112,7 +128,7 @@ module.exports = generators.Base.extend({
         type    : 'checkbox',
         name    : 'plugins',
         message : 'Select plugins',
-        choices : plugins,
+        choices : sub_generators,
         default : config.plugins
       },
       {
@@ -128,10 +144,13 @@ module.exports = generators.Base.extend({
         _.each(answers.plugins, function(plugin) {
           that.composeWith(plugin, {
             options : {
-              parent : that
+              parent : that,
+              getPlugins : getPlugins,
+              addPlugin : addPlugin
             }
           }, {});
         });
+        
         
         done();
       }.bind(this));
