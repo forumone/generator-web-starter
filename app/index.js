@@ -33,7 +33,7 @@ function getPlugin(name) {
  * Adds plugin functionality
  */
 function addPlugin(name, value) {
-  plugins[plugin] = value;
+  plugins[name] = value;
 }
 
 module.exports = generators.Base.extend({
