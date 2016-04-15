@@ -11,17 +11,27 @@ var generators = require('yeoman-generator'),
 var plugins = {};
 var sub_generators = [];
 
+/**
+ * Returns all plugin and functionality
+ * 
+ * @returns []
+ */
 function getPlugins() {
   return plugins;
 }
 
 /**
  * Returns the functionality exposed by a plugin
+ * 
+ * @returns {}
  */
 function getPlugin(name) {
   return plugins.hasOwnProperty(name) ? plugins[name] : null; 
 }
 
+/**
+ * Adds plugin functionality
+ */
 function addPlugin(name, value) {
   plugins[plugin] = value;
 }
