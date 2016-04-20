@@ -9,10 +9,11 @@ var generators = require('yeoman-generator'),
   pkg = require('../package.json');
 
 var plugins = {};
+var devDependencies = {};
 var sub_generators = [];
 
 /**
- * Returns all plugin and functionality
+ * Returns all plugins and functionality
  * 
  * @returns []
  */
@@ -34,6 +35,31 @@ function getPlugin(name) {
  */
 function addPlugin(name, value) {
   plugins[name] = value;
+}
+
+/**
+ * Returns all devDependencies and functionality
+ * 
+ * @returns []
+ */
+function getDevDependencies() {
+  return devDependencies;
+}
+
+/**
+ * Returns the functionality exposed by a devDependency
+ * 
+ * @returns {}
+ */
+function getDevDependency(name) {
+  return devDependencies.hasOwnProperty(name) ? devDependencies[name] : null; 
+}
+
+/**
+ * Adds devDependency functionality
+ */
+function addDevDependency(name, value) {
+  devDependencies[name] = value;
 }
 
 module.exports = generators.Base.extend({
@@ -157,7 +183,10 @@ module.exports = generators.Base.extend({
               parent : that,
               getPlugins : getPlugins,
               addPlugin : addPlugin,
-              getPlugin : getPlugin
+              getPlugin : getPlugin,
+              getDevDependencies : getDevDependencies,
+              addDevDependency : addDevDependency,
+              getDevDependency : getDevDependency
             }
           }, {});
         });
@@ -232,9 +261,12 @@ module.exports = generators.Base.extend({
       // Get current system config
       var config = this.answers;
       
-      // Set package.json attributes
-      var package_file_string = JSON.stringify(config.package_file, null, 2);
-      config.package_file = package_file_string.substring(1, (package_file_string.length - 2));
+      config.dev_dependencies = '"devDependencies": {\n';
+      _.forEach(getDevDependencies(), function(value, key) {
+        config.dev_dependencies += '    "' + key + '":"' + value + '",\n';
+      });
+      config.dev_dependencies = config.dev_dependencies.substring(0, config.dev_dependencies.length-2);
+      config.dev_dependencies += "\n  },";
       
       this.fs.copyTpl(
         this.templatePath('package.json'),
