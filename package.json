@@ -27,7 +27,7 @@
     "gitty": "^3.1.1",
     "globby": "^3.0.1",
     "inquirer": "^0.9.0",
-    "lodash": "^3.10.0",
+    "lodash": "^4.11.0",
     "update-notifier": "^0.2.2",
     "yeoman-generator": "~0.20",
     "yosay": "^1.0.0"
