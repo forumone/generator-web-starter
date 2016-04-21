@@ -6,5 +6,5 @@
     "url": "<%- repository %>"
   },
   "themePath": "<%- theme_path %>",
-  <%- package_file %>
+  <%- dev_dependencies %>
 }
