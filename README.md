@@ -1,10 +1,8 @@
 generator-web-starter
 =====================
 
-Yeoman generator for the Web Starter Kit. Currently under active development. Steps to test:
+The ```Web Starter Kit``` is a [yeoman](http://yeoman.io/) generator developed and maintained by [Forum One](http://forumone.com/). It allows you to:
 
-1. Clone the repository
-2. Install Yeoman CLI tool (if you don't already have it) by running `npm install -g yo` -- note you may need to run this as a user with elevated privileges
-3. Run ```npm link``` to link the project and install all dependencies -- note you may need to run this as a user with elevated privileges
-4. Navigate to directory to contain new project and run ```yo web-starter``` and follow prompts
-5. Profit!
+1. Create a [drupal](https://github.com/forumone/generator-web-starter-drupal) or [wordpress](https://github.com/forumone/generator-web-starter-wordpress) project.
+2. Add a default theme like the [gesso theme](https://github.com/forumone/generator-web-starter-gesso/).
+3. Add common preconfigure common utilities like [grunt tasks](https://github.com/forumone/generator-web-starter-grunt/), capistrano or puppet.
