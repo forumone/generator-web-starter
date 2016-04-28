@@ -64,6 +64,9 @@ function addDevDependency(name, value) {
 
 module.exports = generators.Base.extend({
   initializing : {
+    dependencies : function() {
+      addDevDependency('generator-web-starter', pkg.version);
+    },
     plugins : function() {
       var env = this.env;
       env.lookup(function () {
@@ -260,13 +263,12 @@ module.exports = generators.Base.extend({
       
       // Get current system config
       var config = this.answers;
-      
-      config.dev_dependencies = '"devDependencies": {\n';
-      _.forEach(getDevDependencies(), function(value, key) {
-        config.dev_dependencies += '    "' + key + '":"' + value + '",\n';
-      });
-      config.dev_dependencies = config.dev_dependencies.substring(0, config.dev_dependencies.length-2);
-      config.dev_dependencies += "\n  },";
+
+      // Unfortunately we're unable to simply add them to the package file by using
+      // the normal Yeoman method since that invokes `npm install` from the host
+      config.dev_dependencies = _.map(getDevDependencies(), function(value, key) {
+        return '"' + key + '": "' + value + '"'; 
+      }).join(",\n    ");
       
       this.fs.copyTpl(
         this.templatePath('package.json'),
