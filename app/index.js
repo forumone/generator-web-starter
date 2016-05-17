@@ -5,7 +5,6 @@ var generators = require('yeoman-generator'),
   fs = require('fs'),
   inquirer = require('inquirer'),
   globby = require('globby'),
-  GruntfileEditor = require('gruntfile-editor'),
   pkg = require('../package.json');
 
 var plugins = {};
