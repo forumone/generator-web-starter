@@ -24,19 +24,21 @@
     "generator-web-starter-capistrano": "~0.2.0",
     "generator-web-starter-drupal": "~0.1.5",
     "generator-web-starter-gesso": "^0.1.0",
-    "generator-web-starter-grunt": "^0.1.2",
+    "generator-web-starter-grunt": "~0.1.2",
     "generator-web-starter-puppet": "~0.1.2",
     "generator-web-starter-wordpress": "~0.1.5",
-    "gitty": "^3.3.5",
-    "globby": "^4.1.0",
-    "inquirer": "^1.0.2",
-    "lodash": "^4.12.0",
-    "update-notifier": "^0.7.0",
-    "yeoman-generator": "~0.23",
-    "yosay": "^1.1.1"
+    "generator-web-starter-gesso": "~0.1.0",
+    "gitty": "^3.1.1",
+    "globby": "^3.0.1",
+    "inquirer": "^0.9.0",
+    "lodash": "^4.11.0",
+    "update-notifier": "^0.2.2",
+    "yeoman-generator": "~0.20",
+    "yeoman-generator-bluebird": "^0.1.0",
+    "yosay": "^1.0.0"
   },
   "devDependencies": {
-    "mocha": "~2.4.5"
+    "mocha": "~1.12.0"
   },
   "engines": {
     "node": ">=0.8.0",
