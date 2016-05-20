@@ -269,6 +269,7 @@ module.exports = generators.Base.extend({
         return '"' + key + '": "' + value + '"'; 
       }).join(",\n    ");
       
+      config.name = _.snakeCase(config.name);
       this.fs.copyTpl(
         this.templatePath('package.json'),
         this.destinationPath('package.json'),
