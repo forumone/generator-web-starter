@@ -20,8 +20,10 @@
     "test": "mocha"
   },
   "dependencies": {
+    "generator-web-starter-angularjs": "^0.1.0",
     "generator-web-starter-capistrano": "~0.2.0",
     "generator-web-starter-drupal": "~0.1.5",
+    "generator-web-starter-gesso": "^0.1.0",
     "generator-web-starter-grunt": "~0.1.2",
     "generator-web-starter-puppet": "~0.1.2",
     "generator-web-starter-wordpress": "~0.1.5",
