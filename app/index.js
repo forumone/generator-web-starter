@@ -64,7 +64,7 @@ function addDevDependency(name, value) {
 module.exports = generators.Base.extend({
   initializing : {
     dependencies : function() {
-      addDevDependency('generator-web-starter', pkg.version);
+      addDevDependency(pkg.name, '^' + pkg.version);
     },
     plugins : function() {
       var env = this.env;
