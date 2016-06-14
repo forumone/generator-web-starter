@@ -147,6 +147,7 @@ module.exports = generators.Base.extend({
         plugins : [],
         refspec : '1.1.x',
         theme_path : '',
+        build_path : '',
         package_file : { devDependencies : { 'generator-web-starter' : pkg.version } }
       }, this.config.getAll());
       
@@ -273,6 +274,22 @@ module.exports = generators.Base.extend({
       this.fs.copyTpl(
         this.templatePath('package.json'),
         this.destinationPath('package.json'),
+        config
+      );
+      
+      done();
+    },
+    bower : function() {
+      var done = this.async();
+      
+      // Get current system config
+      var config = this.answers;
+      
+      config.name = _.snakeCase(config.name);
+      
+      this.fs.copyTpl(
+        this.templatePath('bower.json'),
+        this.destinationPath('bower.json'),
         config
       );
       
