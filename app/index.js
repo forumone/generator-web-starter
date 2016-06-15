@@ -144,6 +144,7 @@ module.exports = generators.Base.extend({
       var done = this.async();
       var that = this;
       var config = _.extend({
+        name : process.env.HOSTNAME,
         plugins : [],
         refspec : '1.1.x',
         theme_path : '',
@@ -154,7 +155,7 @@ module.exports = generators.Base.extend({
       this.prompt([{
         type    : 'input',
         name    : 'name',
-        message : 'Project name (machine name)',
+        message : 'Project name (' + config.name + ')',
         default : config.name
       },
       {
