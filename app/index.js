@@ -4,8 +4,11 @@ var generators = require('yeoman-generator'),
   path = require('path'),
   fs = require('fs'),
   inquirer = require('inquirer'),
+  Promise = require('bluebird'),
+  glob = Promise.promisify(require('glob')),
   globby = require('globby'),
-  pkg = require('../package.json');
+  pkg = require('../package.json'),
+  ygp = require('yeoman-generator-bluebird');
 
 var plugins = {};
 var devDependencies = {};
@@ -63,6 +66,9 @@ function addDevDependency(name, value) {
 
 module.exports = generators.Base.extend({
   initializing : {
+    async : function() {
+      ygp(this);
+    },
     dependencies : function() {
       addDevDependency(pkg.name, '~' + pkg.version);
     },
@@ -141,7 +147,6 @@ module.exports = generators.Base.extend({
   },
   prompting : {
     plugins : function() {
-      var done = this.async();
       var that = this;
       var config = _.extend({
         plugins : [],
@@ -151,7 +156,7 @@ module.exports = generators.Base.extend({
         package_file : { devDependencies : { 'generator-web-starter' : pkg.version } }
       }, this.config.getAll());
       
-      this.prompt([{
+      return this.prompt([{
         type    : 'input',
         name    : 'name',
         message : 'Project name (machine name)',
@@ -175,10 +180,10 @@ module.exports = generators.Base.extend({
         name    : 'refspec',
         message : 'Version',
         default : config.refspec
-      }], function (answers) {
-        this.config.set(answers);
+      }]).then(function(answers) {
+        that.config.set(answers);
 
-        this.answers = _.extend(config, answers);
+        that.answers = _.extend(config, answers);
         
         _.each(answers.plugins, function(plugin) {
           that.composeWith(plugin, {
@@ -193,59 +198,44 @@ module.exports = generators.Base.extend({
             }
           }, {});
         });
-        
-        
-        done();
-      }.bind(this));
+      });
     }
   },
   writing : {
     repo : function() {
       var that = this;
-      var done = this.async();
       var config = this.config.getAll();
       
-      this.remote('forumone', 'web-starter', config.refspec, function(err, remote) {
-        if (err) {
-          done.err(err);
-        } else {
-          // Build a map of template and target files
-          var templates = that.expand('**/_*', {
-            cwd : remote.cachePath
-          });
-          
-          var template_map = _.each(templates, function(template) {
-            return path.dirname(template) + '/' + path.basename(template).substring(1);
-          });
-          
-          // Get list of all files to transfer
-          var files = that.expandFiles('**', {
-            cwd : remote.cachePath,
-            dot : true
-          });
-
-          // Exclude templates and targets from general transfer
-          var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
-          
-          // Copy files to the current
-          _.each(transfer_files, function(file) {
-            that.fs.copyTpl(
-              remote.cachePath + '/' + file,
-              that.destinationPath(file),
-              {},
-              { delimiter: '$' }
-            );
-          });
-          
-          done();
-        }
-      }, true);
+      return this.remoteAsync('forumone', 'web-starter', config.refspec)
+      .then(function(remote) {
+        return [ 
+                 glob('**/*_', { cwd : remote.cachePath }), 
+                 glob('**', { cwd : remote.cachePath, dot : true }),
+                 Promise.resolve(remote)
+               ];
+      })
+      .spread(function(templates, files, remote) {
+        var template_map = _.each(templates, function(template) {
+          return path.dirname(template) + '/' + path.basename(template).substring(1);
+        });
+        
+        // Exclude templates and targets from general transfer
+        var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
+        
+        // Copy files to the current
+        _.each(transfer_files, function(file) {
+          that.fs.copyTpl(
+            remote.cachePath + '/' + file,
+            that.destinationPath(file),
+            {},
+            { delimiter: '$' }
+          );
+        });
+      });
     },
     
     // Template Gemfile
     gemfile : function() {
-      var done = this.async();
-      
       // Get current system config
       var config = this.answers;
       
@@ -254,12 +244,9 @@ module.exports = generators.Base.extend({
         this.destinationPath('Gemfile'),
         config
       );
-      
-      done();
     },
     // Template package.json file
     package : function() {
-      var done = this.async();
       
       // Get current system config
       var config = this.answers;
@@ -276,12 +263,8 @@ module.exports = generators.Base.extend({
         this.destinationPath('package.json'),
         config
       );
-      
-      done();
     },
     bower : function() {
-      var done = this.async();
-      
       // Get current system config
       var config = this.answers;
       
@@ -292,8 +275,6 @@ module.exports = generators.Base.extend({
         this.destinationPath('bower.json'),
         config
       );
-      
-      done();
     }
   }
 });
