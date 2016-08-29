@@ -13,6 +13,7 @@ var generators = require('yeoman-generator'),
 var plugins = {};
 var devDependencies = {};
 var sub_generators = [];
+var rubyGems = {};
 
 /**
  * Returns all plugins and functionality
@@ -62,6 +63,14 @@ function getDevDependency(name) {
  */
 function addDevDependency(name, value) {
   devDependencies[name] = value;
+}
+
+function getRubyGems() {
+  return rubyGems;
+}
+
+function addRubyGem(name, version) {
+  rubyGems[name] = version;
 }
 
 module.exports = generators.Base.extend({
@@ -150,10 +159,10 @@ module.exports = generators.Base.extend({
       var that = this;
       var config = _.extend({
         plugins : [],
-        refspec : '1.1.x',
         theme_path : '',
         build_path : '',
-        package_file : { devDependencies : { 'generator-web-starter' : pkg.version } }
+        package_file : { devDependencies : { 'generator-web-starter' : pkg.version } },
+        ruby_version : '2.3.1',
       }, this.config.getAll());
       
       return this.prompt([{
@@ -169,17 +178,18 @@ module.exports = generators.Base.extend({
         default : config.repository
       },
       {
+        type    : 'list',
+        name    : 'ruby_version',
+        message : 'Ruby version',
+        default : config.ruby_version,
+        choices : [ '2.3.0', '2.2.4', '2.1.8', '2.0.0', '1.9.3' ]
+      },
+      {
         type    : 'checkbox',
         name    : 'plugins',
         message : 'Select plugins',
         choices : sub_generators,
         default : config.plugins
-      },
-      {
-        type    : 'input',
-        name    : 'refspec',
-        message : 'Version',
-        default : config.refspec
       }]).then(function(answers) {
         that.config.set(answers);
 
@@ -194,7 +204,9 @@ module.exports = generators.Base.extend({
               getPlugin : getPlugin,
               getDevDependencies : getDevDependencies,
               addDevDependency : addDevDependency,
-              getDevDependency : getDevDependency
+              getDevDependency : getDevDependency,
+              getRubyGems : getRubyGems,
+              addRubyGem : addRubyGem
             }
           }, {});
         });
@@ -202,42 +214,14 @@ module.exports = generators.Base.extend({
     }
   },
   writing : {
-    repo : function() {
-      var that = this;
-      var config = this.config.getAll();
-      
-      return this.remoteAsync('forumone', 'web-starter', config.refspec)
-      .then(function(remote) {
-        return [ 
-                 glob('**/*_', { cwd : remote.cachePath }), 
-                 glob('**', { cwd : remote.cachePath, dot : true }),
-                 Promise.resolve(remote)
-               ];
-      })
-      .spread(function(templates, files, remote) {
-        var template_map = _.each(templates, function(template) {
-          return path.dirname(template) + '/' + path.basename(template).substring(1);
-        });
-        
-        // Exclude templates and targets from general transfer
-        var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
-        
-        // Copy files to the current
-        _.each(transfer_files, function(file) {
-          that.fs.copyTpl(
-            remote.cachePath + '/' + file,
-            that.destinationPath(file),
-            {},
-            { delimiter: '$' }
-          );
-        });
-      });
-    },
-    
     // Template Gemfile
     gemfile : function() {
       // Get current system config
       var config = this.answers;
+      
+      config.gems = _.map(getRubyGems(), function(value, key) {
+        return 'gem "' + key + '", "' + value + '"'; 
+      }).join("\n");
       
       this.fs.copyTpl(
         this.templatePath('Gemfile'),
@@ -273,6 +257,36 @@ module.exports = generators.Base.extend({
       this.fs.copyTpl(
         this.templatePath('bower.json'),
         this.destinationPath('bower.json'),
+        config
+      );
+    },
+    gitattributes : function() {
+      // Get current system config
+      var config = this.answers;
+      
+      this.fs.copyTpl(
+        this.templatePath('_.gitattributes'),
+        this.destinationPath('.gitattributes'),
+        config
+      );
+    },
+    gitignore : function() {
+      // Get current system config
+      var config = this.answers;
+      
+      this.fs.copyTpl(
+        this.templatePath('_.gitignore'),
+        this.destinationPath('.gitignore'),
+        config
+      );
+    },
+    rubyVersion : function() {
+      // Get current system config
+      var config = this.answers;
+      
+      this.fs.copyTpl(
+        this.templatePath('_.ruby-version'),
+        this.destinationPath('.ruby-version'),
         config
       );
     }
