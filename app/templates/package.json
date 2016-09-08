@@ -10,6 +10,8 @@
   "devDependencies": {
     <%- dev_dependencies %>
   },
+  "private": true,
+  "license": "UNLICENSED",
   "dependencies": {
   }
 }
