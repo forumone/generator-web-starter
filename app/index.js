@@ -159,6 +159,7 @@ module.exports = generators.Base.extend({
       var that = this;
       var config = _.extend({
         plugins : [],
+        refspec : '1.1.x',
         theme_path : '',
         build_path : '',
         package_file : { devDependencies : { 'generator-web-starter' : pkg.version } },
@@ -190,6 +191,12 @@ module.exports = generators.Base.extend({
         message : 'Select plugins',
         choices : sub_generators,
         default : config.plugins
+      },
+      {
+        type    : 'input',
+        name    : 'refspec',
+        message : 'Version',
+        default : config.refspec
       }]).then(function(answers) {
         that.config.set(answers);
 
@@ -214,6 +221,37 @@ module.exports = generators.Base.extend({
     }
   },
   writing : {
+    repo : function() {
+      var that = this;
+      var config = this.config.getAll();
+      
+      return this.remoteAsync('forumone', 'web-starter', config.refspec)
+      .then(function(remote) {
+        return [ 
+                 glob('**/*_', { cwd : remote.cachePath }), 
+                 glob('**', { cwd : remote.cachePath, dot : true }),
+                 Promise.resolve(remote)
+               ];
+      })
+      .spread(function(templates, files, remote) {
+        var template_map = _.each(templates, function(template) {
+          return path.dirname(template) + '/' + path.basename(template).substring(1);
+        });
+        
+        // Exclude templates and targets from general transfer
+        var transfer_files = _.difference(files, _.values(template_map), _.keys(template_map));
+        
+        // Copy files to the current
+        _.each(transfer_files, function(file) {
+          that.fs.copyTpl(
+            remote.cachePath + '/' + file,
+            that.destinationPath(file),
+            {},
+            { delimiter: '$' }
+          );
+        });
+      });
+    },
     // Template Gemfile
     gemfile : function() {
       // Get current system config
