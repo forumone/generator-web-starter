@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "bluebird": "^3.4.1",
+    "generator-web-starter-salt": "~0.1.0",
     "generator-web-starter-angularjs": "~0.1.2",
     "generator-web-starter-capistrano": "~0.2.1",
     "generator-web-starter-drupal": "~0.1.6",
