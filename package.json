@@ -26,7 +26,7 @@
     "generator-web-starter-capistrano": "~0.2.1",
     "generator-web-starter-drupal": "~0.1.6",
     "generator-web-starter-drupal8": "~0.1.0",
-    "generator-web-starter-gesso": "~0.1.6",
+    "generator-web-starter-gesso": "~0.2",
     "generator-web-starter-grunt": "~0.1.4",
     "generator-web-starter-puppet": "~0.1.6",
     "generator-web-starter-wordpress": "~0.1.8",
