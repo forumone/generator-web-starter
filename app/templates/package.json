@@ -10,6 +10,11 @@
   "devDependencies": {
     <%- dev_dependencies %>
   },
+  "scripts": {
+    <%if (theme_path) { %>
+    "postinstall": "cd <%- theme_path %> && npm install --no-bin-links || true"
+    <% } %>
+  },
   "private": true,
   "license": "UNLICENSED",
   "dependencies": {
