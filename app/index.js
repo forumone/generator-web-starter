@@ -14,6 +14,7 @@ var plugins = {};
 var devDependencies = {};
 var sub_generators = [];
 var rubyGems = {};
+var services = {};
 
 /**
  * Returns all plugins and functionality
@@ -31,6 +32,22 @@ function getPlugins() {
  */
 function getPlugin(name) {
   return plugins.hasOwnProperty(name) ? plugins[name] : null; 
+}
+
+function addService(name, settings) {
+  services[name] = settings;
+}
+
+function getServices() {
+  return services;
+}
+
+function getService(name) {
+  return (services.hasOwnProperty(name)) ? services[name] : null;
+}
+
+function hasService(name) {
+  return services.hasOwnProperty(name);
 }
 
 /**
@@ -65,10 +82,21 @@ function addDevDependency(name, value) {
   devDependencies[name] = value;
 }
 
+/**
+ * Returns Ruby Gems
+ *
+ * @returns {}
+ */
 function getRubyGems() {
   return rubyGems;
 }
 
+/**
+ * Adds a Ruby Gem
+ *
+ * @param string name
+ * @param string version
+ */
 function addRubyGem(name, version) {
   rubyGems[name] = version;
 }
