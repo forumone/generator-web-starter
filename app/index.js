@@ -234,7 +234,11 @@ module.exports = generators.Base.extend({
               addDevDependency : addDevDependency,
               getDevDependency : getDevDependency,
               getRubyGems : getRubyGems,
-              addRubyGem : addRubyGem
+              addRubyGem : addRubyGem,
+              addService: addService,
+              getService: getService,
+              getServices: getServices,
+              hasService: hasService,
             }
           }, {});
         });
