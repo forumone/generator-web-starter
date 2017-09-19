@@ -16,6 +16,26 @@ var sub_generators = [];
 var rubyGems = {};
 var services = {};
 
+/** @type {Array.<string>} */
+var gitignore = [];
+
+/** @type {Array.<string>} */
+var gitattributes = [];
+
+/**
+ * @param {string} content
+ */
+function addToGitignore(content) {
+  gitignore.push(content);
+}
+
+/**
+ * @param {string} content
+ */
+function addToGitattributes(content) {
+  gitattributes.push(content);
+}
+
 /**
  * Returns all plugins and functionality
  * 
@@ -103,6 +123,10 @@ function addRubyGem(name, version) {
 
 module.exports = generators.Base.extend({
   initializing : {
+    gitFiles: function () {
+      addToGitignore(this.fs.read(this.templatePath('_.gitignore')));
+      addToGitattributes(this.fs.read(this.templatePath('_.gitattributes')));
+    },
     async : function() {
       ygp(this);
     },
@@ -239,6 +263,8 @@ module.exports = generators.Base.extend({
               getService: getService,
               getServices: getServices,
               hasService: hasService,
+              addToGitignore: addToGitignore,
+              addToGitattributes: addToGitattributes,
             }
           }, {});
         });
@@ -293,24 +319,10 @@ module.exports = generators.Base.extend({
       );
     },
     gitattributes : function() {
-      // Get current system config
-      var config = this.answers;
-      
-      this.fs.copyTpl(
-        this.templatePath('_.gitattributes'),
-        this.destinationPath('.gitattributes'),
-        config
-      );
+      this.fs.write(this.destinationPath('.gitattributes'), gitattributes.join('\n'));
     },
     gitignore : function() {
-      // Get current system config
-      var config = this.answers;
-      
-      this.fs.copyTpl(
-        this.templatePath('_.gitignore'),
-        this.destinationPath('.gitignore'),
-        config
-      );
+      this.fs.write(this.destinationPath('.gitignore'), gitignore.join('\n'));
     },
     rubyVersion : function() {
       // Get current system config
