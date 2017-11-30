@@ -28,6 +28,7 @@
     "generator-web-starter-gesso": "^0.2",
     "generator-web-starter-grunt": "^0.2",
     "generator-web-starter-puppet": "^0.1.6",
+    "generator-web-starter-react": ">=0.1.1",
     "generator-web-starter-salt": ">=0.3.0",
     "generator-web-starter-wordpress": "^0.1.8",
     "gitty": "^3.1.1",
