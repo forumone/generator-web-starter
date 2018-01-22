@@ -173,7 +173,11 @@ module.exports = generators.Base.extend({
           var val = '';
           
           var pkg_path = path.dirname(meta.resolved);
-          var pkg = JSON.parse(fs.readFileSync(path.join(pkg_path, '..', 'package.json'), 'utf8'));
+          do {
+            pkg_path = path.dirname(pkg_path);
+          } while (!fs.existsSync(path.join(pkg_path, 'package.json')));
+
+          var pkg = JSON.parse(fs.readFileSync(path.join(pkg_path, 'package.json'), 'utf8'));
           
           var namespaces = key.split(':');
           
