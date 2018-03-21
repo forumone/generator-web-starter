@@ -7,7 +7,7 @@ var generators = require('yeoman-generator'),
   Promise = require('bluebird'),
   glob = Promise.promisify(require('glob')),
   globby = require('globby'),
-  pkg = require('../package.json'),
+  pkg = require('../../package.json'),
   ygp = require('yeoman-generator-bluebird');
 
 var plugins = {};
@@ -38,7 +38,7 @@ function addToGitattributes(content) {
 
 /**
  * Returns all plugins and functionality
- * 
+ *
  * @returns []
  */
 function getPlugins() {
@@ -47,11 +47,11 @@ function getPlugins() {
 
 /**
  * Returns the functionality exposed by a plugin
- * 
+ *
  * @returns {}
  */
 function getPlugin(name) {
-  return plugins.hasOwnProperty(name) ? plugins[name] : null; 
+  return plugins.hasOwnProperty(name) ? plugins[name] : null;
 }
 
 function addService(name, settings) {
@@ -79,7 +79,7 @@ function addPlugin(name, value) {
 
 /**
  * Returns all devDependencies and functionality
- * 
+ *
  * @returns []
  */
 function getDevDependencies() {
@@ -88,11 +88,11 @@ function getDevDependencies() {
 
 /**
  * Returns the functionality exposed by a devDependency
- * 
+ *
  * @returns {}
  */
 function getDevDependency(name) {
-  return devDependencies.hasOwnProperty(name) ? devDependencies[name] : null; 
+  return devDependencies.hasOwnProperty(name) ? devDependencies[name] : null;
 }
 
 /**
@@ -137,30 +137,30 @@ module.exports = generators.Base.extend({
       var env = this.env;
       env.lookup(function () {
         // Add local dependencies
-        var dependencies = path.join(__dirname, '..', 'node_modules');
+        var dependencies = path.join(__dirname, '..', '..', 'node_modules');
         var localGenerators = env.findGeneratorsIn([dependencies]);
 
         var patterns = [];
         var namespaces = env.namespaces();
-        
+
         // Copied liberally from Yeoman resolver
         env.lookups.forEach(function (lookup) {
           localGenerators.forEach(function (modulePath) {
             patterns.push(path.join(modulePath, lookup));
           });
         });
-        
+
         patterns.forEach(function (pattern) {
           globby.sync('*/index.js', { cwd: pattern }).forEach(function (filename) {
             var generatorReference = path.join(pattern, filename);
             var namespace;
-            
+
             var realPath = fs.realpathSync(generatorReference);
-            
+
             if (realPath !== generatorReference) {
               namespace = env.namespace(generatorReference);
             }
-            
+
             // Ensure we don't add a global module if a local one exists
             if (-1 === _.indexOf(namespaces, namespace)) {
               env.register(realPath, namespace);
@@ -171,28 +171,30 @@ module.exports = generators.Base.extend({
         var plugin_vals = _.chain(env.getGeneratorsMeta())
         .map(function(meta, key) {
           var val = '';
-          
-          var pkg_path = path.dirname(meta.resolved);
-          var pkg = JSON.parse(fs.readFileSync(path.join(pkg_path, '..', 'package.json'), 'utf8'));
-          
+
           var namespaces = key.split(':');
-          
-          if (2 == namespaces.length && 'web-starter' == namespaces[1]) {
-            // Make sure we have appropriate keys
-            val = _.extend({ 
-              category : 'Other', 
-              name : key, 
-              value : key 
-            }, (_.has(pkg, 'webStarter')) ? pkg.webStarter : {});
+
+          if (key !== 'web-starter:app') {
+            var pkg_path = path.dirname(meta.resolved);
+            var pkg = JSON.parse(fs.readFileSync(path.join(pkg_path, '..', 'package.json'), 'utf8'));
+
+            if (2 == namespaces.length && 'web-starter' == namespaces[1]) {
+              // Make sure we have appropriate keys
+              val = _.extend({
+                category : 'Other',
+                name : key,
+                value : key
+              }, (_.has(pkg, 'webStarter')) ? pkg.webStarter : {});
+            }
           }
-            
+
           return val;
         })
         .compact()
         .sortBy('label')
         .sortBy('category')
         .value();
-        
+
         // Convert into correct Inquirer format with separators
         plugin_vals.forEach(function(item, idx) {
           if (0 == idx || (item.category != plugin_vals[idx - 1].category)) {
@@ -216,7 +218,7 @@ module.exports = generators.Base.extend({
         package_file : { devDependencies : { 'generator-web-starter' : pkg.version } },
         ruby_version : '2.3.1',
       }, this.config.getAll());
-      
+
       return this.prompt([{
         type    : 'input',
         name    : 'name',
@@ -246,7 +248,7 @@ module.exports = generators.Base.extend({
         that.config.set(answers);
 
         that.answers = _.extend(config, answers);
-        
+
         _.each(answers.plugins, function(plugin) {
           that.composeWith(plugin, {
             options : {
@@ -276,11 +278,11 @@ module.exports = generators.Base.extend({
     gemfile : function() {
       // Get current system config
       var config = this.answers;
-      
+
       config.gems = _.map(getRubyGems(), function(value, key) {
-        return 'gem "' + key + '", "' + value + '"'; 
+        return 'gem "' + key + '", "' + value + '"';
       }).join("\n");
-      
+
       this.fs.copyTpl(
         this.templatePath('Gemfile'),
         this.destinationPath('Gemfile'),
@@ -289,16 +291,16 @@ module.exports = generators.Base.extend({
     },
     // Template package.json file
     package : function() {
-      
+
       // Get current system config
       var config = this.answers;
 
       // Unfortunately we're unable to simply add them to the package file by using
       // the normal Yeoman method since that invokes `npm install` from the host
       config.dev_dependencies = _.map(getDevDependencies(), function(value, key) {
-        return '"' + key + '": "' + value + '"'; 
+        return '"' + key + '": "' + value + '"';
       }).join(",\n    ");
-      
+
       config.name = _.snakeCase(config.name);
       this.fs.copyTpl(
         this.templatePath('package.json'),
@@ -309,9 +311,9 @@ module.exports = generators.Base.extend({
     bower : function() {
       // Get current system config
       var config = this.answers;
-      
+
       config.name = _.snakeCase(config.name);
-      
+
       this.fs.copyTpl(
         this.templatePath('bower.json'),
         this.destinationPath('bower.json'),
@@ -327,7 +329,7 @@ module.exports = generators.Base.extend({
     rubyVersion : function() {
       // Get current system config
       var config = this.answers;
-      
+
       this.fs.copyTpl(
         this.templatePath('_.ruby-version'),
         this.destinationPath('.ruby-version'),
