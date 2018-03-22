@@ -47,7 +47,11 @@
     "gruntfile-editor": "https://github.com/forumone/gruntfile-editor.git#master"
   },
   "devDependencies": {
-    "mocha": "~1.12.0"
+    "mocha": "~1.12.0",
+    "eslint": "^3.19.0",
+    "eslint-config-airbnb-base": "^11.1.3",
+    "eslint-config-forumone-es5": "^2.0.0",
+    "eslint-plugin-import": "^2.2.0"
   },
   "engines": {
     "node": ">=0.10.0",
