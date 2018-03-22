@@ -10,6 +10,7 @@ var generators = require('yeoman-generator'),
   pkg = require('../../package.json'),
   ygp = require('yeoman-generator-bluebird');
 
+var wsGeneratorRegex = /^web-starter:(.*)/;
 var plugins = {};
 var devDependencies = {};
 var sub_generators = [];
@@ -136,56 +137,26 @@ module.exports = generators.Base.extend({
     plugins : function() {
       var env = this.env;
       env.lookup(function () {
-        // Add local dependencies
-        var dependencies = path.join(__dirname, '..', '..', 'node_modules');
-        var localGenerators = env.findGeneratorsIn([dependencies]);
-
-        var patterns = [];
-        var namespaces = env.namespaces();
-
-        // Copied liberally from Yeoman resolver
-        env.lookups.forEach(function (lookup) {
-          localGenerators.forEach(function (modulePath) {
-            patterns.push(path.join(modulePath, lookup));
-          });
-        });
-
-        patterns.forEach(function (pattern) {
-          globby.sync('*/index.js', { cwd: pattern }).forEach(function (filename) {
-            var generatorReference = path.join(pattern, filename);
-            var namespace;
-
-            var realPath = fs.realpathSync(generatorReference);
-
-            if (realPath !== generatorReference) {
-              namespace = env.namespace(generatorReference);
-            }
-
-            // Ensure we don't add a global module if a local one exists
-            if (-1 === _.indexOf(namespaces, namespace)) {
-              env.register(realPath, namespace);
-            }
-          }, env);
-        }, env);
-
         var plugin_vals = _.chain(env.getGeneratorsMeta())
-        .map(function(meta, key) {
+        .map(function(meta, generator) {
           var val = '';
 
-          var namespaces = key.split(':');
+          var packageName = wsGeneratorRegex.exec(generator);
 
-          if (key !== 'web-starter:app') {
-            var pkg_path = path.dirname(meta.resolved);
-            var pkg = JSON.parse(fs.readFileSync(path.join(pkg_path, '..', 'package.json'), 'utf8'));
+          if (packageName && packageName[1] !== 'app') {
+            var pkgPath = path.dirname(meta.resolved);
+            var generatorMetadata = {};
 
-            if (2 == namespaces.length && 'web-starter' == namespaces[1]) {
-              // Make sure we have appropriate keys
-              val = _.extend({
-                category : 'Other',
-                name : key,
-                value : key
-              }, (_.has(pkg, 'webStarter')) ? pkg.webStarter : {});
+            if (fs.existsSync(path.join(pkgPath, 'meta.json'))) {
+              generatorMetadata = JSON.parse(fs.readFileSync(path.join(pkgPath, 'meta.json'), 'utf8'));
             }
+
+            // Make sure we have appropriate keys
+            val = _.extend({
+              category : 'Other',
+              name : generator,
+              value : generator
+            }, generatorMetadata);
           }
 
           return val;

@@ -1,0 +1,19 @@
+---
+classes: 
+  - forumone::solr
+  - forumone::varnish
+  - forumone::nodejs
+  - forumone::ruby
+  - memcached
+
+forumone::webserver::webserver: apache
+
+forumone::php::prefix: "php56u"
+
+forumone::php::modules:
+  - opcache
+  - pecl-memcached
+  
+forumone::solr::collections:  
+  drupal: 
+    order: 1
