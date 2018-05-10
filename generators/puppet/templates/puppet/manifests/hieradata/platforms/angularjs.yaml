@@ -1,0 +1,7 @@
+---
+classes: 
+  - forumone::webserver
+  - forumone::nodejs
+  - forumone::ruby
+
+forumone::webserver::platform: 'html'
