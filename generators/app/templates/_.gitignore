@@ -21,6 +21,20 @@ bower_components
 # Local configuration
 Vagrantfile.local
 settings.local.php
+.env
+public/wp-config.php
+
+# Composer generated files
+public/wp
+public/wp-content/vendor
+
+# Ignore themes/plugins with exceptions for custom code
+public/wp-content/plugins/*
+public/wp-content/themes/*
+!public/wp-content/themes/gesso
+
+# Ignore file uploads
+public/wp-content/uploads/*
 
 # SASS cache
 .sass-cache
