@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+
+    "importHelpers": true,
+
+    "lib": ["esnext"],
+
+    "rootDir": "src"
+  },
+
+  "include": ["src"],
+  "exclude": ["src/**/templates/**/*"]
+}

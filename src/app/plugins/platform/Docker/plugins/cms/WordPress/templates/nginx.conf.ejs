@@ -1,0 +1,27 @@
+server {
+  server_name localhost;
+
+  listen 80 default_server;
+  listen 443 ssl default_server;
+  ssl_certificate ssl/local.crt;
+  ssl_certificate_key ssl/local.key;
+
+  root /var/www/html/<%= documentRoot %>;
+
+  index index.php index.html;
+  location / {
+    try_files $uri $uri/ @rewrite;
+  }
+
+  location @rewrite {
+    rewrite ^/(.*)$ /index.php?q=$uri&$args;
+  }
+
+  location ~ \.php$ {
+    fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include fastcgi_params;
+    fastcgi_intercept_errors on;
+    fastcgi_pass wordpress:9000;
+  }
+}

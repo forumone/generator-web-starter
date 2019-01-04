@@ -1,0 +1,11 @@
+WORDPRESS_ENV=development
+
+DB_HOST=mysql:3306
+DB_NAME=web
+DB_USER=web
+DB_PASSWORD=web
+
+WP_HOME=http://localhost:8080/
+
+# Redirect email to MailHog (localhost:8025 to access the UI)
+SMTPHOST=mailhog:1025

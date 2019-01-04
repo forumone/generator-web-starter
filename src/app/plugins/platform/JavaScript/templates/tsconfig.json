@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+
+    "module": "esnext",
+    "moduleResolution": "node",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    "importHelpers": true,
+    "jsx": "preserve",
+
+    "lib": ["dom", "es5", "es2015.promise"]
+  },
+
+  "include": ["src/**/*.tsx", "src/**/*.ts"]
+}
