@@ -1,6 +1,6 @@
 {
   "name": "generator-web-starter",
-  "version": "0.10.0",
+  "version": "2.0.0",
   "description": "A generator for Yeoman",
   "keywords": [
     "yeoman-generator"
@@ -20,37 +20,14 @@
     "url": "git://github.com/forumone/generator-web-starter.git"
   },
   "scripts": {
-    "test": "mocha"
+    "build": "gulp",
+    "start": "gulp watch",
+    "prepack": "gulp"
   },
-  "dependencies": {
-    "bluebird": "^3.4.1",
-    "drupal-modules": "~0.1.1",
-    "gitty": "^3.1.1",
-    "glob": "^7.0.5",
-    "globby": "^3.0.1",
-    "gruntfile-editor": "https://github.com/forumone/gruntfile-editor.git#master",
-    "inquirer": "^0.9.0",
-    "jsdom": "^9.2.1",
-    "lodash": "^4.12",
-    "request": "^2.74.0",
-    "request-promise": "^4.1.1",
-    "semver": "^5.1.0",
-    "update-notifier": "^0.7.0",
-    "wgxpath": "^1.2.0",
-    "yeoman-generator": "~0.23",
-    "yeoman-generator-bluebird": "^0.1.0",
-    "yosay": "^1.1.1"
-  },
-  "devDependencies": {
-    "eslint": "^3.19.0",
-    "eslint-config-airbnb-base": "^11.1.3",
-    "eslint-config-forumone-es5": "^2.0.0",
-    "eslint-plugin-import": "^2.2.0",
-    "mocha": "~1.12.0"
-  },
+  "dependencies": {},
+  "devDependencies": {},
   "engines": {
-    "node": ">=0.10.0",
-    "npm": ">=1.2.10"
+    "node": ">=8"
   },
   "licenses": [
     {
