@@ -132,13 +132,13 @@ class JavaScript extends Generator {
   }
 
   private _installDependencies() {
-    // It's safe to install these with caret ranges - they adhere to semver fairly closely.
+    // It's safe to install these with caret ranges - they adhere to semver fairly closely...
     this.npmInstall(['es6-promise', 'react', 'react-dom'], {
       'save-dev': true,
     });
 
-    // However, any change to an @types-scoped package is a patch-level bump, so we should install
-    // type definitions with the -E flag to avoid breaking future installations.
+    // ... however, any change to an @types-scoped package is a patch-level bump, so we should
+    // install type definitions with the -E flag to avoid breaking future installations.
     this.npmInstall(['@types/react', '@types/react-dom'], {
       'save-dev': true,
       'save-exact': true,
@@ -146,10 +146,15 @@ class JavaScript extends Generator {
   }
 
   async install() {
+    // We don't need to catch ENOENT errors here: package.json always exists after the writing
+    // phase since the root generator wrote a file with { name, private } in it.
     const packageContents = JSON.parse(
       await readFile(this.destinationPath('package.json'), 'utf-8'),
     );
 
+    // Don't clobber the project's dependencies unless the user asked us to. The choice of
+    // 'typescript' as the dev dependency is entirely arbitrary - it's just a sentinel to indicate
+    // that we've already called `_installToolchain()' for this project.
     if (
       'devDependencies' in packageContents &&
       'typescript' in packageContents.devDependencies &&

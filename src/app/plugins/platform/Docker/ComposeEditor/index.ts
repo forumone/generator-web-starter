@@ -12,6 +12,7 @@ export interface ComposeEditorOptions {
 // Make input YAML-safe by prepending a '#' on all lines that don't already have one.
 // 'abc\ndef' ==> '# abc\n# def'
 // '# comment' ==> '# comment'
+// 'abc\n\ndef' ==> '# abc\n\n# def'
 function prependCommentMarker(comment: string): string {
   return comment.replace(/^(?!#)(?=.)/gm, '# ');
 }
@@ -52,6 +53,9 @@ class ComposeEditor {
       volumes: this.volumes,
     };
 
+    // docker-compose uses the YAML-1.1 schema, which interprets the bare constant 'yes' as True
+    // instead of the string 'yes', so we have to use this schema to avoid MYSQL_RANDOM_ROOT_PASSWORD
+    // being misinterpreted and thus causing a schema validation failure.
     const contents = stringify(file, { schema: 'yaml-1.1' });
     if (this.intro) {
       const intro = prependCommentMarker(this.intro.trim()) + '\n';
@@ -96,6 +100,7 @@ class ComposeEditor {
         MYSQL_DATABASE: 'web',
         MYSQL_USER: 'web',
         MYSQL_PASSWORD: 'web',
+        // Scrambles the password for the 'root' user.
         MYSQL_RANDOM_ROOT_PASSWORD: 'yes',
       },
       ports: ['13306:3306'],

@@ -14,9 +14,11 @@ async function getLatestWpRelease() {
     throw new Error(`Failed to retrieve WP tags: HTTP ${response.status}`);
   }
 
+  // Assumption: the topmost (i.e., most recent) WordPress tag is the latest version
   return response.data[0];
 }
 
+// Installs WordPress from source for projects not using the wp-starter Composer package.
 async function installWordPressSource(destination: string) {
   const release = await getLatestWpRelease();
 

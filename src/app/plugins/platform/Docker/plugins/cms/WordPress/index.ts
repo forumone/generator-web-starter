@@ -4,6 +4,7 @@ import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
 import CliConfigEditor from '../../../../../../CliConfigEditor';
+import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createGessoDockerfile from '../../../createGessoDockerfile';
 import createPHPDockerfile from '../../../createPHPDockerfile';
@@ -29,7 +30,8 @@ class WordPress extends Generator {
   private themeName!: string;
 
   private usesWpStarter: boolean | undefined = true;
-  private usesWpCfm: boolean | undefined = true;
+  // Currently unused
+  // private usesWpCfm: boolean | undefined = true;
   private shouldInstallWordPress: boolean | undefined = false;
   private shouldInstallGesso: boolean | undefined = false;
 
@@ -49,7 +51,8 @@ class WordPress extends Generator {
       documentRoot,
       wpThemeName,
       wpStarter,
-      wpCfm,
+      // NB. Option currently unused
+      // wpCfm,
       shouldInstallWordPress,
       shouldInstallGesso,
       useCapistrano,
@@ -113,7 +116,7 @@ class WordPress extends Generator {
     this.shouldInstallWordPress = shouldInstallWordPress;
     this.shouldInstallGesso = shouldInstallGesso;
     this.usesWpStarter = wpStarter;
-    this.usesWpCfm = wpCfm;
+    // this.usesWpCfm = wpCfm;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -364,6 +367,15 @@ class WordPress extends Generator {
       this.destinationPath('services/wordpress/Dockerfile'),
       wpDockerfile.render(),
     );
+
+    // As with the Drupal8 generator, we don't use anything filesystem when building
+    // this image, so we just ignore everything.
+    const wpDockerIgnore = new IgnoreEditor();
+    wpDockerIgnore.addEntry('*');
+    this.fs.write(
+      this.destinationPath('services/wordpress'),
+      wpDockerIgnore.serialize(),
+    );
   }
 
   private async _installWordPress() {
@@ -406,10 +418,6 @@ class WordPress extends Generator {
   async install() {
     await this._installWordPress();
     await this._installGesso();
-  }
-
-  end() {
-    this.log('WP-CFM? ' + this.usesWpCfm);
   }
 }
 

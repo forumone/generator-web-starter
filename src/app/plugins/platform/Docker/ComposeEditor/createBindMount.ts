@@ -5,6 +5,9 @@ export interface BindMountOptions {
   consistency?: Consistency;
 }
 
+// At time of writing, Docker Compose doesn't understand the longhand version of a bind mount when
+// consistency options for osxfs are required. This helper function exists to ease generating
+// the shorthand notation and ensure that all bind mounts are given a consistency option.
 function createBindMount(
   source: string,
   target: string,

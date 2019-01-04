@@ -9,6 +9,7 @@ interface ComposeFile {
 
   readonly services: Readonly<Record<string, AnyService>>;
 
+  // The record values are always `null' because we don't use any volume options.
   readonly volumes: Readonly<Record<string, null>>;
 }
 
