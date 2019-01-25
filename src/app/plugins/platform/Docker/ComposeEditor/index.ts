@@ -118,6 +118,13 @@ class ComposeEditor {
       ports: ['8025:8025'],
     });
   }
+
+  addComposer(directory: string) {
+    this.addService('composer', {
+      image: 'composer:1.7',
+      volumes: [createBindMount('./' + directory, '/app')],
+    });
+  }
 }
 
 export default ComposeEditor;

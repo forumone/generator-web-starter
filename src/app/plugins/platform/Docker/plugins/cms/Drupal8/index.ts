@@ -6,7 +6,6 @@ import { promisify } from 'util';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
-import CliConfigEditor from '../../../../../../CliConfigEditor';
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createGessoDockerfile from '../../../createGessoDockerfile';
@@ -304,9 +303,7 @@ class Drupal8 extends Generator {
       ],
     });
 
-    // Identify project path for `f1' CLI command
-    const config = this.options.cliConfigEditor as CliConfigEditor;
-    config.setComposerProject('services/drupal');
+    cliEditor.addComposer('services/drupal');
   }
 
   private async _installDrupal() {

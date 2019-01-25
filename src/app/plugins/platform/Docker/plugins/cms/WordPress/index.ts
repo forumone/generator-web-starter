@@ -3,7 +3,6 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
-import CliConfigEditor from '../../../../../../CliConfigEditor';
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createGessoDockerfile from '../../../createGessoDockerfile';
@@ -316,8 +315,7 @@ class WordPress extends Generator {
     });
 
     if (this.usesWpStarter) {
-      const cliConfig = this.options.cliConfigEditor as CliConfigEditor;
-      cliConfig.setComposerProject('services/wordpress');
+      cliEditor.addComposer('services/wordpress');
     }
   }
 

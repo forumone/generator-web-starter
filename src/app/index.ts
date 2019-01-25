@@ -3,12 +3,10 @@ import slugify from 'slugify';
 import validate from 'validate-npm-package-name';
 import Generator from 'yeoman-generator';
 
-import CliConfigEditor from './CliConfigEditor';
 import discoverModules from './discoverModules';
 import IgnoreEditor from './IgnoreEditor';
 
 class WebStarter extends Generator {
-  private cliConfigEditor = new CliConfigEditor();
   private gitignoreEditor = new IgnoreEditor();
   private name!: string;
 
@@ -40,7 +38,7 @@ class WebStarter extends Generator {
     this.composeWith(
       require.resolve(path.join(platformDirectory, answers.platform)),
       {
-        cliConfigEditor: this.cliConfigEditor,
+        // cliConfigEditor: this.cliConfigEditor,
         gitignoreEditor: this.gitignoreEditor,
         name: answers.name,
         capistrano: require.resolve('./plugins/Capistrano'),
@@ -76,11 +74,6 @@ class WebStarter extends Generator {
       name: this.name,
       private: true,
     });
-
-    this.fs.write(
-      this.destinationPath('.f1.yml'),
-      this.cliConfigEditor.serialize(),
-    );
   }
 }
 
