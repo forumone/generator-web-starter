@@ -265,8 +265,10 @@ class WordPress extends Generator {
         this.themeName,
       );
 
+    const cliEditor = this.options.composeCliEditor as ComposeEditor;
+
     // Node container for sass...
-    editor.addService('gesso', {
+    cliEditor.addService('gesso', {
       build: {
         context: hostThemePath,
         dockerfile: '$PWD/services/gesso/Dockerfile',
@@ -291,7 +293,7 @@ class WordPress extends Generator {
     });
 
     // ... and a PHP container for PL.
-    editor.addService('pattern-lab', {
+    cliEditor.addService('pattern-lab', {
       image: 'php:' + this.latestPhpTag,
       command: [
         'php',
@@ -308,7 +310,6 @@ class WordPress extends Generator {
       working_dir: '/app',
     });
 
-    const cliEditor = this.options.composeCliEditor as ComposeEditor;
     cliEditor.addService('wp', {
       image: 'wordpress:' + this.latestWpCliTag,
       volumes: [createBindMount('./services/wordpress', '/var/www/html')],

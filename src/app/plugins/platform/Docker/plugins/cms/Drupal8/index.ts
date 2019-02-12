@@ -223,6 +223,8 @@ class Drupal8 extends Generator {
     editor.addMysqlService();
     editor.addMailhogService();
 
+    const cliEditor = this.options.composeCliEditor as ComposeEditor;
+
     // Gesso + PL building
 
     // NB. posix.join() doesn't add the ./ we need to help Compose distinguish between bind mounts
@@ -239,7 +241,7 @@ class Drupal8 extends Generator {
       );
 
     // Node container for sass...
-    editor.addService('gesso', {
+    cliEditor.addService('gesso', {
       build: {
         context: hostThemePath,
         dockerfile: '$PWD/services/gesso/Dockerfile',
@@ -264,7 +266,7 @@ class Drupal8 extends Generator {
     });
 
     // ... and a PHP container for PL.
-    editor.addService('pattern-lab', {
+    cliEditor.addService('pattern-lab', {
       image: 'php:' + this.latestPhpTag,
       command: [
         'php',
@@ -287,7 +289,6 @@ class Drupal8 extends Generator {
     });
 
     // Build custom container for drush 9
-    const cliEditor = this.options.composeCliEditor as ComposeEditor;
     cliEditor.addService('drush', {
       build: './services/drush',
       // Pass --root to the entrypoint so that Drush can both see the full Drupal
