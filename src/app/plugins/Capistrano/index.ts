@@ -43,7 +43,8 @@ class Capistrano extends Generator {
   writing() {
     this._copyFile('Capfile');
     this._copyFile('Gemfile');
-    this._copyFile('capistrano/lib');
+    this._copyFile('capistrano/rsync.rb');
+    this._copyFile('capistrano/rsync');
     this._copyFile('capistrano/tasks');
 
     const { config = {}, linkedDirectories = [] } = this.options;

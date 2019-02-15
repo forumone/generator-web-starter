@@ -42,7 +42,7 @@ namespace :drush do
   desc "Creates ~/.drush directory if it's missing"
   task :drushdir do
     on roles(:all) do
-      home = capture(:echo, '$HOME') 
+      home = capture(:echo, '$HOME')
       unless test "[ -d #{home}/.drush ]"
         execute :mkdir, "#{home}/.drush"
       end
@@ -63,17 +63,17 @@ namespace :drush do
   task :siteinstall do
     on roles(:db) do
       command = "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} site-install "
-    
+
       if ENV['profile']
         command << ENV['profile']
       end
-      
+
       execute :drush, command
     end
   end
-  
+
   desc "Triggers drush sql-sync to copy databases between environments"
-  task :sqlsync do 
+  task :sqlsync do
     on roles(:db) do
       if ENV['source']
         within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
@@ -103,13 +103,13 @@ namespace :drush do
   end
 
   desc "Creates database backup"
-  task :sqldump do 
+  task :sqldump do
     on roles(:db) do
       unless test " [ -f #{release_path}/db.sql.gz ]"
         within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
           # Capture the output from drush status
           status = JSON.parse(capture(:drush, '-p', 'status'))
-          
+
           # Ensure that we are connected to the database and were able to bootstrap Drupal
           if ('Connected' == status['db-status'] && 'Successful' == status['bootstrap'])
             execute :drush, "-r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} sql-dump -y --gzip --result-file=#{release_path}/db.sql"
@@ -118,7 +118,7 @@ namespace :drush do
       end
     end
   end
-  
+
   desc "Runs all pending update hooks"
   task :updatedb do
     on roles(:db) do
@@ -138,7 +138,7 @@ namespace :drush do
       invoke 'drush:cc'
     end
   end
-  
+
   desc "(Drupal 8) Rebuilds the Drupal cache"
   task :cr do
     on roles(:db) do
@@ -167,14 +167,14 @@ namespace :drush do
     if fetch(:drupal_db_updates)
       invoke 'drush:updatedb'
     end
-    
+
     invoke 'drush:cacheclear'
 
     # If we're using Features revert Features
     if fetch(:drupal_features)
       invoke 'drush:features:revert'
     end
-    
+
     # If we're using Configuration Management
     if fetch(:platform) == "drupal8"
       invoke 'drush:configuration:import'
@@ -184,7 +184,7 @@ namespace :drush do
       end
     end
   end
-  
+
   namespace :configuration do
     desc "(Drupal 8) Import Configuration into the database from the config management directory"
     task :import do
@@ -204,11 +204,11 @@ namespace :drush do
           execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)}", 'config-sync'
         end
       end
-      
+
       invoke 'drush:cc'
     end
   end
-  
+
   namespace :features do
     desc "Revert Features"
     task :revert do
@@ -235,7 +235,7 @@ namespace :drush do
           end
         end
       end
-      
+
       invoke 'drush:cacheclear'
     end
   end
