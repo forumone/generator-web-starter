@@ -9,6 +9,8 @@ export interface ComposeEditorOptions {
   intro?: string;
 }
 
+export type ServiceMutator = (service: AnyService) => AnyService;
+
 // Make input YAML-safe by prepending a '#' on all lines that don't already have one.
 // 'abc\ndef' ==> '# abc\n# def'
 // '# comment' ==> '# comment'
@@ -31,6 +33,15 @@ class ComposeEditor {
     this.services = {
       ...this.services,
       [name]: service,
+    };
+  }
+
+  modifyService(name: string, mutator: ServiceMutator) {
+    const service = this.services[name];
+
+    this.services = {
+      ...this.services,
+      [name]: mutator(service),
     };
   }
 
