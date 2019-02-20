@@ -8,11 +8,8 @@ import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createGessoDockerfile from '../../../createGessoDockerfile';
 import createPHPDockerfile from '../../../createPHPDockerfile';
-import installGesso from '../../../installGesso';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
-import getLatestNodeTag from '../../../registry/getLatestNodeTag';
 import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
 import spawnComposer from '../../../spawnComposer';
 
@@ -31,35 +28,29 @@ async function replaceIn(
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
   private latestDrupalTag!: string;
-  private latestNodeTag!: string;
   private latestPhpTag!: string;
 
   // Assigned to in prompting phase
   private documentRoot!: string;
-  private themeName!: string;
 
-  private shouldInstallDrupal: boolean | undefined = false;
-  private shouldInstallGesso: boolean | undefined = false;
+  private shouldInstall: boolean | undefined = false;
 
   async initializing() {
-    const [latestDrupalTag, latestPhpTag, latestNodeTag] = await Promise.all([
+    const [latestDrupalTag, latestPhpTag] = await Promise.all([
       getLatestDrupalTag(8),
       getLatestPhpCliTag(),
-      getLatestNodeTag(),
     ]);
 
     this.latestDrupalTag = latestDrupalTag;
-    this.latestNodeTag = latestNodeTag;
     this.latestPhpTag = latestPhpTag;
   }
 
   async prompting() {
     const {
       documentRoot,
-      drupalThemeName,
-      shouldInstallDrupal,
-      shouldInstallGesso,
       useCapistrano,
+      useGesso,
+      shouldInstallDrupal,
     } = await this.prompt([
       {
         type: 'input',
@@ -70,11 +61,10 @@ class Drupal8 extends Generator {
         store: true,
       },
       {
-        type: 'input',
-        name: 'drupalThemeName',
-        validate: name => name !== '' && validFilename(name),
-        message: 'What is the theme name?',
-        default: 'gesso',
+        type: 'confirm',
+        name: 'useGesso',
+        message: 'Use Gesso?',
+        default: true,
         store: true,
       },
       {
@@ -88,22 +78,20 @@ class Drupal8 extends Generator {
         type: 'confirm',
         name: 'shouldInstallDrupal',
         message: 'Install Drupal 8?',
-        default: false,
+        default: (answers: { documentRoot: string }) => {
+          const targetPath = this.destinationPath(
+            'services/drupal',
+            answers.documentRoot,
+          );
+
+          return !this.fs.exists(targetPath);
+        },
         when: !this.options.skipInstall,
-      },
-      {
-        type: 'confirm',
-        name: 'shouldInstallGesso',
-        message: 'Install Gesso?',
-        default: false,
-        when: answers => answers.shouldInstallDrupal,
       },
     ]);
 
     this.documentRoot = documentRoot;
-    this.themeName = drupalThemeName;
-    this.shouldInstallDrupal = shouldInstallDrupal;
-    this.shouldInstallGesso = shouldInstallGesso;
+    this.shouldInstall = shouldInstallDrupal;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -113,6 +101,14 @@ class Drupal8 extends Generator {
         appWebroot: posix.join('services/drupal', documentRoot),
         config: {},
         linkedDirectories: ['sites/default/files'],
+      });
+    }
+
+    if (useGesso) {
+      this.composeWith(require.resolve('../../gesso/GessoDrupal8'), {
+        documentRoot: this.documentRoot,
+        composeEditor: this.options.composeEditor,
+        composeCliEditor: this.options.composeCliEditor,
       });
     }
   }
@@ -131,23 +127,12 @@ class Drupal8 extends Generator {
     // Path to Drupal uploads (when not using s3fs)
     const uploadPath = posix.join(varHtmlPath, 'sites/default/files');
 
-    // Various important Gesso-related paths
-    const themePath = posix.join(varHtmlPath, 'themes', this.themeName);
-    const patternLabPublicPath = posix.join(themePath, 'pattern-lab/public');
-    const gessoCssPath = posix.join(themePath, 'css');
-
     const editor = this.options.composeEditor as ComposeEditor;
 
-    // Volumes needed by Drupal and Gesso.
+    // Volumes needed by Drupal, shared with nginx.
     // * fs-data: sites/default/files
     //   Needed so that we can persist saved files across containers.
-    // * gesso-public: <theme>/pattern-lab/public
-    //   Needed to share the PL output with nginx, Drupal, and the PL builder
-    // * gesso-css: <theme>/css
-    //   Needed to share the compiled sass with nginx, Drupal, and the Gesso container
-    const filesystemVolume = editor.ensureVolume('fs-data');
-    const gessoPublicVolume = editor.ensureVolume('gesso-public');
-    const gessoCssVolume = editor.ensureVolume('gesso-css');
+    const filesystemVolumeName = editor.ensureVolume('fs-data');
 
     const hostDrupalPath =
       './' + posix.join('services/drupal', this.documentRoot);
@@ -163,20 +148,8 @@ class Drupal8 extends Generator {
         createBindMount(hostDrupalPath, varHtmlPath),
         {
           type: 'volume',
-          source: filesystemVolume,
+          source: filesystemVolumeName,
           target: uploadPath,
-          read_only: true,
-        },
-        {
-          type: 'volume',
-          source: gessoPublicVolume,
-          target: patternLabPublicPath,
-          read_only: true,
-        },
-        {
-          type: 'volume',
-          source: gessoCssVolume,
-          target: gessoCssPath,
           read_only: true,
         },
       ],
@@ -204,18 +177,8 @@ class Drupal8 extends Generator {
         createBindMount('./services/drupal', '/var/www/html'),
         {
           type: 'volume',
-          source: filesystemVolume,
+          source: filesystemVolumeName,
           target: uploadPath,
-        },
-        {
-          type: 'volume',
-          source: gessoPublicVolume,
-          target: patternLabPublicPath,
-        },
-        {
-          type: 'volume',
-          source: gessoCssVolume,
-          target: gessoCssPath,
         },
       ],
     });
@@ -224,69 +187,6 @@ class Drupal8 extends Generator {
     editor.addMailhogService();
 
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
-
-    // Gesso + PL building
-
-    // NB. posix.join() doesn't add the ./ we need to help Compose distinguish between bind mounts
-    // and volumes, so we have to add it manually here. (It's the same reason we use string
-    // concatenation later on in this file when creating a handful of bind mounts relative to this
-    // directory.)
-    const hostThemePath =
-      './' +
-      posix.join(
-        'services/drupal',
-        this.documentRoot,
-        'themes',
-        this.themeName,
-      );
-
-    // Node container for sass...
-    cliEditor.addService('gesso', {
-      build: {
-        context: hostThemePath,
-        dockerfile: '$PWD/services/gesso/Dockerfile',
-      },
-      command: ['grunt', 'gessoWatch'],
-      init: true,
-      volumes: [
-        createBindMount(hostThemePath + '/images', '/app/images'),
-        createBindMount(hostThemePath + '/pattern-lab', '/app/pattern-lab'),
-        createBindMount(hostThemePath + '/js', '/app/js'),
-        {
-          type: 'volume',
-          source: gessoPublicVolume,
-          target: '/app/pattern-lab/public',
-        },
-        {
-          type: 'volume',
-          source: gessoCssVolume,
-          target: '/app/css',
-        },
-      ],
-    });
-
-    // ... and a PHP container for PL.
-    cliEditor.addService('pattern-lab', {
-      image: 'php:' + this.latestPhpTag,
-      command: [
-        'php',
-        '-dmemory_limit=-1',
-        'core/console',
-        '--watch',
-        '--no-procs',
-      ],
-      init: true,
-      restart: 'always',
-      volumes: [
-        createBindMount(hostThemePath + '/pattern-lab', '/app'),
-        {
-          type: 'volume',
-          source: gessoPublicVolume,
-          target: '/app/public',
-        },
-      ],
-      working_dir: '/app',
-    });
 
     // Build custom container for drush 9
     cliEditor.addService('drush', {
@@ -298,7 +198,7 @@ class Drupal8 extends Generator {
         createBindMount('./services/drupal', '/var/www/html'),
         {
           type: 'volume',
-          source: filesystemVolume,
+          source: filesystemVolumeName,
           target: uploadPath,
         },
       ],
@@ -308,7 +208,7 @@ class Drupal8 extends Generator {
   }
 
   private async _installDrupal() {
-    if (!this.shouldInstallDrupal) {
+    if (!this.shouldInstall) {
       return;
     }
 
@@ -361,23 +261,10 @@ class Drupal8 extends Generator {
     await spawnComposer(['composer', 'drupal:scaffold'], { cwd: drupalRoot });
   }
 
-  private async _installGesso() {
-    if (!this.shouldInstallGesso) {
+  private async _installGessoDependencies() {
+    if (!this.shouldInstall) {
       return;
     }
-
-    const themePath = this.destinationPath(
-      'services/drupal',
-      this.documentRoot,
-      'themes',
-      this.themeName,
-    );
-
-    await installGesso({
-      branch: '8.x-2.x',
-      repository: 'gesso',
-      targetPath: themePath,
-    });
 
     // Install required dependencies to avoid Gesso crashing when enabled
     for (const dependency of ['components', 'twig_field_value']) {
@@ -394,15 +281,13 @@ class Drupal8 extends Generator {
   // writing phase, despite the `installing' phase being the more natural choice.
   async default() {
     await this._installDrupal();
-    await this._installGesso();
+
+    if (this.options.useGesso) {
+      await this._installGessoDependencies();
+    }
   }
 
   writing() {
-    this.fs.write(
-      this.destinationPath('services/gesso/Dockerfile'),
-      createGessoDockerfile(this.latestNodeTag).render(),
-    );
-
     const needsMemcached = this.options.plugins.cache === 'Memcache';
     const sharedDependencies = needsMemcached
       ? ['libmemcached-dev', 'zlib-dev', 'libevent-dev']
@@ -460,22 +345,6 @@ class Drupal8 extends Generator {
     this.fs.write(
       this.destinationPath('services/drupal/.dockerignore'),
       drupalDockerIgnore.serialize(),
-    );
-
-    const gessoDockerIgnore = new IgnoreEditor();
-    gessoDockerIgnore.addEntry('*');
-    gessoDockerIgnore.addEntry('!tasks');
-    gessoDockerIgnore.addEntry('!Gruntfile.js');
-    gessoDockerIgnore.addEntry('!package.json');
-    gessoDockerIgnore.addEntry('!package-lock.json');
-
-    this.fs.write(
-      this.destinationPath(
-        'services/drupal/themes',
-        this.themeName,
-        '.dockerignore',
-      ),
-      gessoDockerIgnore.serialize(),
     );
   }
 }
