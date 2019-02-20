@@ -23,7 +23,10 @@ interface CreateGeneratorOptions {
   git: BranchSpecifier;
 
   /**
-   * Install phase to use. Depends largely on
+   * Install phase to use.
+   *
+   * The `'default'` value is needed due to the Drupal8 generator - see comments there for
+   * more information.
    */
   installPhase: 'install' | 'default';
 
@@ -46,10 +49,10 @@ interface CreateGeneratorOptions {
  * branch to download, etc. - that vary between systems.
  */
 function createGessoGenerator({
-  git: branch,
+  git,
   installPhase,
   serviceName,
-  themeDirectory: themeParts,
+  themeDirectory,
 }: CreateGeneratorOptions): typeof Generator {
   class Gesso extends Generator {
     // Assigned to in initializing phase
@@ -67,7 +70,7 @@ function createGessoGenerator({
         'services',
         serviceName,
         this.documentRoot,
-        themeParts,
+        themeDirectory,
         name,
       );
     }
@@ -122,7 +125,7 @@ function createGessoGenerator({
       const root = posix.join(
         '/var/www/html',
         this.documentRoot,
-        themeParts,
+        themeDirectory,
         this.themeName,
       );
 
@@ -172,7 +175,7 @@ function createGessoGenerator({
           'services',
           serviceName,
           this.documentRoot,
-          themeParts,
+          themeDirectory,
           this.themeName,
         );
 
@@ -230,7 +233,7 @@ function createGessoGenerator({
         return;
       }
 
-      await installGesso({ ...branch, targetPath: this._getTargetThemePath() });
+      await installGesso({ ...git, targetPath: this._getTargetThemePath() });
     }
 
     async default() {
