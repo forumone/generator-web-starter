@@ -1,4 +1,3 @@
-import dedent from 'dedent';
 import fs from 'fs';
 import makeDir from 'make-dir';
 import path, { posix } from 'path';
@@ -12,6 +11,7 @@ import createPHPDockerfile from '../../../createPHPDockerfile';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
 import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
 import spawnComposer from '../../../spawnComposer';
+import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -155,23 +155,21 @@ class Drupal8 extends Generator {
       ],
     });
 
+    // Use an array here because, for some odd reason, dedent gets confused about how
+    // string indentation works otherwise.
+    const drupalEntryCommand = [
+      `chmod -R 0777 ${uploadPath}`,
+      enableXdebug,
+      'exec php-fpm',
+    ].join('\n');
+
     editor.addService('drupal', {
       build: './services/drupal',
-      command: [
-        'sh',
-        '-c',
-        dedent`
-          chmod -R 0777 ${uploadPath}
-          exec php-fpm
-        `,
-      ],
+      command: ['sh', '-c', drupalEntryCommand],
       depends_on: ['mysql'],
       environment: {
         SMTPHOST: 'mailhog:1025',
-        // This is a shell substitution being used in Docker Compose, not a false negative being
-        // flagged by TSLint.
-        // tslint:disable-next-line:no-invalid-template-strings
-        XDEBUG_CONFIG: 'remote_host=${F1_XDEBUG_REMOTE:-127.0.0.1}',
+        ...xdebugEnvironment,
       },
       volumes: [
         createBindMount('./services/drupal', '/var/www/html'),
