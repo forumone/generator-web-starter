@@ -18,10 +18,6 @@ const runDepsCommand = `runDeps="$(\\
       | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \\
   )"`;
 
-const enableXdebugCommand = `{ \\
-    echo 'xdebug.remote_enable=1'; \\
-  } > /usr/local/etc/php/conf.d/xdebug.ini`;
-
 function createPHPDockerfile({
   from,
   buildDeps = [],
@@ -55,18 +51,21 @@ function createPHPDockerfile({
     command.push(['docker-php-ext-install', '-j', '$(nproc)', ...builtins]);
   }
 
-  // If Xdebug is requested, add it to the end of the PECL packages array
-  const allPeclPackages = xdebug ? [...peclPackages, 'xdebug'] : peclPackages;
-
-  for (const peclPackage of allPeclPackages) {
+  for (const peclPackage of peclPackages) {
     command.push(
       ['pecl', 'install', peclPackage],
       ['docker-php-ext-enable', peclPackage],
     );
   }
 
+  // Due to the fairly significant performance hits incurred by enabling Xdebug, services
+  // with xdebug built-in need to conditionally enable the extension on container startup.
+  if (xdebug) {
+    command.push(['pecl', 'install', 'xdebug']);
+  }
+
   // Scan runtime dependencies and force apk to save them in the resulting image
-  if (builtins.length !== 0 || allPeclPackages.length !== 0) {
+  if (builtins.length !== 0 || peclPackages.length > 0) {
     command.push(runDepsCommand, [
       'apk',
       'add',
@@ -86,11 +85,6 @@ function createPHPDockerfile({
 
   // Allow post-build setup
   command.push(...postBuildCommands);
-
-  // Enable Xdebug if requested
-  if (xdebug) {
-    command.push(enableXdebugCommand);
-  }
 
   return new Dockerfile().from(from).run({ command });
 }

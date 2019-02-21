@@ -25,7 +25,12 @@ async function spawnComposer(
 ): Promise<ExecaReturns> {
   const userOptions = runAsUser ? getUserGroupOptions() : [];
   const mountOptions =
-    mountCwd && execaOptions.cwd ? ['-v', execaOptions.cwd + ':/app'] : [];
+    // Use 'delegated' since we presume that install-related Composer tasks are I/O
+    // related, and thus can rely on the container being authoritative while the
+    // process is running.
+    mountCwd && execaOptions.cwd
+      ? ['-v', execaOptions.cwd + ':/app:delegated']
+      : [];
 
   return execa(
     'docker',

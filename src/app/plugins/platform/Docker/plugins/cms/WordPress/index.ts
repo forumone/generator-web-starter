@@ -1,4 +1,3 @@
-import dedent from 'dedent';
 import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
@@ -8,6 +7,7 @@ import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createPHPDockerfile from '../../../createPHPDockerfile';
 import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
 import spawnComposer from '../../../spawnComposer';
+import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
 import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
@@ -172,24 +172,23 @@ class WordPress extends Generator {
           SMTPHOST: 'mailhog:1025',
         };
 
+    // Use an array here because, for some odd reason, dedent gets confused about how
+    // string indentation works otherwise.
+    const wpEntryCommand = [
+      `chmod -R 0777 ${uploadPath}`,
+      enableXdebug,
+      'exec bash ./wp-entrypoint.sh',
+    ].join('\n');
+
     editor.addService('wordpress', {
       build: './services/wordpress',
       depends_on: ['mysql'],
-      command: [
-        '-c',
-        dedent`
-          chmod -R 0777 ${uploadPath}
-          exec bash ./wp-entrypoint.sh
-        `,
-      ],
+      command: ['-c', wpEntryCommand],
       entrypoint: '/bin/bash',
       ...envFile,
       environment: {
         ...initialEnvironment,
-        // This is a shell substitution being used in Docker Compose, not a false negative being
-        // flagged by TSLint.
-        // tslint:disable-next-line:no-invalid-template-strings
-        XDEBUG_CONFIG: 'remote_host=${F1_XDEBUG_REMOTE:-127.0.0.1}',
+        ...xdebugEnvironment,
       },
       volumes: [
         createBindMount('./services/wordpress', '/var/www/html'),
