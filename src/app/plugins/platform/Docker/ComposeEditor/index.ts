@@ -84,21 +84,21 @@ class ComposeEditor {
       image: 'nginx:alpine',
       ports: ['8080:80', '8443:443'],
       ...service,
+      // Hush, TSLint, these are Docker Compose environment variables.
+      // tslint:disable:no-invalid-template-strings
       volumes: [
-        // These are output by the root Docker generator, so we can unconditionally
-        // output these mounts.
-        createBindMount(
-          './services/nginx/local.crt',
-          '/etc/nginx/ssl/local.crt',
-          { readOnly: true },
-        ),
-        createBindMount(
-          './services/nginx/local.key',
-          '/etc/nginx/ssl/local.key',
-          { readOnly: true },
-        ),
+        // These environment variables will be filled in by forumone-cli with the 'up'
+        // command - we use mkcert to generate locally-trusted certificates instead of
+        // relying on externally-provisioned certificates for a domain name.
+        createBindMount('${F1_TLS_CERT}', '/etc/nginx/ssl/local.crt', {
+          readOnly: true,
+        }),
+        createBindMount('${F1_TLS_KEY}', '/etc/nginx/ssl/local.key', {
+          readOnly: true,
+        }),
         ...volumes,
       ],
+      // tslint:enable:no-invalid-template-strings
     });
   }
 

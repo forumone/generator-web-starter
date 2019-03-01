@@ -123,16 +123,6 @@ class Docker extends Generator {
   }
 
   writing() {
-    this.fs.copy(
-      this.templatePath('local.crt'),
-      this.destinationPath('services/nginx/local.crt'),
-    );
-
-    this.fs.copy(
-      this.templatePath('local.key'),
-      this.destinationPath('services/nginx/local.key'),
-    );
-
     this.fs.write(
       this.destinationPath('docker-compose.yml'),
       this.editor.serialize(),
