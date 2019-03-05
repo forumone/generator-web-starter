@@ -11,10 +11,6 @@ const path = require('path');
 // when using a CDN (like Fastly, CloudFlare, or CloudFront).
 const hashFilenames = true;
 
-// This directory is where Webpack outputs build assets. The name is resolved in the same directory
-// as this configuration file.
-const targetDirectoryName = 'public';
-
 // This array consists of the full path to any images which look terrible under the image
 // optimization options we have configured.
 const imagesExcludedFromOptimization = [
@@ -41,9 +37,6 @@ const isDevelopment = !isProduction;
 
 // Derived settings from variables above:
 
-// Full path to output directory
-const targetDirectory = path.join(__dirname, targetDirectoryName);
-
 const templatePrefix = isProduction ? '[id]' : '[name]';
 const templateSuffix = hashFilenames ? '-[chunkhash]' : '';
 
@@ -60,6 +53,10 @@ function createFilenameTemplate(extension) {
 function createChunkFilenameTemplate(extension) {
   return chunkFilenameTemplate + '.' + extension;
 }
+
+// NB. Changing the name of the target directory requires updates to Capistrano and the
+// .gitignore file.
+const targetDirectory = path.join(__dirname, 'public');
 
 // We always use these plugins
 const plugins = [
@@ -218,7 +215,7 @@ module.exports = {
             options: {
               sourceMap: isDevelopment,
               modules: useCSSModules,
-              
+
               // Include local path in hashed classes. This only applies to CSS modules.
               localIdentName: isDevelopment
                 ? '[path]__[local]__[hash:base64:5]'
