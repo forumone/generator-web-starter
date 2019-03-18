@@ -131,7 +131,11 @@ class ComposeEditor {
   }
 
   addComposer(directory: string) {
-    this.addService('composer', {
+    this.addNamedComposer('composer', directory);
+  }
+
+  addNamedComposer(name: string, directory: string) {
+    this.addService(name, {
       image: 'composer:1.7',
       volumes: [createBindMount('./' + directory, '/app')],
     });

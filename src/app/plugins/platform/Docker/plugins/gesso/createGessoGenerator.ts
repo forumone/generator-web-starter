@@ -226,6 +226,12 @@ function createGessoGenerator({
         ],
         working_dir: '/app',
       });
+
+      // Add composer to the theme directory to run install tasks.
+      cliEditor.addNamedComposer(
+        'theme-composer',
+        hostThemePath + '/pattern-lab',
+      );
     }
 
     private async _installGesso() {
