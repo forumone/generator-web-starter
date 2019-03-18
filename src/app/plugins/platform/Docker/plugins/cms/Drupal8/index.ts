@@ -1,7 +1,4 @@
-import fs from 'fs';
-import makeDir from 'make-dir';
-import path, { posix } from 'path';
-import { promisify } from 'util';
+import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
@@ -13,17 +10,11 @@ import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
-const readFile = promisify(fs.readFile);
-const writeFile = promisify(fs.writeFile);
-
-async function replaceIn(
-  path: string,
-  search: string | RegExp,
-  replacement: string,
-): Promise<void> {
-  const contents = await readFile(path, 'utf-8');
-  return writeFile(path, contents.replace(search, replacement));
-}
+import installDrupal, {
+  drupalProject,
+  pantheonProject,
+  Project,
+} from './installDrupal';
 
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
@@ -32,6 +23,7 @@ class Drupal8 extends Generator {
 
   // Assigned to in prompting phase
   private documentRoot!: string;
+  private projectType!: Project;
 
   private shouldInstall: boolean | undefined = false;
 
@@ -51,6 +43,7 @@ class Drupal8 extends Generator {
       useCapistrano,
       useGesso,
       shouldInstallDrupal,
+      drupalProjectType,
     } = await this.prompt([
       {
         type: 'input',
@@ -88,10 +81,31 @@ class Drupal8 extends Generator {
         },
         when: !this.options.skipInstall,
       },
+      {
+        type: 'list',
+        name: 'drupalProjectType',
+        message: 'Select project type to install:',
+        // NB. `as' casts below needed to dodge a deficiency in the Inquirer types
+        // (they don't know about the 'choice' property)
+        choices: [
+          {
+            name: `Drupal Project (${drupalProject})`,
+            value: drupalProject,
+            short: 'Drupal Project',
+          } as { name: string; value: string },
+          {
+            name: `Pantheon (${pantheonProject})`,
+            value: pantheonProject,
+            short: 'Pantheon',
+          } as { name: string; value: string },
+        ],
+        when: answers => answers.shouldInstallDrupal,
+      },
     ]);
 
     this.documentRoot = documentRoot;
     this.shouldInstall = shouldInstallDrupal;
+    this.projectType = drupalProjectType;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -210,53 +224,11 @@ class Drupal8 extends Generator {
       return;
     }
 
-    const drupalRoot = this.destinationPath('services/drupal');
-
-    await makeDir(drupalRoot);
-
-    await spawnComposer(
-      [
-        'create-project',
-        'drupal-composer/drupal-project:8.x-dev',
-        'drupal',
-        '--stability',
-        'dev',
-        '--no-interaction',
-        '--no-install',
-      ],
-      { cwd: path.dirname(drupalRoot) },
-    );
-
-    const documentRoot = this.documentRoot;
-    if (documentRoot !== 'web') {
-      await Promise.all([
-        replaceIn(
-          path.join(drupalRoot, 'composer.json'),
-          /web\//g,
-          documentRoot + '/',
-        ),
-        replaceIn(
-          path.join(drupalRoot, '.gitignore'),
-          /web\//g,
-          documentRoot + '/',
-        ),
-        replaceIn(
-          path.join(drupalRoot, 'scripts/composer/ScriptHandler.php'),
-          /\/web/g,
-          '/' + documentRoot,
-        ),
-        replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
-      ]);
-    }
-
-    await spawnComposer(['update', '--ignore-platform-reqs'], {
-      cwd: drupalRoot,
+    await installDrupal({
+      documentRoot: this.documentRoot,
+      projectType: this.projectType,
+      serviceDirectory: this.destinationPath('services'),
     });
-
-    // The composer entrypoint doesn't know about the drupal-scaffold command, so we
-    // have to manually specify 'drupal-scaffold' or else it'll try to look it up in
-    // $PATH, which fails.
-    await spawnComposer(['composer', 'drupal:scaffold'], { cwd: drupalRoot });
   }
 
   private async _installGessoDependencies() {
