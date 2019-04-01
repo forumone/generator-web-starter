@@ -34,12 +34,12 @@ desc "Stage and rsync to the server (or its cache)."
 task :rsync => %w[rsync:stage] do
   roles(:all).each do |role|
     user = role.user + "@" if !role.user.nil?
-	
-	path = fetch(:rsync_stage)
-	if path.nil? 
-	  path = '.'
-	end
-	
+
+    path = fetch(:rsync_stage)
+    if path.nil?
+      path = '.'
+    end
+
     rsync = %w[rsync]
     rsync.concat fetch(:rsync_options)
     rsync << path + "/"
@@ -76,7 +76,7 @@ namespace :rsync do
   desc "Stage the repository in a local directory."
   task :stage => %w[create_stage] do
     next if fetch(:rsync_stage).nil? || !File.directory?(fetch(:rsync_stage))
-    
+
     Dir.chdir fetch(:rsync_stage) do
       update = %W[git fetch --quiet --all --prune]
       Kernel.system *update
@@ -93,7 +93,7 @@ namespace :rsync do
 
     copy = %(#{fetch(:rsync_copy)} "#{rsync_cache.call}/" "#{release_path}/")
     on roles(:all) do |host|
-      execute copy 
+      execute copy
     end
   end
 
@@ -105,10 +105,10 @@ namespace :rsync do
   task :set_current_revision do
     run_locally do
       path = fetch(:rsync_stage)
-	  if path.nil? 
-	    path = '.'
-	  end
-	  
+    if path.nil?
+      path = '.'
+    end
+
       within path do
         rev = capture(:git, 'rev-parse', 'HEAD')
         set :current_revision, rev

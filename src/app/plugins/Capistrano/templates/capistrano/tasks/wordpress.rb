@@ -7,7 +7,7 @@ end
 Rake::Task["deploy:published"].enhance ["wordpress:dbbackup"]
 
 # After publication run updates
-Rake::Task["deploy:published"].enhance do 
+Rake::Task["deploy:published"].enhance do
   Rake::Task["wpcli:update"].invoke
 end
 
@@ -17,25 +17,25 @@ namespace :wordpress do
       if test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php ]"
         execute :rm, "-f", "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php"
       end
-      
+
       execute :ln, '-s', "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.#{fetch(:stage)}.php", "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php"
-        
+
       # If a .htaccess file for the stage exists
       if test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/htaccess.#{fetch(:stage)} ]"
         # If there is currently an .htaccess file
         if test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/.htaccess ]"
           execute :rm, "#{current_path}/#{fetch(:app_webroot, 'public')}/.htaccess"
         end
-        
+
         execute :ln, '-s', "#{current_path}/#{fetch(:app_webroot, 'public')}/htaccess.#{fetch(:stage)}", "#{current_path}/#{fetch(:app_webroot, 'public')}/.htaccess"
       end
     end
   end
-  
+
   task :dbbackup do
     invoke "wpcli:dbexport"
   end
-  
+
   desc "Revert the database"
   task :revert_database do
     on roles(:db) do

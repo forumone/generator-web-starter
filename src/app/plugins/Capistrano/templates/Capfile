@@ -1,7 +1,7 @@
 require 'json'
 
 # Set config paths
-set :deploy_config_path, 'capistrano/deploy.rb'
+set :deploy_config_path, File.expand_path('capistrano/deploy.rb')
 set :stage_config_path, 'capistrano/deploy'
 
 # Load DSL and Setup Up Stages

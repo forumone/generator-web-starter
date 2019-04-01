@@ -31,18 +31,18 @@ namespace :web do
       invoke "web:run_build"
     end
   end
-  
+
   # Only run the build if we stage rsync
   task :run_build do
     if ENV["ignore_rsync_stage"].nil?
       invoke "web:build"
     end
   end
-  
+
   desc "Run application build scripts"
   task :build do
   end
-  
+
   namespace :varnish do
     desc "Ban all URLs for a site"
     task :ban do
@@ -50,13 +50,13 @@ namespace :web do
         # Make sure we have access to the varnish secret file
         if test " [ -r /etc/varnish/secret ]"
           fetch(:site_url).each do |site|
-            execute :varnishadm, "'ban req.http.host ~ #{site}'"
+            execute :varnishadm, "'ban req.http.host ~ #{site}' || true"
           end
         end
       end
     end
   end
-  
+
   desc "Run any tasks after deployment"
   task :restart do
     invoke "web:varnish:ban"
@@ -71,7 +71,7 @@ namespace :deploy do
     invoke "deploy:finishing"
     invoke "deploy:finished"
   end
-  
+
   namespace :symlink do
     desc "Set application webroot"
     task :web do
@@ -85,7 +85,7 @@ namespace :deploy do
       invoke "#{fetch(:platform)}:settings"
     end
   end
-  
+
   desc 'Clean up old releases'
   task :cleanup do
     on roles :all do |host|
@@ -105,7 +105,7 @@ namespace :deploy do
       end
     end
   end
-  
+
   desc 'Remove and archive rolled-back release.'
   task :cleanup_rollback do
     on roles(:all) do
