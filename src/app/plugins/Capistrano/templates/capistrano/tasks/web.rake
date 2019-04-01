@@ -50,7 +50,7 @@ namespace :web do
         # Make sure we have access to the varnish secret file
         if test " [ -r /etc/varnish/secret ]"
           fetch(:site_url).each do |site|
-            execute :varnishadm, "'ban req.http.host ~ #{site}'"
+            execute :varnishadm, "'ban req.http.host ~ #{site}' || true"
           end
         end
       end
