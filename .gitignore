@@ -1,4 +1,8 @@
-node_modules/
-temp/
-/.project
-/.settings
+# Editor stuff
+.vscode
+
+# NPM
+node_modules
+
+# Build output
+generators

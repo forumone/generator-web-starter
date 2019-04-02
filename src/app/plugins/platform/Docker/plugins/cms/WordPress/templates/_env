@@ -1,0 +1,15 @@
+WORDPRESS_ENV=development
+
+DB_HOST=mysql:3306
+DB_NAME=web
+DB_USER=web
+DB_PASSWORD=web
+
+WP_HOME=http://localhost:8080/
+
+# Redirect email to MailHog (visit localhost:8025 to access the UI)
+SMTPHOST=mailhog:1025
+
+# Don't allow WP to write to the filesystem (it can't in a container anyway.)
+DISALLOW_FILE_MODS=true
+DISALLOW_FILE_EDIT=true
