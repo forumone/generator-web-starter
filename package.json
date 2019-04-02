@@ -85,11 +85,7 @@
   "engines": {
     "node": ">=8"
   },
-  "licenses": [
-    {
-      "type": "GPL"
-    }
-  ],
+  "license": "GPL-3.0-or-later",
   "optionalDependencies": {
     "nodegit": "0.23.0"
   }
