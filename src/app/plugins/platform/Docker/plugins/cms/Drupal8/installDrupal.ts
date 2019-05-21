@@ -1,6 +1,7 @@
 import fs from 'fs';
 import makeDir from 'make-dir';
 import path from 'path';
+import rimraf from 'rimraf';
 import { promisify } from 'util';
 
 import spawnComposer from '../../../spawnComposer';
@@ -15,6 +16,7 @@ export type Project = PantheonProject | DrupalProject;
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
+const rimrafAsync = promisify(rimraf);
 
 async function replaceIn(
   path: string,
@@ -88,6 +90,13 @@ async function installDrupal({
       ),
       replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
     ]);
+  }
+
+  // Composer create-project now "helpfully" installs the web/ directory for us, which
+  // we don't want when it isn't the document root.
+  if (needsRename) {
+    const webRoot = path.join(drupalRoot, 'web');
+    await rimrafAsync(webRoot);
   }
 
   // Make sure the lock file is up to date.
