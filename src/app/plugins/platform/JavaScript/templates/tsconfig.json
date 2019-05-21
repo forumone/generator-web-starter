@@ -16,7 +16,7 @@
     "importHelpers": true,
     "jsx": "preserve",
 
-    "lib": ["dom", "es5", "es2015.promise"]
+    "lib": ["dom", "es5", "es2015.promise", "es2015.collection"]
   },
 
   "include": ["src/**/*.tsx", "src/**/*.ts"]
