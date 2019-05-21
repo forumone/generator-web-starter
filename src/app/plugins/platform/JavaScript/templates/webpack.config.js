@@ -158,7 +158,7 @@ module.exports = {
                 {
                   use: 'imagemin-pngquant',
                   options: {
-                    quality: '50-60',
+                    quality: [0.5, 0.6],
                   },
                 },
                 {
