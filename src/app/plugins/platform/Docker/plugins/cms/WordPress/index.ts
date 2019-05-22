@@ -22,8 +22,7 @@ class WordPress extends Generator {
   private documentRoot!: string;
 
   private usesWpStarter: boolean | undefined = true;
-  // Currently unused
-  // private usesWpCfm: boolean | undefined = true;
+  private usesWpCfm: boolean | undefined = true;
 
   private shouldInstall: boolean | undefined = false;
 
@@ -38,8 +37,7 @@ class WordPress extends Generator {
     const {
       documentRoot,
       wpStarter,
-      // NB. Option currently unused
-      // wpCfm,
+      wpCfm,
       shouldInstallWordPress,
       useGesso,
       useCapistrano,
@@ -96,7 +94,7 @@ class WordPress extends Generator {
     this.documentRoot = documentRoot;
     this.shouldInstall = shouldInstallWordPress;
     this.usesWpStarter = wpStarter;
-    // this.usesWpCfm = wpCfm;
+    this.usesWpCfm = wpCfm;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -104,7 +102,9 @@ class WordPress extends Generator {
         name: this.options.name,
         appWebroot: posix.join('services/wordpress', documentRoot),
         webroot: documentRoot,
-        config: {},
+        config: {
+          wordpress_wpcfm: Boolean(this.usesWpCfm),
+        },
       });
     }
 
