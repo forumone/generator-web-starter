@@ -113,7 +113,9 @@ class Drupal8 extends Generator {
         name: this.options.name,
         webroot: documentRoot,
         appWebroot: posix.join('services/drupal', documentRoot),
-        config: {},
+        config: {
+          drupal_features: false,
+        },
         linkedDirectories: ['sites/default/files'],
       });
     }
