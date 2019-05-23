@@ -47,7 +47,11 @@ class Capistrano extends Generator {
     this._copyFile('capistrano/rsync');
     this._copyFile('capistrano/tasks');
 
-    const { config = {}, linkedDirectories = [] } = this.options;
+    const {
+      config = {},
+      linkedDirectories = [],
+      linkedFiles = [],
+    } = this.options;
 
     // Write out the deploy.rb file
     const data = {
@@ -59,6 +63,7 @@ class Capistrano extends Generator {
       app_webroot: this.options.appWebroot,
       webroot: this.options.webroot,
       linked_directories: linkedDirectories,
+      linked_files: linkedFiles,
       config,
     };
 
