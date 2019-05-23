@@ -105,6 +105,7 @@ class WordPress extends Generator {
         config: {
           wordpress_wpcfm: Boolean(this.usesWpCfm),
         },
+        linkedFiles: wpStarter ? ['.env'] : [],
       });
     }
 

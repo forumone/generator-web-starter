@@ -117,6 +117,7 @@ class Drupal8 extends Generator {
           drupal_features: false,
         },
         linkedDirectories: ['sites/default/files'],
+        linkedFiles: ['.env'],
       });
     }
 
@@ -317,6 +318,11 @@ class Drupal8 extends Generator {
     this.fs.write(
       this.destinationPath('services/drupal/.dockerignore'),
       drupalDockerIgnore.serialize(),
+    );
+
+    this.fs.copy(
+      this.templatePath('_env'),
+      this.destinationPath('services/drupal/.env'),
     );
   }
 }
