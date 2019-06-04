@@ -62,7 +62,7 @@ class Capistrano extends Generator {
       platform: this.options.platform,
       app_webroot: this.options.appWebroot,
       webroot: this.options.webroot,
-      linked_directories: linkedDirectories,
+      linked_dirs: linkedDirectories,
       linked_files: linkedFiles,
       config,
     };
