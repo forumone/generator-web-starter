@@ -56,7 +56,7 @@ end
 set :app_webroot, '<%= app_webroot %>'
 set :webroot, '<%= webroot %>'
 
-set :linked_directories, <%- JSON.stringify(linked_directories) %>
+set :linked_dirs, <%- JSON.stringify(linked_dirs) %>
 set :linked_files, <%- JSON.stringify(linked_files) %>
 
 <% Object.entries(config).forEach(([key, value]) => { -%>

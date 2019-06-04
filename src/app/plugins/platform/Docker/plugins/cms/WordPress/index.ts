@@ -105,7 +105,12 @@ class WordPress extends Generator {
         config: {
           wordpress_wpcfm: Boolean(this.usesWpCfm),
         },
-        linkedFiles: wpStarter ? ['.env'] : [],
+        linkedDirectories: [
+          `services/wordpress/${documentRoot}/wp-content/uploads`,
+          `services/wordpress/${documentRoot}/wp-content/upgrade`,
+          `services/wordpress/${documentRoot}/wp-content/wflogs`,
+        ],
+        linkedFiles: wpStarter ? ['services/wordpress/.env'] : [],
       });
     }
 
