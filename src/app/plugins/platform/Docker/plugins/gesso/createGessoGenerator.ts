@@ -11,12 +11,20 @@ import ComposeEditor, {
 import VolumeMount from '../../ComposeEditor/VolumeMount';
 import createGessoDockerfile from '../../createGessoDockerfile';
 import installGesso, { InstallGessoOptions } from '../../installGesso';
-import getLatestNodeTag from '../../registry/getLatestNodeTag';
+import getLatestNodeVersion, {
+  Dist,
+} from '../../registry/getLatestNodeRelease';
 import getLatestPhpCliTag from '../../registry/getLatestPhpCliTag';
 
 type BranchSpecifier = Pick<InstallGessoOptions, 'branch' | 'repository'>;
 
 interface CreateGeneratorOptions {
+  /**
+   * Additional bind mounts that may be needed for this generator. Mainly used to support
+   * `alter-twig.php` in the WordPress edition of Gesso 3.x.
+   */
+  extraBindMounts?: ReadonlyArray<string>;
+
   /**
    * The repository and branch name used for downloading Gesso from GitHub.
    */
@@ -49,6 +57,7 @@ interface CreateGeneratorOptions {
  * branch to download, etc. - that vary between systems.
  */
 function createGessoGenerator({
+  extraBindMounts = [],
   git,
   installPhase,
   serviceName,
@@ -56,7 +65,7 @@ function createGessoGenerator({
 }: CreateGeneratorOptions): typeof Generator {
   class Gesso extends Generator {
     // Assigned to in initializing phase
-    private latestNodeTag!: string;
+    private latestNodeDist!: Dist;
     private latestPhpTag!: string;
     private documentRoot!: string;
 
@@ -83,12 +92,12 @@ function createGessoGenerator({
 
       this.documentRoot = options.documentRoot;
 
-      const [latestPhpTag, latestNodeTag] = await Promise.all([
+      const [latestPhpTag, latestNodeDist] = await Promise.all([
         getLatestPhpCliTag(),
-        getLatestNodeTag(),
+        getLatestNodeVersion(),
       ]);
 
-      this.latestNodeTag = latestNodeTag;
+      this.latestNodeDist = latestNodeDist;
       this.latestPhpTag = latestPhpTag;
     }
 
@@ -129,19 +138,19 @@ function createGessoGenerator({
         this.themeName,
       );
 
-      const patternLabPublicPath = posix.join(root, 'pattern-lab/public');
+      const patternLabPath = posix.join(root, 'pattern-lab');
       const cssPath = posix.join(root, 'css');
 
       const editor = this.options.composeEditor as ComposeEditor;
 
-      const publicVolumeName = editor.ensureVolume('gesso-public');
+      const publicVolumeName = editor.ensureVolume('gesso-patternlab');
       const cssVolumeName = editor.ensureVolume('gesso-css');
 
       const gessoVolumes: VolumeMount[] = [
         {
           type: 'volume',
           source: publicVolumeName,
-          target: patternLabPublicPath,
+          target: patternLabPath,
         },
         {
           type: 'volume',
@@ -179,22 +188,24 @@ function createGessoGenerator({
           this.themeName,
         );
 
-      // Node container for sass...
+      // Add the Gesso container here
       cliEditor.addService('gesso', {
         build: {
           context: hostThemePath,
           dockerfile: '$PWD/services/gesso/Dockerfile',
         },
-        command: ['grunt', 'gessoWatch'],
         init: true,
         volumes: [
           createBindMount(hostThemePath + '/images', '/app/images'),
-          createBindMount(hostThemePath + '/pattern-lab', '/app/pattern-lab'),
           createBindMount(hostThemePath + '/js', '/app/js'),
+          createBindMount(hostThemePath + '/source', '/app/source'),
+          ...extraBindMounts.map(extra =>
+            createBindMount(`${hostThemePath}/${extra}`, `/app/${extra}`),
+          ),
           {
             type: 'volume',
             source: publicVolumeName,
-            target: '/app/pattern-lab/public',
+            target: '/app/pattern-lab',
           },
           {
             type: 'volume',
@@ -203,35 +214,6 @@ function createGessoGenerator({
           },
         ],
       });
-
-      // ... and a PHP container for PL.
-      cliEditor.addService('pattern-lab', {
-        image: 'php:' + this.latestPhpTag,
-        command: [
-          'php',
-          '-dmemory_limit=-1',
-          'core/console',
-          '--watch',
-          '--no-procs',
-        ],
-        init: true,
-        restart: 'always',
-        volumes: [
-          createBindMount(hostThemePath + '/pattern-lab', '/app'),
-          {
-            type: 'volume',
-            source: publicVolumeName,
-            target: '/app/public',
-          },
-        ],
-        working_dir: '/app',
-      });
-
-      // Add composer to the theme directory to run install tasks.
-      cliEditor.addNamedComposer(
-        'theme-composer',
-        hostThemePath + '/pattern-lab',
-      );
     }
 
     private async _installGesso() {
@@ -257,15 +239,18 @@ function createGessoGenerator({
     writing() {
       this.fs.write(
         this.destinationPath('services/gesso/Dockerfile'),
-        createGessoDockerfile(this.latestNodeTag).render(),
+        createGessoDockerfile({
+          node: this.latestNodeDist,
+          php: this.latestPhpTag,
+        }).render(),
       );
 
       const ignore = new IgnoreEditor();
       ignore.addEntry('*');
-      ignore.addEntry('!tasks');
-      ignore.addEntry('!Gruntfile.js');
       ignore.addEntry('!package.json');
       ignore.addEntry('!package-lock.json');
+      ignore.addEntry('!gulpfile.js');
+      ignore.addEntry('!patternlab-config.json');
 
       this.fs.write(
         this.destinationPath(this._getTargetThemePath(), '.dockerignore'),

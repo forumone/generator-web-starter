@@ -1,8 +1,8 @@
 import getImageTags from './getImageTags';
 import semverMax from './semverMax';
 
-// NB. matches X.Y-cli-alpine
-const cliAlpine = /^(\d+\.\d+)-cli-alpine$/;
+// NB. matches X.Y-cli
+const cliAlpine = /^(\d+\.\d+)-cli$/;
 
 async function getLatestPhpCliTag(): Promise<string> {
   const tags = await getImageTags('php');
@@ -14,10 +14,10 @@ async function getLatestPhpCliTag(): Promise<string> {
     .reduce(semverMax, '0.0');
 
   if (maxVersion === '0.0') {
-    return 'cli-alpine';
+    return 'cli';
   }
 
-  return maxVersion + '-cli-alpine';
+  return maxVersion + '-cli';
 }
 
 export default getLatestPhpCliTag;
