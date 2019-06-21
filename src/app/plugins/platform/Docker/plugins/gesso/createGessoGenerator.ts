@@ -20,12 +20,6 @@ type BranchSpecifier = Pick<InstallGessoOptions, 'branch' | 'repository'>;
 
 interface CreateGeneratorOptions {
   /**
-   * Additional bind mounts that may be needed for this generator. Mainly used to support
-   * `alter-twig.php` in the WordPress edition of Gesso 3.x.
-   */
-  extraBindMounts?: ReadonlyArray<string>;
-
-  /**
    * The repository and branch name used for downloading Gesso from GitHub.
    */
   git: BranchSpecifier;
@@ -57,7 +51,6 @@ interface CreateGeneratorOptions {
  * branch to download, etc. - that vary between systems.
  */
 function createGessoGenerator({
-  extraBindMounts = [],
   git,
   installPhase,
   serviceName,
@@ -199,9 +192,6 @@ function createGessoGenerator({
           createBindMount(hostThemePath + '/images', '/app/images'),
           createBindMount(hostThemePath + '/js', '/app/js'),
           createBindMount(hostThemePath + '/source', '/app/source'),
-          ...extraBindMounts.map(extra =>
-            createBindMount(`${hostThemePath}/${extra}`, `/app/${extra}`),
-          ),
           {
             type: 'volume',
             source: publicVolumeName,
