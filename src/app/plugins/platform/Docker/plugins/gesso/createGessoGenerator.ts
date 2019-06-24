@@ -241,6 +241,8 @@ function createGessoGenerator({
       ignore.addEntry('!package-lock.json');
       ignore.addEntry('!gulpfile.js');
       ignore.addEntry('!patternlab-config.json');
+      ignore.addEntry('!.stylelintignore');
+      ignore.addEntry('!.stylelintrc.yml');
 
       this.fs.write(
         this.destinationPath(this._getTargetThemePath(), '.dockerignore'),

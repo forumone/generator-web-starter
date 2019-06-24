@@ -63,7 +63,13 @@ function createGessoDockerfile({
     .comment('Add Node modules and copy configuration')
     .copy({ from: 'build', src: '/app/node_modules', dest: './node_modules' })
     .copy({
-      src: ['gulpfile.js', 'package*.json', 'patternlab-config.json'],
+      src: [
+        'gulpfile.js',
+        'package*.json',
+        'patternlab-config.json',
+        '.stylelintignore',
+        '.stylelintrc.yml',
+      ],
       dest: './',
     });
 
