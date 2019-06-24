@@ -2,7 +2,7 @@ import createGessoGenerator from './createGessoGenerator';
 
 const GessoWordPress = createGessoGenerator({
   git: {
-    branch: '2.x',
+    branch: '3.x',
     repository: 'gesso-wp',
   },
   installPhase: 'install',

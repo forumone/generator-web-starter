@@ -30,6 +30,23 @@ declare module 'dockerfilejs' {
     dest: string;
   }
 
+  export interface Chown {
+    user?: string | number;
+    group?: string | number;
+  }
+
+  export interface ChownOptions extends SourceDest {
+    chown?: Chown | string | number;
+    user?: string | number;
+    group?: string | number;
+  }
+
+  export interface CopyOptions extends ChownOptions {
+    from?: string;
+  }
+
+  export interface AddOptions extends ChownOptions {}
+
   export interface CommandString {
     command: string;
     params?: ReadonlyArray<string>;
@@ -55,6 +72,7 @@ declare module 'dockerfilejs' {
     tag?: string;
     digest?: string;
     registry?: string;
+    stage?: string;
   }
 
   export interface Maintainer {
@@ -74,10 +92,10 @@ declare module 'dockerfilejs' {
   }
 
   export class Dockerfile {
-    add(source: SourceDest): this;
+    add(source: AddOptions): this;
     cmd(command: string | CommandArray | CommandString): this;
     comment(...comments: string[]): this;
-    copy(source: SourceDest): this;
+    copy(source: CopyOptions): this;
     entryPoint(entryPoint: EntryPoint): this;
     env(environment: KeyValueMapping): this;
     expose(port: number | Expose | ReadonlyArray<string | Expose>): this;
@@ -87,6 +105,8 @@ declare module 'dockerfilejs' {
     run(command: string | RunCommand | RunCommands): this;
     user(user: string): this;
     workdir(workdir: string): this;
+
+    stage(): this;
 
     separator(separator: string): this;
     steps(): unknown[];
