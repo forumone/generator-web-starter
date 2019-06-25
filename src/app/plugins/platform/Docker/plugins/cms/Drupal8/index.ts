@@ -6,7 +6,7 @@ import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createPHPDockerfile from '../../../createPHPDockerfile';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
-import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
+import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
@@ -30,7 +30,7 @@ class Drupal8 extends Generator {
   async initializing() {
     const [latestDrupalTag, latestPhpTag] = await Promise.all([
       getLatestDrupalTag(8),
-      getLatestPhpCliTag(),
+      getLatestPhpCliAlpineTag(),
     ]);
 
     this.latestDrupalTag = latestDrupalTag;
