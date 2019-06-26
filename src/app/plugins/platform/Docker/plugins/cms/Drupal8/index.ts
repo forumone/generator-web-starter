@@ -16,6 +16,12 @@ import installDrupal, {
   Project,
 } from './installDrupal';
 
+const gessoDrupalDependencies: ReadonlyArray<string> = [
+  'drupal/components',
+  'drupal/twig_field_value',
+  'drupal/twig_tweak',
+];
+
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
   private latestDrupalTag!: string;
@@ -24,6 +30,7 @@ class Drupal8 extends Generator {
   // Assigned to in prompting phase
   private documentRoot!: string;
   private projectType!: Project;
+  private useGesso: boolean | undefined;
 
   private shouldInstall: boolean | undefined = false;
 
@@ -106,6 +113,7 @@ class Drupal8 extends Generator {
     this.documentRoot = documentRoot;
     this.shouldInstall = shouldInstallDrupal;
     this.projectType = drupalProjectType;
+    this.useGesso = useGesso;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -240,11 +248,10 @@ class Drupal8 extends Generator {
     }
 
     // Install required dependencies to avoid Gesso crashing when enabled
-    for (const dependency of ['components', 'twig_field_value']) {
-      await spawnComposer(
-        ['require', `drupal/${dependency}`, '--ignore-platform-reqs'],
-        { cwd: this.destinationPath('services/drupal') },
-      );
+    for (const dependency of gessoDrupalDependencies) {
+      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
+        cwd: this.destinationPath('services/drupal'),
+      });
     }
   }
 
@@ -255,7 +262,7 @@ class Drupal8 extends Generator {
   async default() {
     await this._installDrupal();
 
-    if (this.options.useGesso) {
+    if (this.useGesso) {
       await this._installGessoDependencies();
     }
   }
