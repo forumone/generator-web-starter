@@ -75,9 +75,7 @@ class Capistrano extends Generator {
   }
 
   end() {
-    this.log(
-      'Remember to run yo web-starter:cap-stage to install a new Capistrano stage.',
-    );
+    this.log('Remember to run f1 cap:stage to install a new Capistrano stage.');
   }
 }
 
