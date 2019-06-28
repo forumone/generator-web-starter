@@ -214,12 +214,12 @@ module.exports = {
             loader: 'css-loader',
             options: {
               sourceMap: isDevelopment,
-              modules: useCSSModules,
-
-              // Include local path in hashed classes. This only applies to CSS modules.
-              localIdentName: isDevelopment
-                ? '[path]__[local]__[hash:base64:5]'
-                : '[hash:base64]',
+              modules: useCSSModules && {
+                // Include local path in hashed classes. This only applies to CSS modules.
+                localIdentName: isDevelopment
+                  ? '[path]__[local]__[hash:base64:5]'
+                  : '[hash:base64]',
+              },
 
               // Ensures postcss-loader and sass-loader see any modules imported via the 'composes'
               // directive (This only applies in CSS modules mode, and is not needed for regular
