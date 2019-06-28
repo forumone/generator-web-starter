@@ -174,12 +174,6 @@ class JavaScript extends Generator {
 
     this._installToolchain();
     this._installDependencies();
-
-    this.installDependencies({
-      npm: true,
-      bower: false,
-      yarn: false,
-    });
   }
 }
 

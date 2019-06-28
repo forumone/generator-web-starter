@@ -25,7 +25,7 @@ const useCSSModules = false;
 
 // It shouldn't be necessary to edit anything below this line.
 
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractCssChunksPlugin = require('extract-css-chunks-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
@@ -61,7 +61,7 @@ const targetDirectory = path.join(__dirname, 'public');
 // We always use these plugins
 const plugins = [
   // Remove stale build output
-  new CleanWebpackPlugin([targetDirectory]),
+  new CleanWebpackPlugin(),
 
   // Create separate CSS stylesheets
   new ExtractCssChunksPlugin({
@@ -214,12 +214,12 @@ module.exports = {
             loader: 'css-loader',
             options: {
               sourceMap: isDevelopment,
-              modules: useCSSModules,
-
-              // Include local path in hashed classes. This only applies to CSS modules.
-              localIdentName: isDevelopment
-                ? '[path]__[local]__[hash:base64:5]'
-                : '[hash:base64]',
+              modules: useCSSModules && {
+                // Include local path in hashed classes. This only applies to CSS modules.
+                localIdentName: isDevelopment
+                  ? '[path]__[local]__[hash:base64:5]'
+                  : '[hash:base64]',
+              },
 
               // Ensures postcss-loader and sass-loader see any modules imported via the 'composes'
               // directive (This only applies in CSS modules mode, and is not needed for regular
