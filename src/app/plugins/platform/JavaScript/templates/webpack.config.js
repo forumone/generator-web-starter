@@ -25,7 +25,7 @@ const useCSSModules = false;
 
 // It shouldn't be necessary to edit anything below this line.
 
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractCssChunksPlugin = require('extract-css-chunks-webpack-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
@@ -61,7 +61,7 @@ const targetDirectory = path.join(__dirname, 'public');
 // We always use these plugins
 const plugins = [
   // Remove stale build output
-  new CleanWebpackPlugin([targetDirectory]),
+  new CleanWebpackPlugin(),
 
   // Create separate CSS stylesheets
   new ExtractCssChunksPlugin({
