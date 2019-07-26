@@ -56,6 +56,18 @@ function watch() {
   gulp.watch(copyFileSources, copy);
 }
 
+var typedoc = require('gulp-typedoc');
+gulp.task('typedoc', function() {
+  return gulp.src(['src/**/*.ts']).pipe(
+    typedoc({
+      module: 'commonjs',
+      target: 'es5',
+      out: 'docs/',
+      name: 'Web Starter Kit',
+    }),
+  );
+});
+
 const defaultTask = gulp.series(clean, build, copy);
 
 exports.default = defaultTask;
