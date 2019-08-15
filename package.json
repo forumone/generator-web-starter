@@ -64,7 +64,7 @@
     "@types/move-file": "1.0.0",
     "@types/node": "10.12.18",
     "@types/node-fetch": "2.1.4",
-    "@types/nodegit": "0.22.7",
+    "@types/nodegit": "0.24.9",
     "@types/require-dir": "1.0.0",
     "@types/rimraf": "2.0.2",
     "@types/tmp": "0.0.33",
