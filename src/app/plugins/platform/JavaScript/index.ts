@@ -74,7 +74,7 @@ class JavaScript extends Generator {
         'file-loader',
         'html-webpack-plugin',
         'clean-webpack-plugin',
-        'uglifyjs-webpack-plugin',
+        'terser-webpack-plugin',
         'optimize-css-assets-webpack-plugin',
       ],
       { 'save-dev': true },
