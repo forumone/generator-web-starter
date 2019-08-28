@@ -125,7 +125,7 @@ class Drupal8 extends Generator {
           drupal_features: false,
         },
         linkedDirectories: [
-          posix.join('services/drupal', documentRoot, '/sites/default/files'),
+          posix.join('services/drupal', documentRoot, 'sites/default/files'),
         ],
         linkedFiles: ['services/drupal/.env'],
       });
