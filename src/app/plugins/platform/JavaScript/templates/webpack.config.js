@@ -28,7 +28,7 @@ const useCSSModules = false;
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractCssChunksPlugin = require('extract-css-chunks-webpack-plugin');
-const TerserJsPlugin = require('terser-webpack-plugin');
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const ForkTsCheckerPlugin = require('fork-ts-checker-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
@@ -102,8 +102,8 @@ module.exports = {
     },
 
     minimizer: [
-      new TerserJsPlugin({
-        terserOptions: {
+      new UglifyJsPlugin({
+        uglifyOptions: {
           ecma: 5, // IE11, man
           output: { comments: false },
         },
@@ -133,6 +133,9 @@ module.exports = {
 
     // Don't fall back to the filesystem in development.
     contentBase: false,
+
+    // Serve bundles from the project root.
+    publicPath: '/',
   },
 
   plugins,

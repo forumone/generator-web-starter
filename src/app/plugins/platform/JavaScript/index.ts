@@ -126,6 +126,7 @@ class JavaScript extends Generator {
     // Grunt, etc.
     this.npmInstall(
       [
+        'gulp',
         'grunt',
         'grunt-cli',
         'grunt-webpack',
