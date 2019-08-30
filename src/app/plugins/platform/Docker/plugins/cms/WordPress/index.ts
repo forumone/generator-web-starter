@@ -271,6 +271,15 @@ class WordPress extends Generator {
       this.destinationPath('services/wordpress/.dockerignore'),
       ignore.serialize(),
     );
+
+    // For projects NOT using the web-starter, add a wp-cli.yml file.
+    if (!this.usesWpStarter) {
+      this.fs.copyTpl(
+        this.templatePath('wp-cli-nostarter.yml.ejs'),
+        this.destinationPath('services/wordpress/wp-cli.yml'),
+        { documentRoot: this.documentRoot },
+      );
+    }
   }
 
   private async _installWordPress() {
