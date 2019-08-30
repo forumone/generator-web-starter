@@ -107,8 +107,6 @@ class JavaScript extends Generator {
     // Sass compilation and plugins
     this.npmInstall(
       [
-        'sass',
-        'fibers',
         'node-sass',
         'sass-loader',
         'import-glob',
