@@ -47,8 +47,6 @@ function createChunkFilenameTemplate(chunkFilenameTemplate, extension) {
 
 module.exports = env => {
   const isProduction = env.NODE_ENV === 'production';
-  console.log('env',env);
-  console.log('isProduction', isProduction);
   const isDevelopment = !isProduction;
 
 // Derived settings from variables above:
