@@ -1,5 +1,6 @@
 # Editor stuff
 .vscode
+.idea
 
 # NPM
 node_modules
