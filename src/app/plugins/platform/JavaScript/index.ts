@@ -53,13 +53,13 @@ class JavaScript extends Generator {
     this._copyFile('tsconfig.json');
     this._copyFile('webpack.config.js');
     this._copyFile('src');
-    this._copyFile('Gruntfile.js');
+    this._copyFile('gulpfile.js');
     this._copyFile('tasks');
 
     this.fs.extendJSON(this.destinationPath('package.json'), {
       scripts: {
-        start: 'grunt',
-        build: 'grunt build',
+        start: 'gulp',
+        build: 'gulp build',
       },
     });
   }
@@ -123,18 +123,8 @@ class JavaScript extends Generator {
       { 'save-dev': true },
     );
 
-    // Grunt, etc.
-    this.npmInstall(
-      [
-        'gulp',
-        'grunt',
-        'grunt-cli',
-        'grunt-webpack',
-        'include-all',
-        'load-grunt-tasks',
-      ],
-      { 'save-dev': true },
-    );
+    // Gulp, etc.
+    this.npmInstall(['gulp'], { 'save-dev': true });
   }
 
   private _installDependencies() {
