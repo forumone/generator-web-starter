@@ -45,11 +45,11 @@ else
   set :rsync_stage, 'tmp/deploy'
 end
 
-# install NPM modules and run grunt when building for deployment
+# install NPM modules and run gulp when building for deployment
 Rake::Task["web:build"].enhance do
   Dir.chdir fetch(:rsync_stage) do
     system "npm", "install", "--loglevel silent", "--no-bin-links"
-    system "grunt build"
+    system "npx gulp build"
   end
 end
 
