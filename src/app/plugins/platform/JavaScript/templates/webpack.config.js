@@ -28,7 +28,7 @@ const useCSSModules = false;
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractCssChunksPlugin = require('extract-css-chunks-webpack-plugin');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+const TerserJsPlugin = require('terser-webpack-plugin');
 const ForkTsCheckerPlugin = require('fork-ts-checker-webpack-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
@@ -45,8 +45,8 @@ function createChunkFilenameTemplate(chunkFilenameTemplate, extension) {
 // The short answer is: we don't! Webpack 4 has built-in optimization options, and we're leaning on
 // its built-in defaults rather than overriding them.
 
-module.exports = env => {
-  const isProduction = env.NODE_ENV === 'production';
+module.exports = ({mode}) => {
+  const isProduction = mode === 'production';
   const isDevelopment = !isProduction;
 
 // Derived settings from variables above:
@@ -87,6 +87,7 @@ module.exports = env => {
       template: path.join(__dirname, 'src/index.html'),
     }),
   ];
+
   return {
     context: __dirname,
 
@@ -102,8 +103,8 @@ module.exports = env => {
       },
 
       minimizer: [
-        new UglifyJsPlugin({
-          uglifyOptions: {
+        new TerserJsPlugin({
+          terserOptions: {
             ecma: 5, // IE11, man
             output: { comments: false },
           },

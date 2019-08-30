@@ -1,16 +1,11 @@
+const util = require('util');
 const webpack = require('webpack');
+const asyncWebpack = util.promisify(webpack);
 
-module.exports = function webpackBuild() {
-  return new Promise((resolve, reject) => {
-    const webpackConfig = require('../webpack.config')({'NODE_ENV': 'production'});
-    webpack(webpackConfig, (err, stats) => {
-      if (err) {
-        return reject(err)
-      }
-      if (stats.hasErrors()) {
-        return reject(new Error(stats.compilation.errors.join('\n')))
-      }
-      resolve();
-    });
-  });
+module.exports = async function webpackBuild() {
+  const webpackConfig = require('../webpack.config')({mode: 'production'});
+  const stats = await asyncWebpack(webpackConfig);
+  if (stats.hasErrors()) {
+    throw new Error(stats.compilation.errors.join('\n'));
+  }
 };
