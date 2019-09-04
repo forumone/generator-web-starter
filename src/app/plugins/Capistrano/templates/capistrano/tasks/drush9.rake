@@ -1,4 +1,6 @@
-# A set of tasks to trigger Drush on the remote system during deployment
+# A set of tasks to trigger operations with Drush 9 on the remote system during deployment
+#
+# Since Drush 9 will only work with Drupal 8.4+ no back support for Drupal 7 is required.
 #
 # Tasks:
 # - :initialize: Creates a ~/.drush directory and copies aliases from the release
@@ -7,44 +9,35 @@
 # - :sqldump: Dumps the database to the current revision's file system
 # - :cacheclear: Clears or rebuilds the Drupal cache
 # - :cr: (Drupal 8) Rebuilds the entire Drupal cache
-# - :cc: (Drupal 7) Clears the entire Drupal cache
 # - :update: Runs all pending updates, including DB updates, Features and Configuration -- if set to use those
 # - :updatedb: Runs update hooks
-# - :features:revert: Reverts Features, which may be all Features or just Features in particular directories
 # - :configuration:import: (Drupal 8) Import Configuration into the database from the config management directory
-# - :configuration:sync: (Drupal 7) Synchronizes Configuration and loads it from the Data Store to the Active Store
 # - :sapi:reindex: Clear Search API indexes and reindex each
 #
 # Variables:
-# - :drupal_features: Whether the Features module is enabled -- defaults to TRUE
-# - :drupal_features_path: Path(s) to scan for Features modules, if empty reverts all Features -- defaults to empty
-# - :drupal_cmi: (Drupal 7) Whether the Configuration module is enabled -- defaults to FALSE
 # - :drupal_db_updates: Whether to run update hooks on deployment -- defaults to TRUE
 
 namespace :load do
   task :defaults do
-    set :drupal_features, true
-    set :drupal_features_path, %w[]
-    set :drupal_cmi, false
     set :drupal_db_updates, true
     set :settings_file_perms, '644'
     set :site_directory_perms, '750'
   end
 end
 
-namespace :drush do
+namespace :drush9 do
   desc "Initializes drush directory and aliases"
   task :initialize do
-    invoke 'drush:drushdir'
-    invoke 'drush:aliases'
+    invoke 'drush9:drushdir'
+    invoke 'drush9:aliases'
   end
 
-  desc "Creates ~/.drush directory if it's missing"
+  desc "Creates ~/.drush/sites directory if it's missing"
   task :drushdir do
     on roles(:all) do
       home = capture(:echo, '$HOME')
-      unless test "[ -d #{home}/.drush ]"
-        execute :mkdir, "#{home}/.drush"
+      unless test "[ -d #{home}/.drush/sites ]"
+        execute :mkdir, "-p #{home}/.drush/sites"
       end
     end
   end
@@ -54,7 +47,7 @@ namespace :drush do
     on roles(:all) do
       within "#{release_path}" do
         home = capture(:echo, '$HOME')
-        execute :cp, "*.aliases.drushrc.php", "#{home}/.drush", "|| :"
+        execute :cp, "*.site.yml", "#{home}/.drush/sites", "|| :"
       end
     end
   end
@@ -82,7 +75,7 @@ namespace :drush do
       end
     end
 
-    invoke 'drush:update'
+    invoke 'drush9:update'
   end
 
   desc "Triggers drush rsync to copy files between environments"
@@ -130,13 +123,20 @@ namespace :drush do
     end
   end
 
+  desc "Drop the current database and roll back to the last database backup."
+    task :revertdb do
+      on roles(:db) do
+        within "#{release_path}" do
+          invoke "drush9:sql:drop"
+          execute :drush, "--yes", "sql:connect < #{last_release_path}/db.sql"
+        end
+      end
+    end
+  end
+
   desc "Clears or rebuilds the Drupal caches"
   task :cacheclear do
-    if fetch(:platform) == "drupal8"
-      invoke 'drush:cr'
-    else
-      invoke 'drush:cc'
-    end
+    invoke 'drush9:cr'
   end
 
   desc "(Drupal 8) Rebuilds the Drupal cache"
@@ -150,39 +150,17 @@ namespace :drush do
     end
   end
 
-  desc "(Drupal 7) Clears the Drupal cache"
-  task :cc do
-    on roles(:db) do
-      within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-        fetch(:site_url).each do |site|
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'cc all'
-        end
-      end
-    end
-  end
-
   desc "Runs pending updates"
   task :update do
     # Run all pending database updates
     if fetch(:drupal_db_updates)
-      invoke 'drush:updatedb'
+      invoke 'drush9:updatedb'
     end
 
-    invoke 'drush:cacheclear'
+    invoke 'drush9:cacheclear'
 
-    # If we're using Features revert Features
-    if fetch(:drupal_features)
-      invoke 'drush:features:revert'
-    end
-
-    # If we're using Configuration Management
-    if fetch(:platform) == "drupal8"
-      invoke 'drush:configuration:import'
-    else
-      if fetch(:drupal_cmi)
-        invoke 'drush:configuration:sync'
-      end
-    end
+    # Import all configuration updates
+    invoke 'drush9:configuration:import'
   end
 
   namespace :configuration do
@@ -194,49 +172,10 @@ namespace :drush do
         end
       end
 
-      invoke 'drush:cr'
+      invoke 'drush9:cacheclear'
     end
 
-    desc "(Drupal 7) Load Configuration from the Data Store and apply it to the Active Store"
-    task :sync do
-      on roles(:db) do
-        within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)}", 'config-sync'
-        end
-      end
-
-      invoke 'drush:cc'
-    end
-  end
-
-  namespace :features do
-    desc "Revert Features"
-    task :revert do
-      on roles(:db) do
-        within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          # For each site
-          fetch(:site_url).each do |site|
-            # If we've explictly set a Features path array
-            if 0 != fetch(:drupal_features_path).length
-              # Iterate through each element
-              fetch(:drupal_features_path).each do |path|
-                features_path = "#{current_path}/#{fetch(:app_webroot, 'public')}/#{path}"
-                # Get a list of all Feature modules in that path
-                features = capture(:ls, '-x', features_path).split
-                modules = capture(:drush, "pm-list", "--pipe --type=module --status=enabled --no-core").split
-                features_enabled = modules & features
-                features_enabled.each do |feature_enabled|
-                  execute :drush, "fr", feature_enabled, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}"
-                end
-              end
-            else
-              execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'fra'
-            end
-          end
-        end
-      end
-
-      invoke 'drush:cacheclear'
+    invoke 'drush9:cacheclear'
     end
   end
 
@@ -263,7 +202,7 @@ namespace :drush do
         end
       end
 
-      invoke 'drush:cacheclear'
+      invoke 'drush9:cacheclear'
     end
   end
 end
