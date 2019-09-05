@@ -10,13 +10,15 @@ module.exports = {
     },
     "plugins": [
         "@typescript-eslint",
-        "@typescript-eslint/tslint"
+        "prettier"
+    ],
+    "extends": [
+        "plugin:prettier/recommended"
     ],
     "rules": {
         "@typescript-eslint/indent": "off",
         "@typescript-eslint/no-explicit-any": "error",
         "@typescript-eslint/no-inferrable-types": "error",
-        "@typescript-eslint/no-param-reassign": "error",
         "@typescript-eslint/no-require-imports": "error",
         "@typescript-eslint/no-this-alias": "error",
         "@typescript-eslint/no-var-requires": "error",
@@ -35,11 +37,12 @@ module.exports = {
         "newline-per-chained-call": "off",
         "no-console": "error",
         "no-empty": "error",
-        "no-empty-functions": "error",
+        "no-empty-function": "error",
         "no-extra-semi": "off",
         "no-fallthrough": "error",
         "no-irregular-whitespace": "off",
         "no-multiple-empty-lines": "off",
+        "no-param-reassign": "error",
         "no-sparse-arrays": "error",
         "no-template-curly-in-string": "error",
         "no-unsafe-finally": "error",
@@ -52,45 +55,7 @@ module.exports = {
             "error",
             "as-needed"
         ],
-        "some-rule": "error",
         "space-before-function-paren": "off",
-        "@typescript-eslint/tslint/config": [
-            "error",
-            {
-                "rulesDirectory": [
-                    "./node_modules/tslint-plugin-prettier/rules"
-                ],
-                "rules": {
-                    "no-implicit-dependencies": [
-                        true,
-                        "optional"
-                    ],
-                    "no-unused-expression": true,
-                    "number-literal-format": true,
-                    "ordered-imports": [
-                        true,
-                        {
-                            "grouped-imports": true
-                        }
-                    ],
-                    "prettier": true,
-                    "quotemark": [
-                        true,
-                        "single",
-                        "jsx-double",
-                        "avoid-escape",
-                        "avoid-template"
-                    ],
-                    "triple-equals": true,
-                    "variable-name": [
-                        true,
-                        "check-format",
-                        "allow-pascal-case",
-                        "ban-keywords",
-                        "allow-leading-underscore"
-                    ]
-                }
-            }
-        ]
+        "prettier/prettier": "error"
     }
 };

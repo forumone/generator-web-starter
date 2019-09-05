@@ -8,7 +8,7 @@ const util = require('util');
 const gulp = require('gulp');
 const babel = require('gulp-babel');
 const sourcemaps = require('gulp-sourcemaps');
-const tslint = require('gulp-tslint').default;
+const eslint = require('gulp-eslint');
 const typescript = require('gulp-typescript');
 
 const rimraf = util.promisify(require('rimraf'));
@@ -27,9 +27,10 @@ function clean() {
 function lint() {
   return gulp
     .src(typescriptSources, { since: gulp.lastRun(lint) })
-    .pipe(tslint({ formatter: 'codeFrame' }))
-    .pipe(tslint.report());
+    .pipe(eslint({ formatter: 'codeFrame' }))
+    .pipe(eslint.format());
 }
+exports.lint = lint;
 
 function copy() {
   return gulp
