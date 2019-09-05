@@ -21,7 +21,7 @@ async function getLatestDrupalTag(majorVersion: number): Promise<string> {
     return 'fpm-alpine';
   }
 
-  return maxVersion + '-fpm-alpine';
+  return `${maxVersion}-fpm-alpine`;
 }
 
 export default getLatestDrupalTag;

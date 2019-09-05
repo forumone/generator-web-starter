@@ -76,17 +76,17 @@ async function installDrupal({
       replaceIn(
         path.join(drupalRoot, 'composer.json'),
         /web\//g,
-        documentRoot + '/',
+        `${documentRoot}/`,
       ),
       replaceIn(
         path.join(drupalRoot, '.gitignore'),
         /web\//g,
-        documentRoot + '/',
+        `${documentRoot}/`,
       ),
       replaceIn(
         path.join(drupalRoot, 'scripts/composer/ScriptHandler.php'),
         /\/web/g,
-        '/' + documentRoot,
+        `/${documentRoot}`,
       ),
       replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
     ]);

@@ -212,7 +212,7 @@ class WordPress extends Generator {
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
 
     cliEditor.addService('wp', {
-      image: 'wordpress:' + this.latestWpCliTag,
+      image: `wordpress: ${this.latestWpCliTag}`,
       volumes: [createBindMount('./services/wordpress', '/var/www/html')],
     });
 

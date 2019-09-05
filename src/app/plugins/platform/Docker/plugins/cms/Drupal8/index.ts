@@ -161,8 +161,10 @@ class Drupal8 extends Generator {
     //   Needed so that we can persist saved files across containers.
     const filesystemVolumeName = editor.ensureVolume('fs-data');
 
-    const hostDrupalPath =
-      './' + posix.join('services/drupal', this.documentRoot);
+    const hostDrupalPath = `./${posix.join(
+      'services/drupal',
+      this.documentRoot,
+    )}`;
 
     editor.addNginxService({
       depends_on: ['drupal'],

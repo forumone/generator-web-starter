@@ -13,7 +13,7 @@ function createGessoDockerfile({
   php,
 }: CreateGessoDockerfileOptions): Dockerfile {
   // The interpolation in these strings is done in Docker, not
-  // tslint:disable: no-invalid-template-strings
+  /* eslint-disable no-template-curly-in-string */
 
   // Assert this is non-null because node.js follows semver for its releases
   const nodeVersion = semver.parse(node.version)!;

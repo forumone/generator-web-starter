@@ -48,7 +48,7 @@ module.exports = {
         "no-unsafe-finally": "error",
         "no-var": "error",
         "object-shorthand": "error",
-        "one-var": "error",
+        "one-var": ["error", "never"],
         "prefer-const": "error",
         "prefer-template": "error",
         "quote-props": [
