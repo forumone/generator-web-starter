@@ -99,7 +99,7 @@ class JavaScript extends Generator {
         'eslint-plugin-prettier',
         'prettier',
         'fork-ts-checker-webpack-plugin',
-        'eslint-loader'
+        'eslint-loader',
       ],
       { 'save-dev': true },
     );
