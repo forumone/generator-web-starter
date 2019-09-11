@@ -49,7 +49,7 @@ class JavaScript extends Generator {
     this._copyFile('_editorconfig', '.editorconfig');
     this._copyFile('_prettierrc', '.prettierrc');
     this._copyFile('babel.config.js');
-    this._copyFile('tslint.json');
+    this._copyFile('_eslint.js', '.eslint.js');
     this._copyFile('tsconfig.json');
     this._copyFile('webpack.config.js');
     this._copyFile('src');
@@ -90,11 +90,16 @@ class JavaScript extends Generator {
     this.npmInstall(
       [
         'ts-loader',
-        'tslint',
-        'tslint-plugin-prettier',
-        'tslint-config-prettier',
+        '@typescript-eslint/eslint-plugin',
+        '@typescript-eslint/eslint-plugin-tslint',
+        '@typescript-eslint/parser',
+        'eslint',
+        'eslint-config-prettier',
+        'eslint-plugin-implicit-dependencies',
+        'eslint-plugin-prettier',
         'prettier',
         'fork-ts-checker-webpack-plugin',
+        'eslint-loader'
       ],
       { 'save-dev': true },
     );

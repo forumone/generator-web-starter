@@ -199,6 +199,9 @@ module.exports = ({mode}) => {
                 transpileOnly: true,
               },
             },
+            {
+              loader: 'eslint-loader'
+            }
           ],
         },
 
