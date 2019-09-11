@@ -30,7 +30,6 @@ function lint() {
     .pipe(eslint({ formatter: 'codeFrame' }))
     .pipe(eslint.format());
 }
-exports.lint = lint;
 
 function copy() {
   return gulp
