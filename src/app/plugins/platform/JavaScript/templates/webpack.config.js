@@ -198,7 +198,7 @@ module.exports = ({mode}) => {
               options: {
                 transpileOnly: true,
               },
-            }
+            },
           ],
         },
 
