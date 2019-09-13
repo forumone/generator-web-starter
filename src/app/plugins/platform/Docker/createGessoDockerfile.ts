@@ -16,6 +16,7 @@ function createGessoDockerfile({
   /* eslint-disable no-template-curly-in-string */
 
   // Assert this is non-null because node.js follows semver for its releases
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const nodeVersion = semver.parse(node.version)!;
 
   return new Dockerfile()
