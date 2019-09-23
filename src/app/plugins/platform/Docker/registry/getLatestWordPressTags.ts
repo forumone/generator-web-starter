@@ -18,7 +18,7 @@ function findLatestCliTag(tags: string[]): string {
     return 'cli';
   }
 
-  return 'cli-' + maxVersion;
+  return `cli-${maxVersion}`;
 }
 
 function isGreaterWpTag(

@@ -6,7 +6,7 @@ import { gt, valid } from 'semver';
 // doesn't crash due to a version syntax problem.
 function fullyQualifyVersion(version: string): string {
   if (!valid(version)) {
-    return version + '.0';
+    return `${version}.0`;
   }
 
   return version;

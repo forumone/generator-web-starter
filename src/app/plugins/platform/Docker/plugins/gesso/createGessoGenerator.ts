@@ -171,15 +171,13 @@ function createGessoGenerator({
       // bind mounts and volumes, so we have to add it manually here. (It's the same
       // reason we use string concatenation later on in this file when creating a handful
       // of bind mounts relative to this directory.)
-      const hostThemePath =
-        './' +
-        posix.join(
-          'services',
-          serviceName,
-          this.documentRoot,
-          themeDirectory,
-          this.themeName,
-        );
+      const hostThemePath = `./${posix.join(
+        'services',
+        serviceName,
+        this.documentRoot,
+        themeDirectory,
+        this.themeName,
+      )}`;
 
       // Add the Gesso container here
       cliEditor.addService('gesso', {
@@ -189,9 +187,9 @@ function createGessoGenerator({
         },
         init: true,
         volumes: [
-          createBindMount(hostThemePath + '/images', '/app/images'),
-          createBindMount(hostThemePath + '/js', '/app/js'),
-          createBindMount(hostThemePath + '/source', '/app/source'),
+          createBindMount(`${hostThemePath}/images`, '/app/images'),
+          createBindMount(`${hostThemePath}/js`, '/app/js'),
+          createBindMount(`${hostThemePath}/source`, '/app/source'),
           {
             type: 'volume',
             source: publicVolumeName,

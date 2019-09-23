@@ -79,7 +79,7 @@ module.exports = ({mode}) => {
     new ForkTsCheckerPlugin({
       async: false,
       formatter: 'codeframe',
-      tslint: true,
+      eslint: true,
     }),
 
     // Autogenerate a index.html for SPAs and webpack-dev-server.

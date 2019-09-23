@@ -99,7 +99,7 @@ class Solr extends Generator {
     const configDirectory = path.join(
       repositoryRoot,
       'solr-conf',
-      this.solrTag + '.x',
+      `${this.solrTag}.x`,
     );
 
     // Figure out if we have a solr configuration that matches the major version we're using.

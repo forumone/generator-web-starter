@@ -88,7 +88,7 @@ class CapStage extends Generator {
 
       this.fs.copyTpl(
         this.templatePath('stage.rb.ejs'),
-        this.destinationPath('capistrano/deploy', name + '.rb'),
+        this.destinationPath('capistrano/deploy', `${name}.rb`),
         data,
       );
     }

@@ -69,7 +69,7 @@ class ComposeEditor {
     // being misinterpreted and thus causing a schema validation failure.
     const contents = stringify(file, { schema: 'yaml-1.1' });
     if (this.intro) {
-      const intro = prependCommentMarker(this.intro.trim()) + '\n';
+      const intro = `${prependCommentMarker(this.intro.trim())}\n`;
       return intro + contents;
     }
 
@@ -84,8 +84,8 @@ class ComposeEditor {
       image: 'nginx:alpine',
       ports: ['8080:80', '8443:443'],
       ...service,
-      // Hush, TSLint, these are Docker Compose environment variables.
-      // tslint:disable:no-invalid-template-strings
+      // Hush, ESLint, these are Docker Compose environment variables.
+      /* eslint-disable no-template-curly-in-string */
       volumes: [
         // These environment variables will be filled in by forumone-cli with the 'up'
         // command - we use mkcert to generate locally-trusted certificates instead of
@@ -98,7 +98,7 @@ class ComposeEditor {
         }),
         ...volumes,
       ],
-      // tslint:enable:no-invalid-template-strings
+      /* eslint-enable no-template-curly-in-string */
     });
   }
 
@@ -137,7 +137,7 @@ class ComposeEditor {
   addNamedComposer(name: string, directory: string) {
     this.addService(name, {
       image: 'composer:1.7',
-      volumes: [createBindMount('./' + directory, '/app')],
+      volumes: [createBindMount(`./${directory}`, '/app')],
     });
   }
 }

@@ -19,7 +19,7 @@ async function getLatestNodeTag(): Promise<string> {
     .map(tag => tag[0])
     .reduce((current, tag) => Math.max(current, parseFloat(tag)), 0);
 
-  return maxVersion + '-alpine';
+  return `${maxVersion}-alpine`;
 }
 
 export default getLatestNodeTag;
