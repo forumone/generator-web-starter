@@ -311,6 +311,12 @@ class Drupal8 extends Generator {
       runtimeDeps: ['mysql-client', 'openssh', 'rsync'],
     });
 
+    // The memory limit defaults to 128M, even in CLI containers - expand it for easier
+    // developer use.
+    drushDockerfile.run(
+      "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
+    );
+
     this.fs.write(
       this.destinationPath('services/drupal/Dockerfile'),
       drupalDockerfile.render(),
