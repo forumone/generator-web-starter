@@ -289,9 +289,7 @@ class WordPress extends Generator {
 
     if (this.usesWpStarter) {
       const wpRoot = this.destinationPath('services/wordpress');
-      await spawnComposer(['install', '--ignore-platform-reqs'], {
-        cwd: wpRoot,
-      });
+      await spawnComposer(['install'], { cwd: wpRoot });
     } else {
       const wpRoot = this.destinationPath(
         'services/wordpress',
