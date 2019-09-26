@@ -28,6 +28,7 @@ function lint() {
   return gulp
     .src(typescriptSources, { since: gulp.lastRun(lint) })
     .pipe(eslint({ formatter: 'codeFrame' }))
+    .pipe(eslint.failAfterError())
     .pipe(eslint.format());
 }
 
