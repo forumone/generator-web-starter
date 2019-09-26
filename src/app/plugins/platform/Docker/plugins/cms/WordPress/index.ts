@@ -5,10 +5,8 @@ import Generator from 'yeoman-generator';
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
-import {
-  memcachedDependencies,
-  memcachedPackages,
-} from '../../../dockerfile/memcached';
+import memcached from '../../../dockerfile/memcached';
+import xdebug from '../../../dockerfile/xdebug';
 import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
@@ -265,14 +263,11 @@ class WordPress extends Generator {
     }
 
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    const dependencies = needsMemcached ? memcachedDependencies : [];
-    const packages = needsMemcached ? memcachedPackages : [];
+    const dependencies = needsMemcached ? [memcached] : [];
 
     const wpDockerfile = createPHPDockerfile({
       from: { image: 'wordpress', tag: this.latestWpTag },
-      buildDeps: dependencies,
-      peclPackages: packages,
-      xdebug: true,
+      dependencies: [...dependencies, xdebug],
     });
 
     this.fs.write(
@@ -282,12 +277,13 @@ class WordPress extends Generator {
 
     const cliDockerfile = createPHPDockerfile({
       from: { image: 'wordpress', tag: this.latestWpCliTag },
-      buildDeps: dependencies,
-      peclPackages: packages,
+      dependencies,
       postBuildCommands: [
         "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
       ],
       runtimeDeps: ['openssh'],
+      // Restore the 'www-data' user in the wordpress:cli image
+      user: 'www-data',
     });
 
     this.fs.write(

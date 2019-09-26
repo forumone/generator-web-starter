@@ -1,7 +1,8 @@
-export const memcachedDependencies: ReadonlyArray<string> = [
-  'libmemcached-dev',
-  'zlib-dev',
-  'libevent-dev',
-];
+import Dependency from './Dependency';
 
-export const memcachedPackages: ReadonlyArray<string> = ['memcached'];
+const memcached: Dependency = {
+  packages: ['libmemcached-dev', 'zlib-dev', 'libevent-dev'],
+  pecl: ['memcached'],
+};
+
+export default memcached;

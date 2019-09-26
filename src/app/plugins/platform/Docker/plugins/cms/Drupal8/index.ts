@@ -5,10 +5,11 @@ import Generator from 'yeoman-generator';
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
-import {
-  memcachedDependencies,
-  memcachedPackages,
-} from '../../../dockerfile/memcached';
+import gd from '../../../dockerfile/gd';
+import memcached from '../../../dockerfile/memcached';
+import opcache from '../../../dockerfile/opcache';
+import pdo from '../../../dockerfile/pdo';
+import zip from '../../../dockerfile/zip';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
 import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
 import spawnComposer from '../../../spawnComposer';
@@ -277,39 +278,19 @@ class Drupal8 extends Generator {
 
   writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    const sharedDependencies = needsMemcached ? memcachedDependencies : [];
-
-    const sharedPeclPackages = needsMemcached ? memcachedPackages : [];
+    const sharedDependencies = needsMemcached ? [memcached] : [];
+    sharedDependencies.push(opcache);
 
     const drupalDockerfile = createPHPDockerfile({
       from: { image: 'drupal', tag: this.latestDrupalTag },
-      buildDeps: sharedDependencies,
-      peclPackages: sharedPeclPackages,
-      xdebug: true,
+      dependencies: sharedDependencies,
     });
 
-    // "borrowed" from library/drupal's Dockerfile
-    const drupalDependencies = [
-      'coreutils',
-      'freetype-dev',
-      'libjpeg-turbo-dev',
-      'postgresql-dev',
-      'libzip-dev',
-    ];
+    const drupalDependencies = [gd, pdo, zip];
 
     const drushDockerfile = createPHPDockerfile({
       from: { image: 'php', tag: this.latestPhpTag },
-      buildDeps: [...drupalDependencies, ...sharedDependencies],
-      builtins: ['gd', 'opcache', 'pdo_mysql', 'pdo_pgsql', 'zip'],
-      configureArgs: [
-        [
-          'gd',
-          '--with-freetype-dir=/usr/include/',
-          '--with-jpeg-dir=/usr/include/',
-          '--with-png-dir=/usr/include/',
-        ],
-      ],
-      peclPackages: sharedPeclPackages,
+      dependencies: [...drupalDependencies, ...sharedDependencies],
       // The memory limit defaults to 128M, even in CLI containers - expand it for easier
       // developer use.
       postBuildCommands: [

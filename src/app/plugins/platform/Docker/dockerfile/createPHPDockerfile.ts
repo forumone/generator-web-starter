@@ -1,15 +1,36 @@
 import { Dockerfile, From } from 'dockerfilejs';
 
+import Dependency from './Dependency';
+
+/**
+ * Options needed to create a `Dockerfile` object for a PHP-based image.
+ */
 export interface CreatePHPDockerfileOptions {
+  /**
+   * The base image to create this from.
+   */
   from: From;
-  buildDeps?: ReadonlyArray<string>;
-  configureArgs?: ReadonlyArray<ReadonlyArray<string>>;
-  builtins?: ReadonlyArray<string>;
-  peclPackages?: ReadonlyArray<string>;
+
+  /**
+   * Any dependencies (such as the gd builtin or memcached from PECL)
+   */
+  dependencies?: ReadonlyArray<Dependency>;
+
+  /**
+   * Any Alpine packages needed at runtime.
+   */
   runtimeDeps?: ReadonlyArray<string>;
+
+  /**
+   * Commands to run after all builds have finished - use to inject configuration
+   * or otherwise customize the container's environment.
+   */
   postBuildCommands?: ReadonlyArray<string | ReadonlyArray<string>>;
+
+  /**
+   * The `USER` directive to inject at the end of the build.
+   */
   user?: string;
-  xdebug?: boolean;
 }
 
 const runDepsCommand = `runDeps="$(\\
@@ -19,18 +40,59 @@ const runDepsCommand = `runDeps="$(\\
       | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \\
   )"`;
 
+/**
+ * Helper type used in `createPHPDockerfile()`.
+ */
+interface PeclPackage {
+  /**
+   * The name of the PECL package.
+   */
+  name: string;
+  /**
+   * Whether or not to enable it by default in the image.
+   */
+  enabled: boolean;
+}
+
 function createPHPDockerfile({
   from,
-  buildDeps = [],
-  builtins = [],
-  configureArgs = [],
-  peclPackages = [],
+  dependencies = [],
   postBuildCommands = [],
   runtimeDeps = [],
   user,
-  xdebug,
 }: CreatePHPDockerfileOptions): Dockerfile {
   const command: Array<string | ReadonlyArray<string>> = [['set', '-ex']];
+
+  const buildDeps: string[] = [];
+  const configureArgs: ReadonlyArray<string>[] = [];
+  const builtins: string[] = [];
+  const peclPackages: PeclPackage[] = [];
+
+  for (const dependency of dependencies) {
+    if (dependency.packages) {
+      buildDeps.push(...dependency.packages);
+    }
+
+    if (dependency.configureArgs) {
+      configureArgs.push(dependency.configureArgs);
+    }
+
+    if (dependency.builtins) {
+      builtins.push(...dependency.builtins);
+    }
+
+    if (dependency.pecl) {
+      const { defaultEnabled = true } = dependency;
+      const additionalPackages = dependency.pecl.map(
+        (name): PeclPackage => ({
+          enabled: defaultEnabled,
+          name,
+        }),
+      );
+
+      peclPackages.push(...additionalPackages);
+    }
+  }
 
   // First, install all build dependencies
   command.push([
@@ -53,17 +115,12 @@ function createPHPDockerfile({
     command.push(['docker-php-ext-install', '-j', '$(nproc)', ...builtins]);
   }
 
-  for (const peclPackage of peclPackages) {
-    command.push(
-      ['pecl', 'install', peclPackage],
-      ['docker-php-ext-enable', peclPackage],
-    );
-  }
+  for (const { enabled, name } of peclPackages) {
+    command.push(['pecl', 'install', name]);
 
-  // Due to the fairly significant performance hits incurred by enabling Xdebug, services
-  // with xdebug built-in need to conditionally enable the extension on container startup.
-  if (xdebug) {
-    command.push(['pecl', 'install', 'xdebug']);
+    if (enabled) {
+      command.push(['docker-php-ext-enable', name]);
+    }
   }
 
   // Scan runtime dependencies and force apk to save them in the resulting image
