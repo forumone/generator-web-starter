@@ -4,7 +4,11 @@ import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../createPHPDockerfile';
+import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
+import {
+  memcachedDependencies,
+  memcachedPackages,
+} from '../../../dockerfile/memcached';
 import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
@@ -212,8 +216,15 @@ class WordPress extends Generator {
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
 
     cliEditor.addService('wp', {
-      image: `wordpress: ${this.latestWpCliTag}`,
-      volumes: [createBindMount('./services/wordpress', '/var/www/html')],
+      build: './services/wp-cli',
+      volumes: [
+        createBindMount('./services/wordpress', '/var/www/html'),
+        {
+          type: 'volume',
+          source: filesystemVolume,
+          target: uploadPath,
+        },
+      ],
     });
 
     if (this.usesWpStarter) {
@@ -253,14 +264,35 @@ class WordPress extends Generator {
       }
     }
 
+    const needsMemcached = this.options.plugins.cache === 'Memcache';
+    const dependencies = needsMemcached ? memcachedDependencies : [];
+    const packages = needsMemcached ? memcachedPackages : [];
+
     const wpDockerfile = createPHPDockerfile({
       from: { image: 'wordpress', tag: this.latestWpTag },
+      buildDeps: dependencies,
+      peclPackages: packages,
       xdebug: true,
     });
 
     this.fs.write(
       this.destinationPath('services/wordpress/Dockerfile'),
       wpDockerfile.render(),
+    );
+
+    const cliDockerfile = createPHPDockerfile({
+      from: { image: 'wordpress', tag: this.latestWpCliTag },
+      buildDeps: dependencies,
+      peclPackages: packages,
+      postBuildCommands: [
+        "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
+      ],
+      runtimeDeps: ['openssh'],
+    });
+
+    this.fs.write(
+      this.destinationPath('services/wp-cli/Dockerfile'),
+      cliDockerfile.render(),
     );
 
     // As with the Drupal8 generator, we don't use anything from the filesystem when

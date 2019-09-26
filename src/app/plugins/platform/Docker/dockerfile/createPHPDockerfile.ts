@@ -8,6 +8,7 @@ export interface CreatePHPDockerfileOptions {
   peclPackages?: ReadonlyArray<string>;
   runtimeDeps?: ReadonlyArray<string>;
   postBuildCommands?: ReadonlyArray<string | ReadonlyArray<string>>;
+  user?: string;
   xdebug?: boolean;
 }
 
@@ -26,6 +27,7 @@ function createPHPDockerfile({
   peclPackages = [],
   postBuildCommands = [],
   runtimeDeps = [],
+  user,
   xdebug,
 }: CreatePHPDockerfileOptions): Dockerfile {
   const command: Array<string | ReadonlyArray<string>> = [['set', '-ex']];
@@ -86,7 +88,19 @@ function createPHPDockerfile({
   // Allow post-build setup
   command.push(...postBuildCommands);
 
-  return new Dockerfile().from(from).run({ command });
+  const dockerfile = new Dockerfile().from(from);
+
+  if (user) {
+    dockerfile.user('root');
+  }
+
+  dockerfile.run({ command });
+
+  if (user) {
+    dockerfile.user(user);
+  }
+
+  return dockerfile;
 }
 
 export default createPHPDockerfile;

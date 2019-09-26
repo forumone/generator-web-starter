@@ -4,7 +4,11 @@ import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../createPHPDockerfile';
+import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
+import {
+  memcachedDependencies,
+  memcachedPackages,
+} from '../../../dockerfile/memcached';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
 import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
 import spawnComposer from '../../../spawnComposer';
@@ -273,11 +277,9 @@ class Drupal8 extends Generator {
 
   writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    const sharedDependencies = needsMemcached
-      ? ['libmemcached-dev', 'zlib-dev', 'libevent-dev']
-      : [];
+    const sharedDependencies = needsMemcached ? memcachedDependencies : [];
 
-    const sharedPeclPackages = needsMemcached ? ['memcached'] : [];
+    const sharedPeclPackages = needsMemcached ? memcachedPackages : [];
 
     const drupalDockerfile = createPHPDockerfile({
       from: { image: 'drupal', tag: this.latestDrupalTag },
@@ -308,14 +310,13 @@ class Drupal8 extends Generator {
         ],
       ],
       peclPackages: sharedPeclPackages,
+      // The memory limit defaults to 128M, even in CLI containers - expand it for easier
+      // developer use.
+      postBuildCommands: [
+        "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
+      ],
       runtimeDeps: ['mysql-client', 'openssh', 'rsync'],
     });
-
-    // The memory limit defaults to 128M, even in CLI containers - expand it for easier
-    // developer use.
-    drushDockerfile.run(
-      "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
-    );
 
     this.fs.write(
       this.destinationPath('services/drupal/Dockerfile'),
