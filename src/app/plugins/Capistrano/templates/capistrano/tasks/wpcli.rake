@@ -22,6 +22,15 @@ namespace :wpcli do
   end
   
   namespace :wpcfm do
+    desc "Activate WP-CFM plugin"
+    task :activate do
+      on roles(:db) do
+        within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
+          execute :wp, "plugin", "activate", "wp-cfm"
+        end
+      end
+    end
+
     desc "Pull all configuration"
     task :pull do
       on roles(:db) do
@@ -34,7 +43,10 @@ namespace :wpcli do
   
   task :update do
     if fetch(:wordpress_wpcfm)
-      invoke "wpcli:wpcfm:pull"
+      sh("#{:wp}", "plugin", "is-installed", "wp-cfm") do
+        invoke "wpcli:wpcfm:activate"
+        invoke "wpcli:wpcfm:pull"
+      end
     end
   end
 end
