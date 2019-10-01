@@ -10,9 +10,9 @@ interface Dependency {
   readonly builtins?: ReadonlyArray<string>;
 
   /**
-   * The args needed to configure this dependency.
+   * The command used to configure this dependency.
    */
-  readonly configureArgs?: ReadonlyArray<string>;
+  readonly configureCommand?: ReadonlyArray<string>;
 
   /**
    * If this dependency represents a PECL package, should it be enabled by default

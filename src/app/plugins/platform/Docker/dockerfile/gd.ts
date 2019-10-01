@@ -2,7 +2,7 @@ import Dependency from './Dependency';
 
 const gd: Dependency = {
   builtins: ['gd'],
-  configureArgs: [
+  configureCommand: [
     'gd',
     '--with-freetype-dir=/usr/include/',
     '--with-jpeg-dir=/usr/include/',
