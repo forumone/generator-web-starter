@@ -81,8 +81,8 @@ function createComposerFile(name: string, documentRoot: string): ComposerFile {
         // Inform composer that the production environment will have the mysqli extension.
         // The number here is completely arbitrary and has no meaning outside of being a
         // valid semver version. Composer does not check this number, only that it exists.
-        'ext-mysqli': '1.0.0'
-      }
+        'ext-mysqli': '1.0.0',
+      },
     },
     scripts: {
       'post-install-cmd': runWPStarterSetup,
