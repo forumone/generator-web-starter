@@ -2,6 +2,7 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
+import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 import memcached from '../../../dockerfile/memcached';
@@ -317,10 +318,8 @@ class WordPress extends Generator {
     if (this.usesWpStarter) {
       wpDockerfile
         .stage()
-        .comment('Create production image')
         .from({ image: 'base' })
         .comment('Copy built dependencies into the production image')
-        .copy({ from: 'deps', src: ['/app/vendor'], dest: 'vendor' })
         .copy({ from: 'deps', src: [`/app/${root}`], dest: root });
     } else {
       wpDockerfile
@@ -355,13 +354,31 @@ class WordPress extends Generator {
       cliDockerfile.render(),
     );
 
+    const editor = new IgnoreEditor();
+
     const gitignorePath = this.destinationPath('services/wordpress/.gitignore');
     if (this.fs.exists(gitignorePath)) {
-      this.fs.write(
-        this.destinationPath('services/wordpress/.dockerignore'),
-        this.fs.read(gitignorePath),
+      editor.addContentsOfFile(this.fs.read(gitignorePath));
+    }
+
+    const themeIgnorePath = this.destinationPath(
+      'services/wordpress',
+      this.documentRoot,
+      'wp-content/themes/gesso/.gitignore',
+    );
+    if (this.fs.exists(themeIgnorePath)) {
+      editor.addSeparator();
+      editor.addComment('Contents of Gesso .gitignore');
+      editor.addContentsOfFile(
+        this.fs.read(themeIgnorePath),
+        posix.join(this.documentRoot, 'wp-content/themes/gesso'),
       );
     }
+
+    this.fs.write(
+      this.destinationPath('services/wordpress/.dockerignore'),
+      editor.serialize(),
+    );
 
     // For projects NOT using the web-starter, add a wp-cli.yml file.
     if (!this.usesWpStarter) {
