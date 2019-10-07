@@ -52,7 +52,7 @@ export interface ComposerFile {
   readonly extra: Extra;
 }
 
-function createComposerFile(name: string, documentRoot: string): ComposerFile {
+function createComposerFile(documentRoot: string): ComposerFile {
   const vendorDirectory = posix.join(documentRoot, 'wp-content/vendor');
 
   const installDirectory = posix.join(documentRoot, 'wp');
@@ -69,7 +69,9 @@ function createComposerFile(name: string, documentRoot: string): ComposerFile {
   }
 
   return {
-    name,
+    // Use a placeholder to comply with recent Composer versions requiring valid package
+    // names.
+    name: 'private/wordpress',
     type: 'project',
     repositories: [{ type: 'composer', url: 'https://wpackagist.org' }],
     require: {

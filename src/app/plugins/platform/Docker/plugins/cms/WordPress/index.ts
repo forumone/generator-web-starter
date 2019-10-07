@@ -7,19 +7,19 @@ import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 import memcached from '../../../dockerfile/memcached';
 import xdebug from '../../../dockerfile/xdebug';
-import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
-import spawnComposer from '../../../spawnComposer';
-import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
-
-import createComposerFile from './createComposerFile';
-import getHashes from './getHashes';
-import installWordPressSource from './installWordPressSource';
 import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
 import getLatestNodeVersion, {
   Dist,
 } from '../../../registry/getLatestNodeRelease';
+import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
+import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
+
+import SubgeneratorOptions from './SubgeneratorOptions';
 
 class WordPress extends Generator {
+  private cliDockerfile = new DockerfileHelper();
+  private dockerfile = new DockerfileHelper();
+
   // Written out in initializing phase
   private latestWpTag!: string;
   private latestWpCliTag!: string;
@@ -32,8 +32,6 @@ class WordPress extends Generator {
 
   private usesWpStarter: boolean | undefined = true;
   private usesWpCfm: boolean | undefined = true;
-
-  private shouldInstall: boolean | undefined = false;
 
   async initializing() {
     const [{ cli, wordpress }, php, node] = await Promise.all([
@@ -107,7 +105,6 @@ class WordPress extends Generator {
     ]);
 
     this.documentRoot = documentRoot;
-    this.shouldInstall = shouldInstallWordPress;
     this.useGesso = useGesso;
     this.usesWpStarter = wpStarter;
     this.usesWpCfm = wpCfm;
@@ -137,6 +134,18 @@ class WordPress extends Generator {
         composeCliEditor: this.options.composeCliEditor,
       });
     }
+
+    const options: SubgeneratorOptions = {
+      useGesso,
+      documentRoot,
+      shouldInstall: shouldInstallWordPress,
+      dockerfile: this.dockerfile,
+      composeEditor: this.options.composeEditor,
+      composeCliEditor: this.options.composeCliEditor,
+    };
+
+    const subgeneratorPath = this.usesWpStarter ? './WpStarter' : './WpSource';
+    this.composeWith(require.resolve(subgeneratorPath), options);
   }
 
   configuring() {
@@ -242,103 +251,37 @@ class WordPress extends Generator {
       ],
     });
 
-    if (this.usesWpStarter) {
-      cliEditor.addComposer('services/wordpress');
-    }
-  }
-
-  async writing() {
-    this.fs.copy(
-      this.templatePath('wp-entrypoint.sh'),
-      this.destinationPath('services/wordpress/wp-entrypoint.sh'),
-    );
-
-    // For project not using wp-starter, don't bother writing out composer.json
-    // or a .env file.
-    if (this.usesWpStarter) {
-      this.fs.extendJSON(
-        this.destinationPath('services/wordpress/composer.json'),
-        createComposerFile(this.options.name, this.documentRoot),
-      );
-
-      const dotenvPath = this.destinationPath('services/wordpress/.env');
-      if (!this.fs.exists(dotenvPath)) {
-        this.fs.copy(this.templatePath('_env'), dotenvPath);
-      }
-    } else {
-      const wpConfigPath = this.destinationPath(
-        'services/wordpress',
-        this.documentRoot,
-        'wp-config.php',
-      );
-
-      if (!this.fs.exists(wpConfigPath)) {
-        this.fs.copyTpl(this.templatePath('wp-config.php.ejs'), wpConfigPath, {
-          hashes: await getHashes(),
-        });
-      }
-    }
+    const dockerfile = this.dockerfile;
 
     const needsMemcached = this.options.plugins.cache === 'Memcache';
     const dependencies = needsMemcached ? [memcached] : [];
 
-    const wpDockerfile = DockerfileHelper.fromBuildStage({
+    dockerfile.addBuildStage({
       comment: 'Based stage shared between development and production builds',
       from: { image: 'wordpress', tag: this.latestWpTag, stage: 'base' },
       dependencies,
     });
 
-    wpDockerfile.addBuildStage({
+    dockerfile.addBuildStage({
       comment:
         'Development-only build stage (used to keep XDebug out of production image)',
       from: { image: 'base', stage: 'dev' },
       dependencies: [xdebug],
     });
 
-    const root = this.documentRoot;
-    const themeRoot = posix.join(root, 'wp-content/themes/gesso');
-
-    if (this.usesWpStarter) {
-      wpDockerfile.addComposerStage({
-        comment: 'Install dependencies',
-        sources: [root],
-      });
-    }
-
     if (this.useGesso) {
-      wpDockerfile.addGessoStage({
+      dockerfile.addGessoStage({
         comment: 'Build Gesso',
         buildSources: true,
         node: this.latestNodeVersion,
         php: this.latestPhpTag,
-        themeRoot,
+        themeRoot: posix.join(this.documentRoot, 'wp-content/themes/gesso'),
       });
     }
 
-    if (this.usesWpStarter) {
-      wpDockerfile
-        .stage()
-        .from({ image: 'base' })
-        .comment('Copy built dependencies into the production image')
-        .copy({ from: 'deps', src: [`/app/${root}`], dest: root });
-    } else {
-      wpDockerfile
-        .stage()
-        .comment('Create production image')
-        .from({ image: 'base' })
-        .copy({ src: [root], dest: root });
-    }
+    const cliDockerfile = this.cliDockerfile;
 
-    if (this.useGesso) {
-      wpDockerfile.copy({ from: 'gesso', src: ['/app'], dest: themeRoot });
-    }
-
-    this.fs.write(
-      this.destinationPath('services/wordpress/Dockerfile'),
-      wpDockerfile.render(),
-    );
-
-    const cliDockerfile = DockerfileHelper.fromBuildStage({
+    cliDockerfile.addBuildStage({
       from: { image: 'wordpress', tag: this.latestWpCliTag },
       dependencies,
       postBuildCommands: [
@@ -348,10 +291,22 @@ class WordPress extends Generator {
       // Restore the 'www-data' user in the wordpress:cli image
       user: 'www-data',
     });
+  }
+
+  async writing() {
+    this.fs.copy(
+      this.templatePath('wp-entrypoint.sh'),
+      this.destinationPath('services/wordpress/wp-entrypoint.sh'),
+    );
+
+    this.fs.write(
+      this.destinationPath('services/wordpress/Dockerfile'),
+      this.dockerfile.render(),
+    );
 
     this.fs.write(
       this.destinationPath('services/wp-cli/Dockerfile'),
-      cliDockerfile.render(),
+      this.cliDockerfile.render(),
     );
 
     const editor = new IgnoreEditor();
@@ -379,37 +334,6 @@ class WordPress extends Generator {
       this.destinationPath('services/wordpress/.dockerignore'),
       editor.serialize(),
     );
-
-    // For projects NOT using the web-starter, add a wp-cli.yml file.
-    if (!this.usesWpStarter) {
-      this.fs.copyTpl(
-        this.templatePath('wp-cli-nostarter.yml.ejs'),
-        this.destinationPath('services/wordpress/wp-cli.yml'),
-        { documentRoot: this.documentRoot },
-      );
-    }
-  }
-
-  private async _installWordPress() {
-    if (!this.shouldInstall) {
-      return;
-    }
-
-    if (this.usesWpStarter) {
-      const wpRoot = this.destinationPath('services/wordpress');
-      await spawnComposer(['install'], { cwd: wpRoot });
-    } else {
-      const wpRoot = this.destinationPath(
-        'services/wordpress',
-        this.documentRoot,
-      );
-
-      await installWordPressSource(wpRoot);
-    }
-  }
-
-  async install() {
-    await this._installWordPress();
   }
 }
 
