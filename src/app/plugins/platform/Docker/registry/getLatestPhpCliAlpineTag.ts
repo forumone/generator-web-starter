@@ -1,5 +1,5 @@
 import createPhpMatcher from './createPhpMatcher';
 
-const getLatestPhpCliTag = createPhpMatcher('cli-alpine');
+const getLatestPhpCliAlpineTag = createPhpMatcher('cli-alpine');
 
-export default getLatestPhpCliTag;
+export default getLatestPhpCliAlpineTag;
