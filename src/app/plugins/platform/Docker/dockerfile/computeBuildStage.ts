@@ -6,7 +6,7 @@ import computeDependencyBuildCommand from './computeDependencyBuildCommand';
 /**
  * Options needed to create a `Dockerfile` object for a PHP-based image.
  */
-export interface CreatePHPDockerfileOptions {
+export interface ComputeBuildStageOptions {
   /**
    * The base image to create this from.
    */
@@ -34,13 +34,16 @@ export interface CreatePHPDockerfileOptions {
   user?: string;
 }
 
-function createPHPDockerfile({
-  from,
-  dependencies = [],
-  postBuildCommands = [],
-  runtimeDeps = [],
-  user,
-}: CreatePHPDockerfileOptions): Dockerfile {
+function computeBuildStage<Builder extends Dockerfile>(
+  dockerfile: Builder,
+  {
+    from,
+    dependencies = [],
+    postBuildCommands = [],
+    runtimeDeps = [],
+    user,
+  }: ComputeBuildStageOptions,
+): Builder {
   const buildCommand = computeDependencyBuildCommand(dependencies);
 
   // Use string[][] to allow more straightforward spreading
@@ -60,7 +63,7 @@ function createPHPDockerfile({
   // Allow post-build setup
   command.push(...postBuildCommands);
 
-  const dockerfile = new Dockerfile().from(from);
+  dockerfile.from(from);
 
   if (user) {
     dockerfile.user('root');
@@ -75,4 +78,4 @@ function createPHPDockerfile({
   return dockerfile;
 }
 
-export default createPHPDockerfile;
+export default computeBuildStage;

@@ -2,15 +2,18 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
-import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
+import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 import gd from '../../../dockerfile/gd';
 import memcached from '../../../dockerfile/memcached';
 import opcache from '../../../dockerfile/opcache';
 import pdo from '../../../dockerfile/pdo';
 import zip from '../../../dockerfile/zip';
+import xdebug from '../../../dockerfile/xdebug';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
+import getLatestNodeVersion, {
+  Dist,
+} from '../../../registry/getLatestNodeRelease';
 import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
@@ -20,6 +23,7 @@ import installDrupal, {
   pantheonProject,
   Project,
 } from './installDrupal';
+import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -30,7 +34,9 @@ const gessoDrupalDependencies: ReadonlyArray<string> = [
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
   private latestDrupalTag!: string;
-  private latestPhpTag!: string;
+  private latestPhpAlpineTag!: string;
+  private latestPhpCliTag!: string;
+  private latestNodeVersion!: Dist;
 
   // Assigned to in prompting phase
   private documentRoot!: string;
@@ -40,13 +46,22 @@ class Drupal8 extends Generator {
   private shouldInstall: boolean | undefined = false;
 
   async initializing() {
-    const [latestDrupalTag, latestPhpTag] = await Promise.all([
+    const [
+      latestDrupalTag,
+      latestNodeVersion,
+      latestPhpAlpineTag,
+      latestPhpCliTag,
+    ] = await Promise.all([
       getLatestDrupalTag(8),
+      getLatestNodeVersion(),
       getLatestPhpCliAlpineTag(),
+      getLatestPhpCliTag(),
     ]);
 
     this.latestDrupalTag = latestDrupalTag;
-    this.latestPhpTag = latestPhpTag;
+    this.latestNodeVersion = latestNodeVersion;
+    this.latestPhpAlpineTag = latestPhpAlpineTag;
+    this.latestPhpCliTag = latestPhpCliTag;
   }
 
   async prompting() {
@@ -198,7 +213,10 @@ class Drupal8 extends Generator {
     ].join('\n');
 
     editor.addService('drupal', {
-      build: './services/drupal',
+      build: {
+        context: './services/drupal',
+        target: 'dev',
+      },
       command: ['sh', '-c', drupalEntryCommand],
       depends_on: ['mysql'],
       environment: {
@@ -258,7 +276,7 @@ class Drupal8 extends Generator {
 
     // Install required dependencies to avoid Gesso crashing when enabled
     for (const dependency of gessoDrupalDependencies) {
-      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
+      await spawnComposer(['require', dependency], {
         cwd: this.destinationPath('services/drupal'),
       });
     }
@@ -279,17 +297,56 @@ class Drupal8 extends Generator {
   writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
     const sharedDependencies = needsMemcached ? [memcached] : [];
-    sharedDependencies.push(opcache);
 
-    const drupalDockerfile = createPHPDockerfile({
-      from: { image: 'drupal', tag: this.latestDrupalTag },
+    const drupalDockerfile = DockerfileHelper.fromBuildStage({
+      comment: 'Base stage shared between development and production builds',
+      from: { image: 'drupal', tag: this.latestDrupalTag, stage: 'base' },
       dependencies: sharedDependencies,
     });
 
-    const drupalDependencies = [gd, pdo, zip];
+    drupalDockerfile.addBuildStage({
+      comment:
+        'Development-only build stage (used to keep XDebug out of production images)',
+      from: { image: 'base', stage: 'dev' },
+      dependencies: [xdebug],
+    });
 
-    const drushDockerfile = createPHPDockerfile({
-      from: { image: 'php', tag: this.latestPhpTag },
+    const root = this.documentRoot;
+    const themeRoot = posix.join(root, 'themes/gesso');
+
+    drupalDockerfile.addComposerStage({
+      comment: 'Install dependencies',
+      sources: ['scripts', root],
+    });
+
+    if (this.useGesso) {
+      drupalDockerfile.addGessoStage({
+        comment: 'Build theme',
+        buildSources: true,
+        node: this.latestNodeVersion,
+        php: this.latestPhpCliTag,
+        themeRoot,
+      });
+    }
+
+    drupalDockerfile
+      .stage()
+      .comment('Create production image')
+      .from({ image: 'base' })
+      .copy({ src: ['load.environment.php'], dest: './' })
+      .comment('Copy built dependencies into the production image')
+      .copy({ from: 'deps', src: ['/app/scripts'], dest: 'scripts' })
+      .copy({ from: 'deps', src: ['/app/vendor'], dest: 'vendor' })
+      .copy({ from: 'deps', src: [`/app/${root}`], dest: root });
+
+    if (this.useGesso) {
+      drupalDockerfile.copy({ from: 'gesso', src: ['/app'], dest: themeRoot });
+    }
+
+    const drupalDependencies = [gd, opcache, pdo, zip];
+
+    const drushDockerfile = DockerfileHelper.fromBuildStage({
+      from: { image: 'php', tag: this.latestPhpAlpineTag },
       dependencies: [...drupalDependencies, ...sharedDependencies],
       // The memory limit defaults to 128M, even in CLI containers - expand it for easier
       // developer use.
@@ -309,14 +366,12 @@ class Drupal8 extends Generator {
       drushDockerfile.render(),
     );
 
-    // We don't use the filesystem when building the Drupal image, and this avoids a great deal of
-    // I/O between the Docker client and daemon.
-    const drupalDockerIgnore = new IgnoreEditor();
-    drupalDockerIgnore.addEntry('*');
-
-    this.fs.write(
+    // Copy the Drupal gitignore into a dockerignore file - this way, we don't send down
+    // the full site installation and can rely solely on the custom code + composer.json
+    // as sources of truth in the Docker build.
+    this.fs.copy(
+      this.destinationPath('services/drupal/.gitignore'),
       this.destinationPath('services/drupal/.dockerignore'),
-      drupalDockerIgnore.serialize(),
     );
 
     this.fs.copy(

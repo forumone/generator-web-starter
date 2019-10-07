@@ -1,6 +1,5 @@
 import assert from 'assert-plus';
 import { posix } from 'path';
-import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../../../IgnoreEditor';
@@ -9,7 +8,7 @@ import ComposeEditor, {
   ServiceMutator,
 } from '../../ComposeEditor';
 import VolumeMount from '../../ComposeEditor/VolumeMount';
-import createGessoDockerfile from '../../createGessoDockerfile';
+import DockerfileHelper from '../../dockerfile/DockerfileHelper';
 import installGesso, { InstallGessoOptions } from '../../installGesso';
 import getLatestNodeVersion, {
   Dist,
@@ -62,18 +61,15 @@ function createGessoGenerator({
     private latestPhpTag!: string;
     private documentRoot!: string;
 
-    // Assigned to in prompting phase
-    private themeName!: string;
-
     private shouldInstall: boolean | undefined = false;
 
-    private _getTargetThemePath(name = this.themeName) {
+    private _getTargetThemePath() {
       return this.destinationPath(
         'services',
         serviceName,
         this.documentRoot,
         themeDirectory,
-        name,
+        'gesso',
       );
     }
 
@@ -95,31 +91,20 @@ function createGessoGenerator({
     }
 
     async prompting() {
-      const { gessoThemeName, gessoShouldInstall } = await this.prompt([
-        {
-          type: 'input',
-          name: 'gessoThemeName',
-          validate: name => name !== '' && validFilename(name),
-          message: 'What is the theme name?',
-          default: 'gesso',
-          store: true,
-        },
+      const { gessoShouldInstall } = await this.prompt([
         {
           type: 'confirm',
           name: 'gessoShouldInstall',
           message: 'Install Gesso?',
           // Default to true if the theme isn't already installed
-          default: (answers: { gessoThemeName: string }) => {
-            return !this.fs.exists(
-              this._getTargetThemePath(answers.gessoThemeName),
-            );
+          default: () => {
+            return !this.fs.exists(this._getTargetThemePath());
           },
           when: !this.options.skipInstall,
         },
       ]);
 
       this.shouldInstall = gessoShouldInstall;
-      this.themeName = gessoThemeName;
     }
 
     configuring() {
@@ -128,7 +113,7 @@ function createGessoGenerator({
         '/var/www/html',
         this.documentRoot,
         themeDirectory,
-        this.themeName,
+        'gesso',
       );
 
       const patternLabPath = posix.join(root, 'pattern-lab');
@@ -176,7 +161,7 @@ function createGessoGenerator({
         serviceName,
         this.documentRoot,
         themeDirectory,
-        this.themeName,
+        'gesso',
       )}`;
 
       // Add the Gesso container here
@@ -227,7 +212,8 @@ function createGessoGenerator({
     writing() {
       this.fs.write(
         this.destinationPath('services/gesso/Dockerfile'),
-        createGessoDockerfile({
+        DockerfileHelper.gesso({
+          buildSources: false,
           node: this.latestNodeDist,
           php: this.latestPhpTag,
         }).render(),
