@@ -273,7 +273,11 @@ class WordPress extends Generator {
         gessoWordpressBranch,
       );
 
-      this.dockerignore.addContentsOfFile('Gesso', gessoIgnoreFile, themeRoot);
+      this.dockerignore.addContentsOfFile({
+        heading: 'Gesso',
+        content: gessoIgnoreFile,
+        path: themeRoot,
+      });
     }
 
     const cliDockerfile = this.cliDockerfile;

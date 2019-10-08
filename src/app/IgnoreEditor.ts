@@ -2,6 +2,30 @@ import { posix } from 'path';
 
 const comment = /^#/;
 
+/**
+ * Options for the `addContentsOfFile()` method on the `IgnoreEditor` class.
+ */
+export interface AddContentsOfFileOptions {
+  /**
+   * The heading text to use for the section implicitly created by copying a file.
+   */
+  heading: string;
+
+  /**
+   * The content of the file to copy.
+   */
+  content: string;
+
+  /**
+   * When present, this path is used to "rebase" the ignore entry paths. For example, if
+   * `path` is set to `foo/bar`, then the entry `baz` from the file is turned into
+   * `foo/bar/baz`. This supports copying nested ignore files (i.e., Gesso) into a root
+   * file - the specific use case this covers is `.dockerignore`, since `docker build`
+   * does not respect nested ignore files in the same way that Git does.
+   */
+  path?: string;
+}
+
 // Helper class for ignore-style files (gitignore, dockerignore, etc.)
 class IgnoreEditor {
   private readonly lines: string[] = [];
@@ -28,15 +52,13 @@ class IgnoreEditor {
   }
 
   /**
-   * Copy the lines of an existing ignore file into this editor. The optional `path`
-   * parameter allows using nested ignore files - this situation supports mirroring an
-   * ignore file from, say, the theme in a root ignore file for Docker.
-   *
-   * @param heading The heading for this section
-   * @param content The string content of an ignore file
-   * @param path The path in which to nest these contents
+   * Create a new section by copying the entries of an existing ignore file into this editor.
    */
-  addContentsOfFile(heading: string, content: string, path = '.') {
+  addContentsOfFile({
+    heading,
+    content,
+    path = '.',
+  }: AddContentsOfFileOptions) {
     const entries = content.split('\n').map(line => {
       const entry = line.trim();
 
