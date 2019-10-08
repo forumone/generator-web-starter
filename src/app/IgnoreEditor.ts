@@ -32,20 +32,22 @@ class IgnoreEditor {
    * parameter allows using nested ignore files - this situation supports mirroring an
    * ignore file from, say, the theme in a root ignore file for Docker.
    *
+   * @param heading The heading for this section
    * @param content The string content of an ignore file
    * @param path The path in which to nest these contents
    */
-  addContentsOfFile(content: string, path = '.') {
-    for (const line of content.split('\n')) {
+  addContentsOfFile(heading: string, content: string, path = '.') {
+    const entries = content.split('\n').map(line => {
       const entry = line.trim();
+
       if (entry && !comment.test(entry)) {
-        // Path entry: prefix the path
-        this.addEntry(posix.join(path, entry));
+        return posix.join(path, entry);
       } else {
-        // Comment or blank line
-        this.addEntry(entry);
+        return entry;
       }
-    }
+    });
+
+    this.addSection(heading, entries);
   }
 
   serialize() {
