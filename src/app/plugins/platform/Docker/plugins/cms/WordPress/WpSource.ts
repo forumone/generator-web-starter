@@ -7,7 +7,22 @@ import SubgeneratorOptions from './SubgeneratorOptions';
 
 class WpSource extends Generator {
   configuring() {
-    const { documentRoot, dockerfile } = this.options as SubgeneratorOptions;
+    const { composeEditor, documentRoot, dockerfile } = this
+      .options as SubgeneratorOptions;
+
+    composeEditor.modifyService('wordpress', service => ({
+      ...service,
+      // Projects not based on wp-starter won't have a .env file, so we have to
+      // ensure a minimally-compatible runtime environment inside the container.
+      environment: {
+        ...service.environment,
+        DB_HOST: 'mysql:3306',
+        DB_NAME: 'web',
+        DB_USER: 'web',
+        DB_PASSWORD: 'web',
+        SMTPHOST: 'mailhog:1025',
+      },
+    }));
 
     dockerfile
       .stage()

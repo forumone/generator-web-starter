@@ -30,7 +30,6 @@ class WordPress extends Generator {
   private documentRoot!: string;
   private useGesso: boolean | undefined;
 
-  private usesWpStarter: boolean | undefined = true;
   private usesWpCfm: boolean | undefined = true;
 
   async initializing() {
@@ -106,7 +105,6 @@ class WordPress extends Generator {
 
     this.documentRoot = documentRoot;
     this.useGesso = useGesso;
-    this.usesWpStarter = wpStarter;
     this.usesWpCfm = wpCfm;
 
     if (useCapistrano) {
@@ -144,7 +142,7 @@ class WordPress extends Generator {
       composeCliEditor: this.options.composeCliEditor,
     };
 
-    const subgeneratorPath = this.usesWpStarter ? './WpStarter' : './WpSource';
+    const subgeneratorPath = wpStarter ? './WpStarter' : './WpSource';
     this.composeWith(require.resolve(subgeneratorPath), options);
   }
 
@@ -187,22 +185,6 @@ class WordPress extends Generator {
       ],
     });
 
-    const envFile = this.usesWpStarter
-      ? { env_file: './services/wordpress/.env' }
-      : undefined;
-
-    // Projects not based on wp-starter won't have a .env file, so we have to
-    // ensure a minimally-compatible runtime environment inside the container.
-    const initialEnvironment = this.usesWpStarter
-      ? undefined
-      : {
-          DB_HOST: 'mysql:3306',
-          DB_NAME: 'web',
-          DB_USER: 'web',
-          DB_PASSWORD: 'web',
-          SMTPHOST: 'mailhog:1025',
-        };
-
     // Use an array here because, for some odd reason, dedent gets confused about how
     // string indentation works otherwise.
     const wpEntryCommand = [
@@ -219,11 +201,7 @@ class WordPress extends Generator {
       depends_on: ['mysql'],
       command: ['-c', wpEntryCommand],
       entrypoint: '/bin/bash',
-      ...envFile,
-      environment: {
-        ...initialEnvironment,
-        ...xdebugEnvironment,
-      },
+      environment: xdebugEnvironment,
       volumes: [
         createBindMount('./services/wordpress', '/var/www/html'),
         {

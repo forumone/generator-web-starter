@@ -8,10 +8,15 @@ import SubgeneratorOptions from './SubgeneratorOptions';
 
 class WpStarter extends Generator {
   configuring() {
-    const { composeCliEditor, documentRoot, dockerfile } = this
+    const { composeCliEditor, composeEditor, documentRoot, dockerfile } = this
       .options as SubgeneratorOptions;
 
     composeCliEditor.addComposer('services/wordpress');
+
+    composeEditor.modifyService('wordpress', service => ({
+      ...service,
+      env_file: './services/wordpress/.env',
+    }));
 
     dockerfile.addComposerStage({
       comment: 'Install dependencies',
