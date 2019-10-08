@@ -8,8 +8,14 @@ import SubgeneratorOptions from './SubgeneratorOptions';
 
 class WpStarter extends Generator {
   configuring() {
-    const { composeCliEditor, composeEditor, documentRoot, dockerfile } = this
-      .options as SubgeneratorOptions;
+    const {
+      composeCliEditor,
+      composeEditor,
+      documentRoot,
+      dockerfile,
+      dockerignore,
+      useGesso,
+    } = this.options as SubgeneratorOptions;
 
     composeCliEditor.addComposer('services/wordpress');
 
@@ -37,6 +43,20 @@ class WpStarter extends Generator {
       const themeRoot = posix.join(documentRoot, 'wp-content/themes/gesso');
       dockerfile.copy({ from: 'gesso', src: ['/app'], dest: themeRoot });
     }
+
+    // Add WP Starter's default gitignore values to our dockerignore.
+    const entries = [
+      '.env',
+      posix.join(documentRoot, 'wp-config.php'),
+      posix.join(documentRoot, 'wp/*'),
+      posix.join(documentRoot, 'wp-content/*'),
+    ];
+
+    if (useGesso) {
+      entries.push(posix.join(`!${documentRoot}`, 'wp-content/themes/gesso'));
+    }
+
+    dockerignore.addSection('WP Starter', entries);
   }
 
   writing() {

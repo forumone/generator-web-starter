@@ -1,3 +1,4 @@
+import IgnoreEditor from '../../../../../../IgnoreEditor';
 import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 import ComposeEditor from '../../../ComposeEditor';
 
@@ -8,6 +9,7 @@ interface SubgeneratorOptions {
   dockerfile: DockerfileHelper;
   composeEditor: ComposeEditor;
   composeCliEditor: ComposeEditor;
+  dockerignore: IgnoreEditor;
 }
 
 export default SubgeneratorOptions;

@@ -15,10 +15,16 @@ import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
 import SubgeneratorOptions from './SubgeneratorOptions';
+import fetchIgnoreFile from '../../gesso/fetchIgnoreFile';
+import {
+  gessoWordpressBranch,
+  gessoWordpressRepository,
+} from '../../gesso/wordpress';
 
 class WordPress extends Generator {
   private cliDockerfile = new DockerfileHelper();
   private dockerfile = new DockerfileHelper();
+  private dockerignore = new IgnoreEditor();
 
   // Written out in initializing phase
   private latestWpTag!: string;
@@ -140,13 +146,14 @@ class WordPress extends Generator {
       dockerfile: this.dockerfile,
       composeEditor: this.options.composeEditor,
       composeCliEditor: this.options.composeCliEditor,
+      dockerignore: this.dockerignore,
     };
 
     const subgeneratorPath = wpStarter ? './WpStarter' : './WpSource';
     this.composeWith(require.resolve(subgeneratorPath), options);
   }
 
-  configuring() {
+  async configuring() {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -248,13 +255,25 @@ class WordPress extends Generator {
     });
 
     if (this.useGesso) {
+      const themeRoot = posix.join(
+        this.documentRoot,
+        'wp-content/themes/gesso',
+      );
+
       dockerfile.addGessoStage({
         comment: 'Build Gesso',
         buildSources: true,
         node: this.latestNodeVersion,
         php: this.latestPhpTag,
-        themeRoot: posix.join(this.documentRoot, 'wp-content/themes/gesso'),
+        themeRoot,
       });
+
+      const gessoIgnoreFile = await fetchIgnoreFile(
+        gessoWordpressRepository,
+        gessoWordpressBranch,
+      );
+
+      this.dockerignore.addContentsOfFile('Gesso', gessoIgnoreFile, themeRoot);
     }
 
     const cliDockerfile = this.cliDockerfile;
@@ -271,7 +290,7 @@ class WordPress extends Generator {
     });
   }
 
-  async writing() {
+  writing() {
     this.fs.copy(
       this.templatePath('wp-entrypoint.sh'),
       this.destinationPath('services/wordpress/wp-entrypoint.sh'),
@@ -287,30 +306,9 @@ class WordPress extends Generator {
       this.cliDockerfile.render(),
     );
 
-    const editor = new IgnoreEditor();
-
-    const gitignorePath = this.destinationPath('services/wordpress/.gitignore');
-    if (this.fs.exists(gitignorePath)) {
-      editor.addContentsOfFile(this.fs.read(gitignorePath));
-    }
-
-    const themeIgnorePath = this.destinationPath(
-      'services/wordpress',
-      this.documentRoot,
-      'wp-content/themes/gesso/.gitignore',
-    );
-    if (this.fs.exists(themeIgnorePath)) {
-      editor.addSeparator();
-      editor.addComment('Contents of Gesso .gitignore');
-      editor.addContentsOfFile(
-        this.fs.read(themeIgnorePath),
-        posix.join(this.documentRoot, 'wp-content/themes/gesso'),
-      );
-    }
-
     this.fs.write(
       this.destinationPath('services/wordpress/.dockerignore'),
-      editor.serialize(),
+      this.dockerignore.serialize(),
     );
   }
 }

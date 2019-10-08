@@ -28,11 +28,7 @@ class WpSource extends Generator {
       .stage()
       .from({ image: 'base' })
       .comment('Copy built dependencies into the production image')
-      .copy({
-        from: 'deps',
-        src: [`/app/${documentRoot}`],
-        dest: documentRoot,
-      });
+      .copy({ src: [documentRoot], dest: documentRoot });
 
     if (this.options.useGesso) {
       const themeRoot = posix.join(documentRoot, 'wp-content/themes/gesso');
