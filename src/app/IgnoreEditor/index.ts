@@ -24,22 +24,38 @@ export interface AddContentsOfFileOptions {
   path?: string;
 }
 
-// Helper class for ignore-style files (gitignore, dockerignore, etc.)
+/**
+ * Helper class for ignore-style files (gitignore, dockerignore, etc.)
+ */
 class IgnoreEditor {
   private readonly lines: string[] = [];
 
+  /**
+   * Adds a line to this ignore file.
+   */
   addEntry(entry: string) {
     this.lines.push(entry);
   }
 
+  /**
+   * Adds a commented line to this file. `addComment('foo')` adds the line `# foo` to the
+   * file.
+   */
   addComment(comment: string) {
     this.addEntry(`# ${comment}`);
   }
 
+  /**
+   * Adds a blank entry to this file.
+   */
   addSeparator() {
     this.addEntry('');
   }
 
+  /**
+   * Shorthand function to create a "section" - that is, a group of lines beginning with
+   * a comment indicating the grouping's purpose and ending with a blank separator line.
+   */
   addSection(heading: string, entries: string[]) {
     this.addComment(heading);
     for (const entry of entries) {
@@ -65,6 +81,9 @@ class IgnoreEditor {
     this.addSection(heading, entries);
   }
 
+  /**
+   * Returns the string contents of this ignore file.
+   */
   serialize() {
     return `${this.lines.join('\n')}\n`;
   }
