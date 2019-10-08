@@ -1,9 +1,10 @@
 import createGessoGenerator from './createGessoGenerator';
+import { gessoWordpressBranch, gessoWordpressRepository } from './wordpress';
 
 const GessoWordPress = createGessoGenerator({
   git: {
-    branch: '3.x',
-    repository: 'gesso-wp',
+    branch: gessoWordpressBranch,
+    repository: gessoWordpressRepository,
   },
   installPhase: 'install',
   serviceName: 'wordpress',
