@@ -1,6 +1,4 @@
-import { posix } from 'path';
-
-const comment = /^#/;
+import createTransformer from './createTransformer';
 
 /**
  * Options for the `addContentsOfFile()` method on the `IgnoreEditor` class.
@@ -59,15 +57,10 @@ class IgnoreEditor {
     content,
     path = '.',
   }: AddContentsOfFileOptions) {
-    const entries = content.split('\n').map(line => {
-      const entry = line.trim();
-
-      if (entry && !comment.test(entry)) {
-        return posix.join(path, entry);
-      } else {
-        return entry;
-      }
-    });
+    const entries = content
+      .trim()
+      .split('\n')
+      .map(createTransformer(path));
 
     this.addSection(heading, entries);
   }
