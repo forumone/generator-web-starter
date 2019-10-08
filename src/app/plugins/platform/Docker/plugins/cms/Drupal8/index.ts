@@ -2,6 +2,7 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
+import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 import gd from '../../../dockerfile/gd';
@@ -15,6 +16,7 @@ import getLatestNodeVersion, {
   Dist,
 } from '../../../registry/getLatestNodeRelease';
 import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
+import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
@@ -23,7 +25,8 @@ import installDrupal, {
   pantheonProject,
   Project,
 } from './installDrupal';
-import getLatestPhpCliTag from '../../../registry/getLatestPhpCliTag';
+import fetchIgnoreFile from '../../gesso/fetchIgnoreFile';
+import { gessoDrupalBranch, gessoDrupalRepository } from '../../gesso/drupal8';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -294,7 +297,7 @@ class Drupal8 extends Generator {
     }
   }
 
-  writing() {
+  async writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
     const sharedDependencies = needsMemcached ? [memcached] : [];
 
@@ -337,7 +340,8 @@ class Drupal8 extends Generator {
       .comment('Copy built dependencies into the production image')
       .copy({ from: 'deps', src: ['/app/scripts'], dest: 'scripts' })
       .copy({ from: 'deps', src: ['/app/vendor'], dest: 'vendor' })
-      .copy({ from: 'deps', src: [`/app/${root}`], dest: root });
+      .copy({ from: 'deps', src: [`/app/${root}`], dest: root })
+      .copy({ src: ['drush'], dest: 'drush' });
 
     if (this.useGesso) {
       drupalDockerfile.copy({ from: 'gesso', src: ['/app'], dest: themeRoot });
@@ -366,12 +370,33 @@ class Drupal8 extends Generator {
       drushDockerfile.render(),
     );
 
+    const dockerignore = new IgnoreEditor();
+
     // Copy the Drupal gitignore into a dockerignore file - this way, we don't send down
     // the full site installation and can rely solely on the custom code + composer.json
     // as sources of truth in the Docker build.
-    this.fs.copy(
-      this.destinationPath('services/drupal/.gitignore'),
+    dockerignore.addContentsOfFile({
+      heading: 'Drupal 8',
+      content: this.fs.read(this.destinationPath('services/drupal/.gitignore')),
+    });
+
+    if (this.useGesso) {
+      // If using Gesso, add its ignore to the Drupal dockerignore.
+      const gessoIgnore = await fetchIgnoreFile(
+        gessoDrupalRepository,
+        gessoDrupalBranch,
+      );
+
+      dockerignore.addContentsOfFile({
+        heading: 'Gesso',
+        content: gessoIgnore,
+        path: 'themes/gesso',
+      });
+    }
+
+    this.fs.write(
       this.destinationPath('services/drupal/.dockerignore'),
+      dockerignore.serialize(),
     );
 
     this.fs.copy(
