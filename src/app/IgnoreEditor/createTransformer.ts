@@ -34,10 +34,10 @@ export type Transformer = (line: string) => string;
  * transformer is smart enough to know not to remap comments or blank lines, and knows
  * about negated entries.
  *
- * @param base The base path to use when remapping entries
+ * @param base The base path to use when remapping entries.
  */
 function createTransformer(base: string): Transformer {
-  // Transforms a non-negated entry
+  // Transforms a non-negated entry.
   function transformEntry(entry: string) {
     return posix.join(base, entry);
   }
