@@ -33,3 +33,14 @@ test('get PHP versions', async () => {
   expect(getImageTags).toBeCalledTimes(1);
   expect(value).toEqual('7.3-cli');
 });
+
+test('defaults to suffix', async () => {
+  getImageTags.mockResolvedValueOnce(['7.3-fpm']);
+
+  const matcher = createPhpMatcher('cli');
+  const value = await matcher();
+
+  expect(getImageTags).toBeCalledWith('php');
+  expect(getImageTags).toBeCalledTimes(1);
+  expect(value).toEqual('cli');
+});
