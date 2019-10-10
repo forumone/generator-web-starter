@@ -7,6 +7,7 @@ const util = require('util');
 
 const gulp = require('gulp');
 const babel = require('gulp-babel');
+const filter = require('gulp-filter');
 const sourcemaps = require('gulp-sourcemaps');
 const eslint = require('gulp-eslint');
 const typescript = require('gulp-typescript');
@@ -41,8 +42,12 @@ function copy() {
 const project = typescript.createProject('./tsconfig.json');
 
 function compile() {
+  // Don't compile or bundle tests (they're checked as part of ts-jest)
+  const ignoreTests = filter(['**', '!**/*.spec.ts']);
+
   return project
     .src()
+    .pipe(ignoreTests)
     .pipe(sourcemaps.init())
     .pipe(project())
     .js.pipe(babel())

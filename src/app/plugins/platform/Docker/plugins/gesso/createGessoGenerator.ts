@@ -11,7 +11,7 @@ import ComposeEditor, {
 import VolumeMount from '../../ComposeEditor/VolumeMount';
 import createGessoDockerfile from '../../createGessoDockerfile';
 import installGesso, { InstallGessoOptions } from '../../installGesso';
-import getLatestNodeVersion, {
+import getLatestNodeRelease, {
   Dist,
 } from '../../registry/getLatestNodeRelease';
 import getLatestPhpCliTag from '../../registry/getLatestPhpCliTag';
@@ -87,7 +87,7 @@ function createGessoGenerator({
 
       const [latestPhpTag, latestNodeDist] = await Promise.all([
         getLatestPhpCliTag(),
-        getLatestNodeVersion(),
+        getLatestNodeRelease(),
       ]);
 
       this.latestNodeDist = latestNodeDist;
