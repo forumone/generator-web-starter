@@ -5,6 +5,13 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import SubgeneratorOptions from './SubgeneratorOptions';
 
+/**
+ * Subgenerator to assist the WordPress CMS plugin. This includes the configuration
+ * necessary to install WordPress directly from source - that is, a project that does
+ * *not* use Composer.
+ *
+ * See also: the main `WordPress` generator and this generator's sibling, the `WpStarter` generator.
+ */
 class WpSource extends Generator {
   configuring() {
     const { composeEditor, documentRoot, dockerfile } = this

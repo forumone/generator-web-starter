@@ -1,5 +1,18 @@
 import Generator from 'yeoman-generator';
 
+/**
+ * Subgenerator to add Capistrano deployment configuration to a project. This generator
+ * expects to be composed with a great many options, listed here:
+ *
+ * * `name` (string) - the name of the project
+ * * `config` (optional object) - key/value pairs of arbitrary config to serialize
+ * * `linkedDirectories` (optional string[]) - directory names to link on release
+ * * `linkedFiles` (optional string[]) - file names to link on release
+ * * `webroot` (string) - the name of the project's web root, as a single path component
+ * * `appWebroot` (string) - the full path to the project's web root
+ * * `platform` (string) - the name of the platform; used to determine which `.rb` file
+ *   to include (see `capistrano/tasks` in the templates directory)
+ */
 class Capistrano extends Generator {
   private deployMethod!: string;
   private repository!: string;

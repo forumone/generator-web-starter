@@ -34,6 +34,13 @@ const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/twig_tweak',
 ];
 
+/**
+ * Docker CMS plugin to configure/install Drupal 8. This generator composes with these
+ * other generators, based on user input:
+ *
+ * * Gesso (`GessoDrupal8`), when enabled
+ * * `Capistrano`, when enabled
+ */
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
   private latestDrupalTag!: string;

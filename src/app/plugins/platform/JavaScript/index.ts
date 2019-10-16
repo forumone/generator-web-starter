@@ -8,6 +8,13 @@ import IgnoreEditor from '../../../IgnoreEditor';
 
 const readFile = promisify(fs.readFile);
 
+/**
+ * Platform plugin for single-page applications. This plugin composes with the `Capistrano`
+ * subgenerator if the user selects that option.
+ *
+ * This plugin is much simpler than the Docker plugin, as most of the behavior is managed
+ * by configuration files within the repository instead of prompt-driven logic.
+ */
 class JavaScript extends Generator {
   initializing() {
     const options = this.options;

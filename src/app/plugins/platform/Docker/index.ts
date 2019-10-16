@@ -29,6 +29,23 @@ const overrideIntro = dedent`
   # Use this file to temporarily customize services (e.g., to expose new ports).
 `;
 
+/**
+ * Platform plugin for Docker-based projects. This plugin delegates to quite a few
+ * generators, listed here grouped by functionality:
+ *
+ * * Caching (the `cache/` directory) - systems such as Memcached or Redis,
+ * * CMS (the `cms/` directory) - CMS systems such as Drupal or WordPress,
+ * * Search (the `search/` directory) - search servers such as Solr, and
+ * * Gesso (the `gesso/` directory) - helper plugins to manage the Gesso theme
+ *
+ * These subgenerators share two primary configuration files: `docker-compose.yml` and
+ * `docker-compose.cli.yml`. These are Docker Compose files divided by function.
+ * `docker-compose.yml` is the main entry point for the `docker-compose` command by default,
+ * and it is used to store long-running services - things like nginx, PHP-FPM, the MailHog
+ * utility, etc. The second file, `docker-compose.cli.yml`, is a convention used by
+ * `generator-web-starter`'s sibling, `forumone-cli`, for running one-off commands. For
+ * example, this is how users can interact with Gesso, Composer, or Drush/WP-CLI.
+ */
 class Docker extends Generator {
   private readonly editor = new ComposeEditor({ intro: composeIntro });
   private readonly cliEditor = new ComposeEditor({ intro: cliIntro });

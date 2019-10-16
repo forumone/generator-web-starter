@@ -6,6 +6,11 @@ import Generator from 'yeoman-generator';
 import discoverModules from './discoverModules';
 import IgnoreEditor from './IgnoreEditor';
 
+/**
+ * Root class for the Web Starter generator. This generator exists largely to delegate its
+ * functionality to its platform plugins (see `plugins/platform`), only sharing a small
+ * number of project-wide configuration files (most notably, the root `.gitignore` file).
+ */
 class WebStarter extends Generator {
   private gitignoreEditor = new IgnoreEditor();
   private name!: string;

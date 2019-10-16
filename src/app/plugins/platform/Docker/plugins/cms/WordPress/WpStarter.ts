@@ -6,6 +6,13 @@ import spawnComposer from '../../../spawnComposer';
 import createComposerFile from './createComposerFile';
 import SubgeneratorOptions from './SubgeneratorOptions';
 
+/**
+ * Subgenerator to assist the WordPress CMS plugin. This includes the configuration
+ * necessary to install WordPress via the wp-starter Composer template, enabling
+ * Composer-driven plugin and theme management.
+ *
+ * See also: the main `WordPress` generator and this generator's sibling, the `WpSource` generator.
+ */
 class WpStarter extends Generator {
   configuring() {
     const {

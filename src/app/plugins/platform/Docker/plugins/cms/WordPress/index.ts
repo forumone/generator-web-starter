@@ -21,6 +21,17 @@ import {
   gessoWordpressRepository,
 } from '../../gesso/wordpress';
 
+/**
+ * Docker CMS plugin to configure/install WordPress. This generator composes with a few
+ * other generators, based on user input:
+ *
+ * * Gesso (`GessoWordPress`), when enabled;
+ * * `Capistrano`, when enabled;
+ * * `WpSource`, when the user's project uses WordPress from source; and/or
+ * * `WpStarter`, when the user's project uses the wp-starter project
+ *
+ * The `WpSource` and `WpStarter` subgenerators are mutually exclusive options.
+ */
 class WordPress extends Generator {
   private cliDockerfile = new DockerfileHelper();
   private dockerfile = new DockerfileHelper();
