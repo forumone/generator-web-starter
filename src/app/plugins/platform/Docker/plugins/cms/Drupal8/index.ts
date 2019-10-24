@@ -225,7 +225,8 @@ class Drupal8 extends Generator {
       build: './services/drush',
       // Pass --root to the entrypoint so that Drush can both see the full Drupal
       // install and know where the site's root actually is.
-      entrypoint: ['/var/www/html/vendor/bin/drush', `--root=${varHtmlPath}`],
+      entrypoint: ['/var/www/html/vendor/bin/drush'],
+      working_dir: varHtmlPath,
       volumes: [
         createBindMount('./services/drupal', '/var/www/html'),
         {
