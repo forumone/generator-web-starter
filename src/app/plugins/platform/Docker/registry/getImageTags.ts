@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import got from 'got';
 
 interface LayerAndTag {
   readonly layer: '';
@@ -37,15 +37,8 @@ async function getImageTags(imageName: string): Promise<string[]> {
     imageName,
   )}/tags`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    const { status, statusText, url } = response;
-    throw new Error(
-      `Failed to request tags for ${imageName}: fetch(${url}) returned ${status} ${statusText}`,
-    );
-  }
-
-  const tagList: LayerAndTag[] = await response.json();
+  const response = await got(url, { json: true });
+  const tagList: LayerAndTag[] = response.body;
   return tagList.map(item => item.name);
 }
 

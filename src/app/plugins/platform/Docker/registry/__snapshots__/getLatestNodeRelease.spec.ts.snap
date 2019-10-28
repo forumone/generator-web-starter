@@ -1,0 +1,5 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Fails to parse checksums for LTS releases 1`] = `"Unable to find checksum for Node.js release node-v4.1.0-linux-x64.tar.gz"`;
+
+exports[`Fails to parse checksums for not LTS releases 1`] = `"Unable to find checksum for Node.js release node-v2.3.1-linux-x64.tar.gz"`;
