@@ -35,7 +35,7 @@ module.exports = {
         "dot-notation": "error",
         "eqeqeq": "error",
         "guard-for-in": "error",
-        "implicit-dependencies/no-implicit": ["error", { optional: true }],
+        "implicit-dependencies/no-implicit": "error",
         "no-console": "error",
         "no-constant-condition": "off",
         "no-empty-function": "error",
