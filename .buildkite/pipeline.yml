@@ -1,0 +1,11 @@
+steps:
+  - label: ":hammer: Build"
+    command:
+      - npm ci
+      - npm pack
+    plugins:
+      - docker#v3.3.0:
+          image: "node:10"
+          volumes:
+            - "./:/app"
+
