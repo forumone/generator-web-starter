@@ -1,8 +1,8 @@
 steps:
   - label: ":hammer: Build"
     command:
-      - "npm install"
-      - "npm pack"
+      - npm ci
+      - npm pack
     plugins:
       - docker#v3.3.0:
           image: "node:10"
