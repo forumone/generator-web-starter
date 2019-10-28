@@ -89,7 +89,5 @@
     "node": ">=8"
   },
   "license": "GPL-3.0-or-later",
-  "optionalDependencies": {
-    "nodegit": "0.23.0"
-  }
+  "optionalDependencies": {}
 }
