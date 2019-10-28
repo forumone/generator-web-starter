@@ -63,7 +63,7 @@ function createComposerFile(name: string, documentRoot: string): ComposerFile {
 
   function createInstallerPath(path: string, type: string): InstallerPaths {
     const key = posix.join(documentRoot, 'wp-content', path, '{$name}');
-    const value = [`type: ${type}`];
+    const value = [`type:${type}`];
 
     return { [key]: value };
   }

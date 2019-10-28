@@ -14,11 +14,14 @@ end
 namespace :wordpress do
   task :settings do
     on roles(:app) do
-      if test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php ]"
-        execute :rm, "-f", "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php"
-      end
+      # If a .env file exists then this is a dotEnv setup and we don't need to link wp-config files.
+      unless test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/../.env ]"
+        if test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php ]"
+          execute :rm, "-f", "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php"
+        end
 
-      execute :ln, '-s', "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.#{fetch(:stage)}.php", "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php"
+        execute :ln, '-s', "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.#{fetch(:stage)}.php", "#{current_path}/#{fetch(:app_webroot, 'public')}/wp-config.php"
+      end
 
       # If a .htaccess file for the stage exists
       if test " [ -f #{current_path}/#{fetch(:app_webroot, 'public')}/htaccess.#{fetch(:stage)} ]"
