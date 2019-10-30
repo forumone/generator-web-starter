@@ -279,10 +279,11 @@ class Drupal8 extends Generator {
   }
 
   writing() {
+    const sharedDependencies = [xdebug, opcache];
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    const sharedDependencies = needsMemcached ? [memcached] : [];
-    sharedDependencies.push(xdebug);
-    sharedDependencies.push(opcache);
+    if (needsMemcached) {
+      sharedDependencies.push(memcached);
+    }
 
     const drupalDockerfile = createPHPDockerfile({
       from: { image: 'drupal', tag: this.latestDrupalTag },

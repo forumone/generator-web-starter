@@ -30,7 +30,7 @@ npx --ignore-existing -p yo -p generator-web-starter yo web-starter
 ## Enhancing this project / Setup instructions
 
 - Clone repository
-- `npm install` - install dependencies
+- `npm ci` - install dependencies
 - Perform changes
 - `npm pack` - Create a tarball for testing purposes
 - `npx -p <path to generator.tgz> -p yo -- yo web-starter`  - Execute web starter with the modifications you just made
