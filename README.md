@@ -26,3 +26,12 @@ This command will temporarily install [`yo`](https://www.npmjs.com/package/yo) -
 ```sh
 npx --ignore-existing -p yo -p generator-web-starter yo web-starter
 ```
+
+## Enhancing this project / Setup instructions
+
+- Clone repository
+- `npm install` - install dependencies
+- Perform changes
+- `npm pack` - Create a tarball for testing purposes
+- `npx -p <path to generator.tgz> -p yo -- yo web-starter`  - Execute web starter with the modifications you just made
+- Review input / output after making selections that you're testing for and ensure changes are captured

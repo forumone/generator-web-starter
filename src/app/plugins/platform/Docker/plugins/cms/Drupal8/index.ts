@@ -14,6 +14,7 @@ import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
 import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
+import xdebug from '../../../dockerfile/xdebug';
 
 import installDrupal, {
   drupalProject,
@@ -280,6 +281,7 @@ class Drupal8 extends Generator {
   writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
     const sharedDependencies = needsMemcached ? [memcached] : [];
+    sharedDependencies.push(xdebug);
     sharedDependencies.push(opcache);
 
     const drupalDockerfile = createPHPDockerfile({
