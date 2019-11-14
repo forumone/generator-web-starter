@@ -15,6 +15,10 @@ import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 
+const gessoWPDependencies: ReadonlyArray<string> = [
+  'wpackagist-plugin/timber-library',
+];
+
 class WordPress extends Generator {
   // Written out in initializing phase
   private latestWpTag!: string;
@@ -25,6 +29,7 @@ class WordPress extends Generator {
 
   private usesWpStarter: boolean | undefined = true;
   private usesWpCfm: boolean | undefined = true;
+  private usesGesso: boolean | undefined = true;
 
   private shouldInstall: boolean | undefined = false;
 
@@ -97,6 +102,7 @@ class WordPress extends Generator {
     this.shouldInstall = shouldInstallWordPress;
     this.usesWpStarter = wpStarter;
     this.usesWpCfm = wpCfm;
+    this.usesGesso = useGesso;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -328,8 +334,25 @@ class WordPress extends Generator {
     }
   }
 
+  private async _installGessoDependencies() {
+    if (!this.shouldInstall) {
+      return;
+    }
+
+    // Install required dependencies to avoid Gesso crashing when enabled
+    for (const dependency of gessoWPDependencies) {
+      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
+        cwd: this.destinationPath('services/wordpress'),
+      });
+    }
+  }
+
   async install() {
     await this._installWordPress();
+
+    if (this.usesGesso) {
+      await this._installGessoDependencies();
+    }
   }
 }
 
