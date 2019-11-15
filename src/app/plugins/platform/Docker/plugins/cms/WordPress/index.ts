@@ -1,6 +1,9 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
+import decompress from 'decompress';
+import fetch from 'node-fetch';
+import { URL } from 'url';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
@@ -15,9 +18,7 @@ import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 
-const gessoWPDependencies: ReadonlyArray<string> = [
-  'wpackagist-plugin/timber-library',
-];
+const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
 class WordPress extends Generator {
   // Written out in initializing phase
@@ -341,9 +342,45 @@ class WordPress extends Generator {
 
     // Install required dependencies to avoid Gesso crashing when enabled
     for (const dependency of gessoWPDependencies) {
-      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
-        cwd: this.destinationPath('services/wordpress'),
-      });
+      // Use Composer if we can.
+      if (this.usesWpStarter) {
+        await spawnComposer(
+          [
+            'require',
+            `wpackagist-plugin/${dependency}`,
+            '--ignore-platform-reqs',
+          ],
+          {
+            cwd: this.destinationPath('services/wordpress'),
+          },
+        );
+      } else {
+        // Otherwise, manually download the plugins from the WP plugin
+        // repository.
+        const endpoint = new URL('https://downloads.wordpress.org');
+        endpoint.pathname = posix.join(
+          'plugin',
+          `${dependency}.latest-stable.zip`,
+        );
+        const response = await fetch(String(endpoint));
+        if (!response.ok) {
+          const { status, statusText, url } = response;
+          throw new Error(`fetch(${url}): ${status} ${statusText}`);
+        }
+
+        const buffer = await response.buffer();
+
+        const destinationPath = posix.join(
+          'services',
+          'wordpress',
+          this.documentRoot,
+          'wp-content',
+          'plugins',
+          dependency,
+        );
+
+        await decompress(buffer, destinationPath, { strip: 1 });
+      }
     }
   }
 
