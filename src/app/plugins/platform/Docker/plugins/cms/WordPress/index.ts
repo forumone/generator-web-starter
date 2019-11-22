@@ -335,52 +335,56 @@ class WordPress extends Generator {
     }
   }
 
+  /**
+   * Install plugin from WordPress Packagist with Composer.
+   */
+  private async _installWithComposer(pluginName: string) {
+    await spawnComposer(
+      ['require', `wpackagist-plugin/${pluginName}`, '--ignore-platform-reqs'],
+      {
+        cwd: this.destinationPath('services/wordpress'),
+      },
+    );
+  }
+
+  /**
+   * Install plugin from WordPress plugin repo as a zip.
+   */
+  private async _installFromWPRepo(pluginName: string) {
+    const endpoint = new URL('https://downloads.wordpress.org');
+    endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
+    const response = await fetch(String(endpoint));
+    if (!response.ok) {
+      const { status, statusText, url } = response;
+      throw new Error(`fetch(${url}): ${status} ${statusText}`);
+    }
+
+    const buffer = await response.buffer();
+
+    const destinationPath = posix.join(
+      'services',
+      'wordpress',
+      this.documentRoot,
+      'wp-content',
+      'plugins',
+      pluginName,
+    );
+
+    await decompress(buffer, destinationPath, { strip: 1 });
+  }
+
   private async _installGessoDependencies() {
     if (!this.shouldInstall) {
       return;
     }
 
+    const install: (pluginName: string) => Promise<void> = this.usesWpStarter
+      ? pluginName => this._installWithComposer(pluginName)
+      : pluginName => this._installFromWPRepo(pluginName);
+
     // Install required dependencies to avoid Gesso crashing when enabled
-    for (const dependency of gessoWPDependencies) {
-      // Use Composer if we can.
-      if (this.usesWpStarter) {
-        await spawnComposer(
-          [
-            'require',
-            `wpackagist-plugin/${dependency}`,
-            '--ignore-platform-reqs',
-          ],
-          {
-            cwd: this.destinationPath('services/wordpress'),
-          },
-        );
-      } else {
-        // Otherwise, manually download the plugins from the WP plugin
-        // repository.
-        const endpoint = new URL('https://downloads.wordpress.org');
-        endpoint.pathname = posix.join(
-          'plugin',
-          `${dependency}.latest-stable.zip`,
-        );
-        const response = await fetch(String(endpoint));
-        if (!response.ok) {
-          const { status, statusText, url } = response;
-          throw new Error(`fetch(${url}): ${status} ${statusText}`);
-        }
-
-        const buffer = await response.buffer();
-
-        const destinationPath = posix.join(
-          'services',
-          'wordpress',
-          this.documentRoot,
-          'wp-content',
-          'plugins',
-          dependency,
-        );
-
-        await decompress(buffer, destinationPath, { strip: 1 });
-      }
+    for (const plugin of gessoWPDependencies) {
+      await install(plugin);
     }
   }
 
