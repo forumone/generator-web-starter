@@ -1,6 +1,9 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
+import decompress from 'decompress';
+import fetch from 'node-fetch';
+import { URL } from 'url';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
@@ -15,6 +18,8 @@ import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 
+const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
+
 class WordPress extends Generator {
   // Written out in initializing phase
   private latestWpTag!: string;
@@ -25,6 +30,7 @@ class WordPress extends Generator {
 
   private usesWpStarter: boolean | undefined = true;
   private usesWpCfm: boolean | undefined = true;
+  private usesGesso: boolean | undefined = true;
 
   private shouldInstall: boolean | undefined = false;
 
@@ -97,6 +103,7 @@ class WordPress extends Generator {
     this.shouldInstall = shouldInstallWordPress;
     this.usesWpStarter = wpStarter;
     this.usesWpCfm = wpCfm;
+    this.usesGesso = useGesso;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -328,8 +335,65 @@ class WordPress extends Generator {
     }
   }
 
+  /**
+   * Install plugin from WordPress Packagist with Composer.
+   */
+  private async _installWithComposer(pluginName: string) {
+    await spawnComposer(
+      ['require', `wpackagist-plugin/${pluginName}`, '--ignore-platform-reqs'],
+      {
+        cwd: this.destinationPath('services/wordpress'),
+      },
+    );
+  }
+
+  /**
+   * Install plugin from WordPress plugin repo as a zip.
+   */
+  private async _installFromWPRepo(pluginName: string) {
+    const endpoint = new URL('https://downloads.wordpress.org');
+    endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
+    const response = await fetch(String(endpoint));
+    if (!response.ok) {
+      const { status, statusText, url } = response;
+      throw new Error(`fetch(${url}): ${status} ${statusText}`);
+    }
+
+    const buffer = await response.buffer();
+
+    const destinationPath = posix.join(
+      'services',
+      'wordpress',
+      this.documentRoot,
+      'wp-content',
+      'plugins',
+      pluginName,
+    );
+
+    await decompress(buffer, destinationPath, { strip: 1 });
+  }
+
+  private async _installGessoDependencies() {
+    if (!this.shouldInstall) {
+      return;
+    }
+
+    const install: (pluginName: string) => Promise<void> = this.usesWpStarter
+      ? pluginName => this._installWithComposer(pluginName)
+      : pluginName => this._installFromWPRepo(pluginName);
+
+    // Install required dependencies to avoid Gesso crashing when enabled
+    for (const plugin of gessoWPDependencies) {
+      await install(plugin);
+    }
+  }
+
   async install() {
     await this._installWordPress();
+
+    if (this.usesGesso) {
+      await this._installGessoDependencies();
+    }
   }
 }
 
