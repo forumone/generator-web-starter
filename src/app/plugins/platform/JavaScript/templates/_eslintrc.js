@@ -21,6 +21,10 @@ module.exports = {
         "plugin:prettier/recommended",
         "prettier/@typescript-eslint",
     ],
+    "react": {
+      "pragma": "React",
+      "version": "detect"
+    },
     "rules": {
         "@typescript-eslint/camelcase": ["error", {
             "properties": "never",
