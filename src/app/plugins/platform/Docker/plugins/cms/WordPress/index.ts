@@ -7,16 +7,16 @@ import { URL } from 'url';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
-import memcached from '../../../dockerfile/memcached';
-import xdebug from '../../../dockerfile/xdebug';
-import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
+import getLatestWordPressCliTag from '../../../registry/getLatestWordPressCliTag';
+import getLatestWordPressTag from '../../../registry/getLatestWordPressTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 
 import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
+import createWordPressDockerfile from './createWordPressDockerfile';
+import createWordPressCliDockerfile from './createWordPressCliDockerfile';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
@@ -35,10 +35,13 @@ class WordPress extends Generator {
   private shouldInstall: boolean | undefined = false;
 
   async initializing() {
-    const { cli, wordpress } = await getLatestWordPressTags();
+    const [latestWpTag, latestWpCliTag] = await Promise.all([
+      getLatestWordPressTag(),
+      getLatestWordPressCliTag(),
+    ]);
 
-    this.latestWpCliTag = cli;
-    this.latestWpTag = wordpress;
+    this.latestWpCliTag = latestWpCliTag;
+    this.latestWpTag = latestWpTag;
   }
 
   async prompting() {
@@ -270,11 +273,10 @@ class WordPress extends Generator {
     }
 
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    const dependencies = needsMemcached ? [memcached] : [];
 
-    const wpDockerfile = createPHPDockerfile({
-      from: { image: 'wordpress', tag: this.latestWpTag },
-      dependencies: [...dependencies, xdebug],
+    const wpDockerfile = createWordPressDockerfile({
+      tag: this.latestWpTag,
+      memcached: needsMemcached,
     });
 
     this.fs.write(
@@ -282,15 +284,9 @@ class WordPress extends Generator {
       wpDockerfile.render(),
     );
 
-    const cliDockerfile = createPHPDockerfile({
-      from: { image: 'wordpress', tag: this.latestWpCliTag },
-      dependencies,
-      postBuildCommands: [
-        "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
-      ],
-      runtimeDeps: ['openssh'],
-      // Restore the 'www-data' user in the wordpress:cli image
-      user: 'www-data',
+    const cliDockerfile = createWordPressCliDockerfile({
+      tag: this.latestWpCliTag,
+      memcached: needsMemcached,
     });
 
     this.fs.write(
