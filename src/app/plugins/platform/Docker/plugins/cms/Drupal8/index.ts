@@ -4,23 +4,18 @@ import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
-import gd from '../../../dockerfile/gd';
-import memcached from '../../../dockerfile/memcached';
-import opcache from '../../../dockerfile/opcache';
-import pdo from '../../../dockerfile/pdo';
-import zip from '../../../dockerfile/zip';
-import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
-import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
+import getLatestDrupal8Tag from '../../../registry/getLatestDrupal8Tag';
+import getLatestDrupal8CliTag from '../../../registry/getLatestDrupal8CliTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
-import xdebug from '../../../dockerfile/xdebug';
 
 import installDrupal, {
   drupalProject,
   pantheonProject,
   Project,
 } from './installDrupal';
+import createDrupalDockerfile from './createDrupalDockerfile';
+import createDrushDockerfile from './createDrushDockerfile';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -31,7 +26,7 @@ const gessoDrupalDependencies: ReadonlyArray<string> = [
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
   private latestDrupalTag!: string;
-  private latestPhpTag!: string;
+  private latestDrushTag!: string;
 
   // Assigned to in prompting phase
   private documentRoot!: string;
@@ -41,13 +36,13 @@ class Drupal8 extends Generator {
   private shouldInstall: boolean | undefined = false;
 
   async initializing() {
-    const [latestDrupalTag, latestPhpTag] = await Promise.all([
-      getLatestDrupalTag(8),
-      getLatestPhpCliAlpineTag(),
+    const [latestDrupalTag, latestDrushTag] = await Promise.all([
+      getLatestDrupal8Tag(),
+      getLatestDrupal8CliTag(),
     ]);
 
     this.latestDrupalTag = latestDrupalTag;
-    this.latestPhpTag = latestPhpTag;
+    this.latestDrushTag = latestDrushTag;
   }
 
   async prompting() {
@@ -199,7 +194,7 @@ class Drupal8 extends Generator {
     ].join('\n');
 
     editor.addService('drupal', {
-      build: './services/drupal',
+      build: { context: './services/drupal', target: 'dev' },
       command: ['sh', '-c', drupalEntryCommand],
       depends_on: ['mysql'],
       environment: {
@@ -279,28 +274,16 @@ class Drupal8 extends Generator {
   }
 
   writing() {
-    const sharedDependencies = [xdebug, opcache];
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    if (needsMemcached) {
-      sharedDependencies.push(memcached);
-    }
 
-    const drupalDockerfile = createPHPDockerfile({
-      from: { image: 'drupal', tag: this.latestDrupalTag },
-      dependencies: sharedDependencies,
+    const drupalDockerfile = createDrupalDockerfile({
+      memcached: needsMemcached,
+      tag: this.latestDrupalTag,
     });
 
-    const drupalDependencies = [gd, pdo, zip];
-
-    const drushDockerfile = createPHPDockerfile({
-      from: { image: 'php', tag: this.latestPhpTag },
-      dependencies: [...drupalDependencies, ...sharedDependencies],
-      // The memory limit defaults to 128M, even in CLI containers - expand it for easier
-      // developer use.
-      postBuildCommands: [
-        "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
-      ],
-      runtimeDeps: ['mysql-client', 'openssh', 'rsync'],
+    const drushDockerfile = createDrushDockerfile({
+      memcached: needsMemcached,
+      tag: this.latestDrushTag,
     });
 
     this.fs.write(
