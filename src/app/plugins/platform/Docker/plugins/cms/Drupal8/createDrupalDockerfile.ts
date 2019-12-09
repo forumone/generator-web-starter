@@ -28,7 +28,7 @@ function createDrupalDockerfile({
     dockerfile.run('f1-ext-install pecl:memcached');
   }
 
-  dockerfile.from({
+  dockerfile.stage().from({
     image: 'forumone/drupal8',
     tag,
   });
