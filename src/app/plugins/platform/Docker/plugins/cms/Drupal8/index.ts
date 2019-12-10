@@ -303,10 +303,11 @@ class Drupal8 extends Generator {
       drushDockerfile.render(),
     );
 
-    // We don't use the filesystem when building the Drupal image, and this avoids a great deal of
-    // I/O between the Docker client and daemon.
     const drupalDockerIgnore = new IgnoreEditor();
-    drupalDockerIgnore.addEntry('*');
+    drupalDockerIgnore.addContentsOfFile({
+      heading: 'Drupal 8',
+      content: this.fs.read(this.destinationPath('services/drupal/.gitignore')),
+    });
 
     this.fs.write(
       this.destinationPath('services/drupal/.dockerignore'),
