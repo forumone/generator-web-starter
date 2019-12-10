@@ -16,12 +16,17 @@ import installDrupal, {
 } from './installDrupal';
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
+import dedent from 'dedent';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
   'drupal/twig_field_value',
   'drupal/twig_tweak',
 ];
+
+const configGitKeepContents = dedent`
+  This file is used for your Drupal 8 configuration.
+`;
 
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
@@ -279,6 +284,8 @@ class Drupal8 extends Generator {
     const drupalDockerfile = createDrupalDockerfile({
       memcached: needsMemcached,
       tag: this.latestDrupalTag,
+      documentRoot: this.documentRoot,
+      gesso: Boolean(this.useGesso),
     });
 
     const drushDockerfile = createDrushDockerfile({
@@ -309,6 +316,11 @@ class Drupal8 extends Generator {
     this.fs.copy(
       this.templatePath('_env'),
       this.destinationPath('services/drupal/.env'),
+    );
+
+    this.fs.write(
+      this.destinationPath('services/drupal/config/.gitkeep'),
+      configGitKeepContents,
     );
   }
 }

@@ -4,7 +4,7 @@ import mkdir from 'make-dir';
 import os from 'os';
 import path from 'path';
 
-import { composer } from './dockerfile/composer';
+import { composer } from './dockerfile/constants';
 
 function getUserGroupOptions(): string[] {
   if (os.platform() === 'win32') {

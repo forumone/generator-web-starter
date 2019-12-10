@@ -1,6 +1,6 @@
 import { stringify } from 'yaml';
 
-import { composer } from '../dockerfile/composer';
+import { composer } from '../dockerfile/constants';
 
 import ComposeFile, { AnyService } from './ComposeFile';
 import composeVersion from './composeVersion';
