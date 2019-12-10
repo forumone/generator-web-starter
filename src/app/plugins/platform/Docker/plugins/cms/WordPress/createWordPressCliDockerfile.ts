@@ -1,4 +1,4 @@
-import { Dockerfile } from 'dockerfilejs';
+import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 
 export interface CreateWordPressCliDockerfileOptions {
   /**
@@ -16,18 +16,12 @@ function createWordPressCliDockerfile({
   tag,
   memcached,
 }: CreateWordPressCliDockerfileOptions) {
-  const dockerfile = new Dockerfile();
-
-  dockerfile.from({
-    image: 'forumone/wordpress-cli',
-    tag,
-  });
-
-  if (memcached) {
-    dockerfile.run('f1-ext-install pecl:memcached');
-  }
-
-  return dockerfile;
+  return new DockerfileHelper()
+    .from({
+      image: 'forumone/wordpress-cli',
+      tag,
+    })
+    .addMemcachedInstall(memcached);
 }
 
 export default createWordPressCliDockerfile;

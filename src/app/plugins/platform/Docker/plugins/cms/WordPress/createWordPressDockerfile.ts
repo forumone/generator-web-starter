@@ -1,4 +1,4 @@
-import { Dockerfile } from 'dockerfilejs';
+import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 
 export interface CreateWordPressDockerfileOptions {
   /**
@@ -16,28 +16,19 @@ function createWordPressDockerfile({
   tag,
   memcached,
 }: CreateWordPressDockerfileOptions) {
-  const dockerfile = new Dockerfile();
-
-  dockerfile.from({
-    image: 'forumone/wordpress',
-    tag: `${tag}-xdebug`,
-    stage: 'dev',
-  });
-
-  if (memcached) {
-    dockerfile.run('f1-ext-install pecl:memcached');
-  }
-
-  dockerfile.stage().from({
-    image: 'forumone/wordpress',
-    tag,
-  });
-
-  if (memcached) {
-    dockerfile.run('f1-ext-install pecl:memcached');
-  }
-
-  return dockerfile;
+  return new DockerfileHelper()
+    .from({
+      image: 'forumone/wordpress',
+      tag: `${tag}-xdebug`,
+      stage: 'dev',
+    })
+    .addMemcachedInstall(memcached)
+    .stage()
+    .from({
+      image: 'forumone/wordpress',
+      tag,
+    })
+    .addMemcachedInstall(memcached);
 }
 
 export default createWordPressDockerfile;

@@ -1,4 +1,4 @@
-import { Dockerfile } from 'dockerfilejs';
+import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 
 export interface CreateDrushDockerfileOptions {
   /**
@@ -16,18 +16,12 @@ function createDrushDockerfile({
   tag,
   memcached,
 }: CreateDrushDockerfileOptions) {
-  const dockerfile = new Dockerfile();
-
-  dockerfile.from({
-    image: 'forumone/drupal8-cli',
-    tag,
-  });
-
-  if (memcached) {
-    dockerfile.run('f1-ext-install pecl:memcached');
-  }
-
-  return dockerfile;
+  return new DockerfileHelper()
+    .from({
+      image: 'forumone/drupal8-cli',
+      tag,
+    })
+    .addMemcachedInstall(memcached);
 }
 
 export default createDrushDockerfile;

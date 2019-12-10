@@ -1,4 +1,4 @@
-import { Dockerfile } from 'dockerfilejs';
+import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
 
 export interface CreateDrupalDockerfileOptions {
   /**
@@ -16,28 +16,19 @@ function createDrupalDockerfile({
   tag,
   memcached,
 }: CreateDrupalDockerfileOptions) {
-  const dockerfile = new Dockerfile();
-
-  dockerfile.from({
-    image: 'forumone/drupal8',
-    tag: `${tag}-xdebug`,
-    stage: 'dev',
-  });
-
-  if (memcached) {
-    dockerfile.run('f1-ext-install pecl:memcached');
-  }
-
-  dockerfile.stage().from({
-    image: 'forumone/drupal8',
-    tag,
-  });
-
-  if (memcached) {
-    dockerfile.run('f1-ext-install pecl:memcached');
-  }
-
-  return dockerfile;
+  return new DockerfileHelper()
+    .from({
+      image: 'forumone/drupal8',
+      tag: `${tag}-xdebug`,
+      stage: 'dev',
+    })
+    .addMemcachedInstall(memcached)
+    .stage()
+    .from({
+      image: 'forumone/drupal8',
+      tag,
+    })
+    .addMemcachedInstall(memcached);
 }
 
 export default createDrupalDockerfile;
