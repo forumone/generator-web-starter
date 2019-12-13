@@ -4,13 +4,18 @@
 #
 # Tasks:
 # - :initialize: Creates a ~/.drush directory and copies aliases from the release
-# - :sqlsync: Copies a database from a remote Drupal site, assumes ENV['source'] provided which is a drush alias
+# - :initialize:drushdir: Creates ~/.drush/sites directory if it's missing
+# - :initialize:aliases: Copies any aliases from the root checkout to the logged in user's ~/.drush directory
+# - :site:install: Triggers drush site-install
 # - :rsync: Copies files from a remote Drupal site, assumes ENV['source'] provided which is a drush alias
-# - :sqldump: Dumps the database to the current revision's file system
 # - :cacheclear: Clears or rebuilds the Drupal cache
 # - :cr: (Drupal 8) Rebuilds the entire Drupal cache
 # - :update: Runs all pending updates, including DB updates, Features and Configuration -- if set to use those
-# - :updatedb: Runs update hooks
+# - :db:update: Runs update hooks
+# - :db:revert: Drop the current database and roll back to the last database backup
+# - :db:dump: Dumps the database to the current revision's file system
+# - :db:sync: Copies a database from a remote Drupal site, assumes ENV['source'] provided which is a drush alias
+# - :db:drop: Drops the database and all content
 # - :configuration:import: (Drupal 8) Import Configuration into the database from the config management directory
 # - :sapi:reindex: Clear Search API indexes and reindex each
 #
@@ -26,54 +31,54 @@ namespace :load do
 end
 
 namespace :drush9 do
-  desc "Initializes drush directory and aliases"
-  task :initialize do
-    invoke 'drush9:drushdir'
-    invoke 'drush9:aliases'
-  end
 
-  desc "Creates ~/.drush/sites directory if it's missing"
-  task :drushdir do
-    on roles(:all) do
-      home = capture(:echo, '$HOME')
-      unless test "[ -d #{home}/.drush/sites ]"
-        execute :mkdir, "-p #{home}/.drush/sites"
-      end
+  namespace :initialize do
+    desc "Initializes drush directory and aliases"
+    task :defaults do
+      invoke 'drush9::initialize:drushdir'
+      invoke 'drush9:initialize:aliases'
     end
-  end
 
-  desc "Copies any aliases from the root checkout to the logged in user's ~/.drush directory"
-  task :aliases do
-    on roles(:all) do
-      within "#{release_path}" do
+    desc "Creates ~/.drush/sites directory if it's missing"
+    task :drushdir do
+      on roles(:all) do
         home = capture(:echo, '$HOME')
-        execute :cp, "*.site.yml", "#{home}/.drush/sites", "|| :"
-      end
-    end
-  end
-
-  desc "Triggers drush site-install"
-  task :siteinstall do
-    on roles(:db) do
-      command = "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} site-install "
-
-      if ENV['profile']
-        command << ENV['profile']
-      end
-
-      execute :drush, command
-    end
-  end
-
-  desc "Triggers drush sql-sync to copy databases between environments"
-  task :sqlsync do
-    on roles(:db) do
-      if ENV['source']
-        within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          execute :drush, "-p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} sql-sync #{ENV['source']} @self -y"
+        unless test "[ -d #{home}/.drush/sites ]"
+          execute :mkdir, "-p #{home}/.drush/sites"
         end
       end
     end
+
+    desc "Copies any aliases from the root checkout to the logged in user's ~/.drush directory"
+    task :aliases do
+      on roles(:all) do
+        within "#{release_path}" do
+          home = capture(:echo, '$HOME')
+          execute :cp, "*.site.yml", "#{home}/.drush/sites", "|| :"
+        end
+      end
+    end
+  end
+
+  namespace :site do
+    desc "Triggers drush site-install"
+    task :install do
+      on roles(:db) do
+        command = "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} site-install "
+
+        if ENV['profile']
+          command << ENV['profile']
+        end
+
+        execute :drush, command
+      end
+    end
+  end
+
+  desc "(Deprecated) Triggers drush sql-sync to copy databases between environments"
+  task :sqlsync do
+    warn "[DEPRECATION] drush9:sqlsync is deprectated. Use drush9:db:sync instead."
+    invoke "drush9:db:sync"
 
     invoke 'drush9:update'
   end
@@ -95,43 +100,22 @@ namespace :drush9 do
     end
   end
 
-  desc "Creates database backup"
+  desc "(Deprecated) Creates database backup"
   task :sqldump do
-    on roles(:db) do
-      unless test " [ -f #{release_path}/db.sql.gz ]"
-        within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          # Capture the output from drush status
-          status = JSON.parse(capture(:drush, '-p', 'status'))
-
-          # Ensure that we are connected to the database and were able to bootstrap Drupal
-          if ('Connected' == status['db-status'] && 'Successful' == status['bootstrap'])
-            execute :drush, "-r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} sql-dump -y --gzip --result-file=#{release_path}/db.sql"
-          end
-        end
-      end
-    end
+    warn "[DEPRECATION] drush9:sqldump is deprectated. Use drush9:db:dump instead."
+    invoke "drush9:db:dump"
   end
 
-  desc "Runs all pending update hooks"
+  desc "(Deprecated) Runs all pending update hooks"
   task :updatedb do
-    on roles(:db) do
-      within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-        fetch(:site_url).each do |site|
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'updatedb'
-        end
-      end
-    end
+    warn "[DEPRECATION] drush9:updatedb is deprectated. Use drush9:db:update instead."
+    invoke "drush9:db:update"
   end
 
-  desc "Drop the current database and roll back to the last database backup."
-    task :revertdb do
-      on roles(:db) do
-        within "#{release_path}" do
-          invoke "drush9:sql:drop"
-          execute :drush, "--yes", "sql:connect < #{last_release_path}/db.sql"
-        end
-      end
-    end
+  desc "(Deprecated) Drop the current database and roll back to the last database backup"
+  task :revertdb do
+    warn "[DEPRECATION] drush9:revertdb is deprectated. Use drush9:db:revert instead."
+    invoke "drush9:db:revert"
   end
 
   desc "Clears or rebuilds the Drupal caches"
@@ -150,17 +134,80 @@ namespace :drush9 do
     end
   end
 
-  desc "Runs pending updates"
+  desc "Apply all updates"
   task :update do
-    # Run all pending database updates
     if fetch(:drupal_db_updates)
-      invoke 'drush9:updatedb'
+      invoke 'drush9:db:update'
     end
 
     invoke 'drush9:cacheclear'
 
     # Import all configuration updates
     invoke 'drush9:configuration:import'
+  end
+
+  namespace :db do
+    desc "Runs all pending update hooks"
+    task :update do
+      if fetch(:drupal_db_updates)
+        on roles(:db) do
+          within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
+            fetch(:site_url).each do |site|
+              execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'updatedb'
+            end
+          end
+        end
+      end
+    end
+
+    desc "Drop the current database and roll back to the last database backup"
+    task :revert do
+      on roles(:db) do
+        within "#{release_path}" do
+          invoke "drush9:db:drop"
+          execute :drush, "--yes", "sql:connect < #{last_release_path}/db.sql"
+        end
+      end
+    end
+
+    desc "Creates database backup"
+    task :dump do
+      on roles(:db) do
+        unless test " [ -f #{release_path}/db.sql.gz ]"
+          within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
+            # Capture the output from drush status
+            status = JSON.parse(capture(:drush, 'status --format=json'))
+
+            # Ensure that we are connected to the database and were able to bootstrap Drupal
+            if ('Connected' == status['db-status'] && 'Successful' == status['bootstrap'])
+              execute :drush, "-r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} sql-dump -y --gzip --result-file=#{release_path}/db.sql"
+            end
+          end
+        end
+      end
+    end
+
+    desc "Triggers drush sql-sync to copy databases between environments"
+    task :sync do
+      on roles(:db) do
+        if ENV['source']
+          within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
+            execute :drush, "-r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} sql-sync #{ENV['source']} @self -y"
+          end
+        end
+      end
+
+      invoke 'drush9:update'
+    end
+
+    desc "Drops the database and all content"
+    task :drop do
+      on roles(:db) do
+        within "#{release_path}" do
+          execute :drush, "--yes", "sql:drop"
+        end
+      end
+    end
   end
 
   namespace :configuration do
@@ -176,7 +223,6 @@ namespace :drush9 do
     end
 
     invoke 'drush9:cacheclear'
-    end
   end
 
   namespace :sapi do
