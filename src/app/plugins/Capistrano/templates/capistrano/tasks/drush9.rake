@@ -94,7 +94,7 @@ namespace :drush9 do
 
       if ENV['source']
         within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} rsync #{ENV['source']}:#{path} @self:#{path} --mode=rz"
+          execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)[0]} rsync #{ENV['source']}:#{path} @self:#{path} --mode=rz"
         end
       end
     end
@@ -128,7 +128,7 @@ namespace :drush9 do
     on roles(:db) do
       within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
         fetch(:site_url).each do |site|
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'cr'
+          execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'cr'
         end
       end
     end
@@ -215,7 +215,7 @@ namespace :drush9 do
     task :import do
       on roles(:db) do
         within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)}", 'config-import --partial'
+          execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)}", 'config-import --partial'
         end
       end
 
@@ -233,16 +233,16 @@ namespace :drush9 do
           # For each site
           fetch(:site_url).each do |site|
             # Clear all indexes
-            execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'sapi-c'
+            execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'sapi-c'
             if (0 != fetch(:search_indexes, []).length)
               # Re-index each defined index individually
               # Sometimes search_api hangs after running the first of multiple indexing operations
               fetch(:search_indexes).each do |index|
-                execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'sapi-i', index
+                execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'sapi-i', index
               end
             else
               # Index without arguments to run for all enabled indexes
-              execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'sapi-i'
+              execute :drush, "-y -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{site}", 'sapi-i'
             end
           end
         end
