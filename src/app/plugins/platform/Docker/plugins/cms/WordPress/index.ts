@@ -1,10 +1,15 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
+import decompress from 'decompress';
+import fetch from 'node-fetch';
+import { URL } from 'url';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../createPHPDockerfile';
+import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
+import memcached from '../../../dockerfile/memcached';
+import xdebug from '../../../dockerfile/xdebug';
 import getLatestWordPressTags from '../../../registry/getLatestWordPressTags';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
@@ -12,6 +17,8 @@ import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
 import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
+
+const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
 class WordPress extends Generator {
   // Written out in initializing phase
@@ -23,6 +30,7 @@ class WordPress extends Generator {
 
   private usesWpStarter: boolean | undefined = true;
   private usesWpCfm: boolean | undefined = true;
+  private usesGesso: boolean | undefined = true;
 
   private shouldInstall: boolean | undefined = false;
 
@@ -95,6 +103,7 @@ class WordPress extends Generator {
     this.shouldInstall = shouldInstallWordPress;
     this.usesWpStarter = wpStarter;
     this.usesWpCfm = wpCfm;
+    this.usesGesso = useGesso;
 
     if (useCapistrano) {
       this.composeWith(this.options.capistrano, {
@@ -212,8 +221,15 @@ class WordPress extends Generator {
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
 
     cliEditor.addService('wp', {
-      image: 'wordpress:' + this.latestWpCliTag,
-      volumes: [createBindMount('./services/wordpress', '/var/www/html')],
+      build: './services/wp-cli',
+      volumes: [
+        createBindMount('./services/wordpress', '/var/www/html'),
+        {
+          type: 'volume',
+          source: filesystemVolume,
+          target: uploadPath,
+        },
+      ],
     });
 
     if (this.usesWpStarter) {
@@ -253,14 +269,33 @@ class WordPress extends Generator {
       }
     }
 
+    const needsMemcached = this.options.plugins.cache === 'Memcache';
+    const dependencies = needsMemcached ? [memcached] : [];
+
     const wpDockerfile = createPHPDockerfile({
       from: { image: 'wordpress', tag: this.latestWpTag },
-      xdebug: true,
+      dependencies: [...dependencies, xdebug],
     });
 
     this.fs.write(
       this.destinationPath('services/wordpress/Dockerfile'),
       wpDockerfile.render(),
+    );
+
+    const cliDockerfile = createPHPDockerfile({
+      from: { image: 'wordpress', tag: this.latestWpCliTag },
+      dependencies,
+      postBuildCommands: [
+        "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
+      ],
+      runtimeDeps: ['openssh'],
+      // Restore the 'www-data' user in the wordpress:cli image
+      user: 'www-data',
+    });
+
+    this.fs.write(
+      this.destinationPath('services/wp-cli/Dockerfile'),
+      cliDockerfile.render(),
     );
 
     // As with the Drupal8 generator, we don't use anything from the filesystem when
@@ -289,9 +324,7 @@ class WordPress extends Generator {
 
     if (this.usesWpStarter) {
       const wpRoot = this.destinationPath('services/wordpress');
-      await spawnComposer(['install', '--ignore-platform-reqs'], {
-        cwd: wpRoot,
-      });
+      await spawnComposer(['install'], { cwd: wpRoot });
     } else {
       const wpRoot = this.destinationPath(
         'services/wordpress',
@@ -302,8 +335,65 @@ class WordPress extends Generator {
     }
   }
 
+  /**
+   * Install plugin from WordPress Packagist with Composer.
+   */
+  private async _installWithComposer(pluginName: string) {
+    await spawnComposer(
+      ['require', `wpackagist-plugin/${pluginName}`, '--ignore-platform-reqs'],
+      {
+        cwd: this.destinationPath('services/wordpress'),
+      },
+    );
+  }
+
+  /**
+   * Install plugin from WordPress plugin repo as a zip.
+   */
+  private async _installFromWPRepo(pluginName: string) {
+    const endpoint = new URL('https://downloads.wordpress.org');
+    endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
+    const response = await fetch(String(endpoint));
+    if (!response.ok) {
+      const { status, statusText, url } = response;
+      throw new Error(`fetch(${url}): ${status} ${statusText}`);
+    }
+
+    const buffer = await response.buffer();
+
+    const destinationPath = posix.join(
+      'services',
+      'wordpress',
+      this.documentRoot,
+      'wp-content',
+      'plugins',
+      pluginName,
+    );
+
+    await decompress(buffer, destinationPath, { strip: 1 });
+  }
+
+  private async _installGessoDependencies() {
+    if (!this.shouldInstall) {
+      return;
+    }
+
+    const install: (pluginName: string) => Promise<void> = this.usesWpStarter
+      ? pluginName => this._installWithComposer(pluginName)
+      : pluginName => this._installFromWPRepo(pluginName);
+
+    // Install required dependencies to avoid Gesso crashing when enabled
+    for (const plugin of gessoWPDependencies) {
+      await install(plugin);
+    }
+  }
+
   async install() {
     await this._installWordPress();
+
+    if (this.usesGesso) {
+      await this._installGessoDependencies();
+    }
   }
 }
 

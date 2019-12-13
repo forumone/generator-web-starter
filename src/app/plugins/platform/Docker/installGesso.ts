@@ -19,7 +19,7 @@ async function installGesso({
     'forumone',
     repository,
     'archive',
-    branch + '.zip',
+    `${branch}.zip`,
   );
 
   const response = await fetch(String(endpoint));

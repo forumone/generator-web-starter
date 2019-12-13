@@ -1,4 +1,4 @@
-import fetch, { Response } from 'node-fetch';
+import got from 'got';
 import semver from 'semver';
 
 interface Release {
@@ -19,19 +19,11 @@ export interface Dist {
   readonly checksum: string;
 }
 
-async function fetchHelper(url: string): Promise<Response> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    const { url, status, statusText } = response;
-    throw new Error(`fetch(${url}): ${status} ${statusText}`);
-  }
-
-  return response;
-}
-
 async function getLatestRelease(): Promise<Release> {
-  const response = await fetchHelper('https://nodejs.org/dist/index.json');
-  const versions: Release[] = await response.json();
+  const response = await got('https://nodejs.org/dist/index.json', {
+    json: true,
+  });
+  const versions: Release[] = response.body;
 
   // Compare b <=> a for descending sort
   versions.sort((a, b) => semver.compare(b.version, a.version));
@@ -40,11 +32,11 @@ async function getLatestRelease(): Promise<Release> {
 }
 
 async function getReleaseChecksum(version: string): Promise<string> {
-  const response = await fetchHelper(
+  const response = await got(
     `https://nodejs.org/dist/${version}/SHASUMS256.txt`,
   );
 
-  const checksums = await response.text();
+  const checksums = response.body;
 
   // NB. SHASUMS256.txt is formatted like so:
   // 9a16909157e68d4e409a73b008994ed05b4b6bc952b65ffa7fbc5abb973d31e9  node-v12.4.0-linux-x64.tar.gz
@@ -65,7 +57,7 @@ async function getReleaseChecksum(version: string): Promise<string> {
   return matching[0];
 }
 
-async function getLatestNodeVersion(): Promise<Dist> {
+async function getLatestNodeRelease(): Promise<Dist> {
   const release = await getLatestRelease();
   const checksum = await getReleaseChecksum(release.version);
 
@@ -75,4 +67,4 @@ async function getLatestNodeVersion(): Promise<Dist> {
   };
 }
 
-export default getLatestNodeVersion;
+export default getLatestNodeRelease;

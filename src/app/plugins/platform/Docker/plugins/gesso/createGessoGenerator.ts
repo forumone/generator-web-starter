@@ -3,18 +3,12 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
-import IgnoreEditor from '../../../../../IgnoreEditor';
 import ComposeEditor, {
   createBindMount,
   ServiceMutator,
 } from '../../ComposeEditor';
 import VolumeMount from '../../ComposeEditor/VolumeMount';
-import createGessoDockerfile from '../../createGessoDockerfile';
 import installGesso, { InstallGessoOptions } from '../../installGesso';
-import getLatestNodeVersion, {
-  Dist,
-} from '../../registry/getLatestNodeRelease';
-import getLatestPhpCliTag from '../../registry/getLatestPhpCliTag';
 
 type BranchSpecifier = Pick<InstallGessoOptions, 'branch' | 'repository'>;
 
@@ -58,8 +52,6 @@ function createGessoGenerator({
 }: CreateGeneratorOptions): typeof Generator {
   class Gesso extends Generator {
     // Assigned to in initializing phase
-    private latestNodeDist!: Dist;
-    private latestPhpTag!: string;
     private documentRoot!: string;
 
     // Assigned to in prompting phase
@@ -84,14 +76,6 @@ function createGessoGenerator({
       assert.object(options.composeCliEditor, 'options.composeCliEditor');
 
       this.documentRoot = options.documentRoot;
-
-      const [latestPhpTag, latestNodeDist] = await Promise.all([
-        getLatestPhpCliTag(),
-        getLatestNodeVersion(),
-      ]);
-
-      this.latestNodeDist = latestNodeDist;
-      this.latestPhpTag = latestPhpTag;
     }
 
     async prompting() {
@@ -171,27 +155,22 @@ function createGessoGenerator({
       // bind mounts and volumes, so we have to add it manually here. (It's the same
       // reason we use string concatenation later on in this file when creating a handful
       // of bind mounts relative to this directory.)
-      const hostThemePath =
-        './' +
-        posix.join(
-          'services',
-          serviceName,
-          this.documentRoot,
-          themeDirectory,
-          this.themeName,
-        );
+      const hostThemePath = `./${posix.join(
+        'services',
+        serviceName,
+        this.documentRoot,
+        themeDirectory,
+        this.themeName,
+      )}`;
 
       // Add the Gesso container here
       cliEditor.addService('gesso', {
-        build: {
-          context: hostThemePath,
-          dockerfile: '$PWD/services/gesso/Dockerfile',
-        },
+        build: hostThemePath,
         init: true,
         volumes: [
-          createBindMount(hostThemePath + '/images', '/app/images'),
-          createBindMount(hostThemePath + '/js', '/app/js'),
-          createBindMount(hostThemePath + '/source', '/app/source'),
+          createBindMount(`${hostThemePath}/images`, '/app/images'),
+          createBindMount(`${hostThemePath}/js`, '/app/js'),
+          createBindMount(`${hostThemePath}/source`, '/app/source'),
           {
             type: 'volume',
             source: publicVolumeName,
@@ -224,30 +203,6 @@ function createGessoGenerator({
       if (installPhase === 'install') {
         return this._installGesso();
       }
-    }
-
-    writing() {
-      this.fs.write(
-        this.destinationPath('services/gesso/Dockerfile'),
-        createGessoDockerfile({
-          node: this.latestNodeDist,
-          php: this.latestPhpTag,
-        }).render(),
-      );
-
-      const ignore = new IgnoreEditor();
-      ignore.addEntry('*');
-      ignore.addEntry('!package.json');
-      ignore.addEntry('!package-lock.json');
-      ignore.addEntry('!gulpfile.js');
-      ignore.addEntry('!patternlab-config.json');
-      ignore.addEntry('!.stylelintignore');
-      ignore.addEntry('!.stylelintrc.yml');
-
-      this.fs.write(
-        this.destinationPath(this._getTargetThemePath(), '.dockerignore'),
-        ignore.serialize(),
-      );
     }
   }
 

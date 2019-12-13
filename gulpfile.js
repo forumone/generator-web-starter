@@ -7,8 +7,9 @@ const util = require('util');
 
 const gulp = require('gulp');
 const babel = require('gulp-babel');
+const filter = require('gulp-filter');
 const sourcemaps = require('gulp-sourcemaps');
-const tslint = require('gulp-tslint').default;
+const eslint = require('gulp-eslint');
 const typescript = require('gulp-typescript');
 
 const rimraf = util.promisify(require('rimraf'));
@@ -27,8 +28,9 @@ function clean() {
 function lint() {
   return gulp
     .src(typescriptSources, { since: gulp.lastRun(lint) })
-    .pipe(tslint({ formatter: 'codeFrame' }))
-    .pipe(tslint.report());
+    .pipe(eslint({ formatter: 'codeFrame' }))
+    .pipe(eslint.format())
+    .pipe(eslint.failAfterError());
 }
 
 function copy() {
@@ -40,8 +42,12 @@ function copy() {
 const project = typescript.createProject('./tsconfig.json');
 
 function compile() {
+  // Don't compile or bundle tests (they're checked as part of ts-jest)
+  const ignoreTests = filter(['**', '!**/*.spec.ts']);
+
   return project
     .src()
+    .pipe(ignoreTests)
     .pipe(sourcemaps.init())
     .pipe(project())
     .js.pipe(babel())

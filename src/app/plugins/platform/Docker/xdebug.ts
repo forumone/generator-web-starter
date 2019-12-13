@@ -9,7 +9,7 @@ export const enableXdebug = dedent(`
 
 // The following are interpolations for Docker Compose files, not mistaken backtick
 // interpolations.
-// tslint:disable:no-invalid-template-strings
+/* eslint-disable no-template-curly-in-string */
 export const xdebugEnvironment: Readonly<Record<string, string>> = {
   XDEBUG_CONFIG: 'remote_host=${F1_XDEBUG_REMOTE:-127.0.0.1}',
 };

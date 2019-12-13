@@ -9,8 +9,13 @@ export interface Require {
   readonly [pkg: string]: string;
 }
 
+export interface Platform {
+  readonly [extension: string]: string;
+}
+
 export interface Config {
   readonly 'vendor-dir': string;
+  readonly platform?: Platform;
 }
 
 const runWPStarterSetup = 'WCM\\WPStarter\\Setup::run';
@@ -58,7 +63,7 @@ function createComposerFile(name: string, documentRoot: string): ComposerFile {
 
   function createInstallerPath(path: string, type: string): InstallerPaths {
     const key = posix.join(documentRoot, 'wp-content', path, '{$name}');
-    const value = ['type:' + type];
+    const value = [`type:${type}`];
 
     return { [key]: value };
   }
@@ -72,6 +77,12 @@ function createComposerFile(name: string, documentRoot: string): ComposerFile {
     },
     config: {
       'vendor-dir': vendorDirectory,
+      platform: {
+        // Inform composer that the production environment will have the mysqli extension.
+        // The number here is completely arbitrary and has no meaning outside of being a
+        // valid semver version. Composer does not check this number, only that it exists.
+        'ext-mysqli': '1.0.0',
+      },
     },
     scripts: {
       'post-install-cmd': runWPStarterSetup,

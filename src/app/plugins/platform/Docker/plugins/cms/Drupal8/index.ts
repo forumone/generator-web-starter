@@ -4,11 +4,17 @@ import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
-import createPHPDockerfile from '../../../createPHPDockerfile';
+import createPHPDockerfile from '../../../dockerfile/createPHPDockerfile';
+import gd from '../../../dockerfile/gd';
+import memcached from '../../../dockerfile/memcached';
+import opcache from '../../../dockerfile/opcache';
+import pdo from '../../../dockerfile/pdo';
+import zip from '../../../dockerfile/zip';
 import getLatestDrupalTag from '../../../registry/getLatestDrupalTag';
 import getLatestPhpCliAlpineTag from '../../../registry/getLatestPhpCliAlpineTag';
 import spawnComposer from '../../../spawnComposer';
 import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
+import xdebug from '../../../dockerfile/xdebug';
 
 import installDrupal, {
   drupalProject,
@@ -161,8 +167,10 @@ class Drupal8 extends Generator {
     //   Needed so that we can persist saved files across containers.
     const filesystemVolumeName = editor.ensureVolume('fs-data');
 
-    const hostDrupalPath =
-      './' + posix.join('services/drupal', this.documentRoot);
+    const hostDrupalPath = `./${posix.join(
+      'services/drupal',
+      this.documentRoot,
+    )}`;
 
     editor.addNginxService({
       depends_on: ['drupal'],
@@ -218,7 +226,8 @@ class Drupal8 extends Generator {
       build: './services/drush',
       // Pass --root to the entrypoint so that Drush can both see the full Drupal
       // install and know where the site's root actually is.
-      entrypoint: ['/var/www/html/vendor/bin/drush', `--root=${varHtmlPath}`],
+      entrypoint: ['/var/www/html/vendor/bin/drush'],
+      working_dir: varHtmlPath,
       volumes: [
         createBindMount('./services/drupal', '/var/www/html'),
         {
@@ -270,42 +279,27 @@ class Drupal8 extends Generator {
   }
 
   writing() {
+    const sharedDependencies = [xdebug, opcache];
     const needsMemcached = this.options.plugins.cache === 'Memcache';
-    const sharedDependencies = needsMemcached
-      ? ['libmemcached-dev', 'zlib-dev', 'libevent-dev']
-      : [];
-
-    const sharedPeclPackages = needsMemcached ? ['memcached'] : [];
+    if (needsMemcached) {
+      sharedDependencies.push(memcached);
+    }
 
     const drupalDockerfile = createPHPDockerfile({
       from: { image: 'drupal', tag: this.latestDrupalTag },
-      buildDeps: sharedDependencies,
-      peclPackages: sharedPeclPackages,
-      xdebug: true,
+      dependencies: sharedDependencies,
     });
 
-    // "borrowed" from library/drupal's Dockerfile
-    const drupalDependencies = [
-      'coreutils',
-      'freetype-dev',
-      'libjpeg-turbo-dev',
-      'postgresql-dev',
-      'libzip-dev',
-    ];
+    const drupalDependencies = [gd, pdo, zip];
 
     const drushDockerfile = createPHPDockerfile({
       from: { image: 'php', tag: this.latestPhpTag },
-      buildDeps: [...drupalDependencies, ...sharedDependencies],
-      builtins: ['gd', 'opcache', 'pdo_mysql', 'pdo_pgsql', 'zip'],
-      configureArgs: [
-        [
-          'gd',
-          '--with-freetype-dir=/usr/include/',
-          '--with-jpeg-dir=/usr/include/',
-          '--with-png-dir=/usr/include/',
-        ],
+      dependencies: [...drupalDependencies, ...sharedDependencies],
+      // The memory limit defaults to 128M, even in CLI containers - expand it for easier
+      // developer use.
+      postBuildCommands: [
+        "echo 'memory_limit = -1' >> /usr/local/etc/php/php-cli.ini",
       ],
-      peclPackages: sharedPeclPackages,
       runtimeDeps: ['mysql-client', 'openssh', 'rsync'],
     });
 

@@ -35,7 +35,7 @@ async function spawnComposer(
     // Use 'delegated' since we presume that install-related Composer tasks are I/O
     // related, and thus can rely on the container being authoritative while the
     // process is running.
-    mountOptions.push('-v', execaOptions.cwd + ':/app:delegated');
+    mountOptions.push('-v', `${execaOptions.cwd}:/app:delegated`);
   }
 
   if (useCache) {
@@ -44,7 +44,7 @@ async function spawnComposer(
 
     try {
       await mkdir(composerCachePath);
-      mountOptions.push('-v', composerCachePath + ':/tmp/cache:cached');
+      mountOptions.push('-v', `${composerCachePath}:/tmp/cache:cached`);
     } catch {
       // Ignore errors; failing to create a subdirectory in the cache isn't fatal, it's
       // just slower.

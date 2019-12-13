@@ -7,7 +7,7 @@ class IgnoreEditor {
   }
 
   addComment(comment: string) {
-    this.addEntry('# ' + comment);
+    this.addEntry(`# ${comment}`);
   }
 
   addSeparator() {
@@ -24,7 +24,7 @@ class IgnoreEditor {
   }
 
   serialize() {
-    return this.lines.join('\n') + '\n';
+    return `${this.lines.join('\n')}\n`;
   }
 }
 
