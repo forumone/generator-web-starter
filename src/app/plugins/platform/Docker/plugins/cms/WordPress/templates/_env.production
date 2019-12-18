@@ -1,15 +1,13 @@
-WORDPRESS_ENV=development
+# Values with a . are here so that WP Starter knows to retrieve them from the env.
 
-# These values are retrieved from the environment
+WORDPRESS_ENV=.
+
 DB_HOST=.
 DB_NAME=.
 DB_USER=.
 DB_PASSWORD=.
 
 WP_HOME=.
-
-# Redirect email to MailHog (visit localhost:8025 to access the UI)
-SMTPHOST=mailhog:1025
 
 # Don't allow WP to write to the filesystem (it can't in a container anyway.)
 DISALLOW_FILE_MODS=true

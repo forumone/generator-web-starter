@@ -174,36 +174,28 @@ class WordPress extends Generator {
       ],
     });
 
-    const envFile = this.usesWpStarter
-      ? { env_file: './services/wordpress/.env' }
-      : undefined;
-
-    // Projects not based on wp-starter won't have a .env file, so we have to
-    // ensure a minimally-compatible runtime environment inside the container.
-    const initialEnvironment = this.usesWpStarter
-      ? undefined
-      : {
-          DB_HOST: 'mysql:3306',
-          DB_NAME: 'web',
-          DB_USER: 'web',
-          DB_PASSWORD: 'web',
-          SMTPHOST: 'mailhog:1025',
-        };
+    // Set up the environment variables to be read in config
+    const initialEnvironment = {
+      DB_HOST: 'mysql:3306',
+      DB_NAME: 'web',
+      DB_USER: 'web',
+      DB_PASSWORD: 'web',
+      SMTPHOST: 'mailhog:1025',
+    };
 
     // Use an array here because, for some odd reason, dedent gets confused about how
     // string indentation works otherwise.
     const wpEntryCommand = [
       `chmod -R 0777 ${uploadPath}`,
       enableXdebug,
-      'exec bash ./wp-entrypoint.sh',
+      'exec php-fpm',
     ].join('\n');
 
     editor.addService('wordpress', {
       build: './services/wordpress',
       depends_on: ['mysql'],
       command: ['-c', wpEntryCommand],
-      entrypoint: '/bin/bash',
-      ...envFile,
+      entrypoint: '/bin/sh',
       environment: {
         ...initialEnvironment,
         ...xdebugEnvironment,
@@ -258,6 +250,11 @@ class WordPress extends Generator {
       if (!this.fs.exists(dotenvPath)) {
         this.fs.copy(this.templatePath('_env'), dotenvPath);
       }
+
+      const prodEnvPath = `${dotenvPath}.production`;
+      if (!this.fs.exists(prodEnvPath)) {
+        this.fs.copy(this.templatePath('_env.production'), prodEnvPath);
+      }
     } else {
       const wpConfigPath = this.destinationPath(
         'services/wordpress',
@@ -277,6 +274,9 @@ class WordPress extends Generator {
     const wpDockerfile = createWordPressDockerfile({
       tag: this.latestWpTag,
       memcached: needsMemcached,
+      documentRoot: this.documentRoot,
+      gesso: Boolean(this.usesGesso),
+      composer: Boolean(this.usesWpStarter),
     });
 
     this.fs.write(
@@ -292,15 +292,6 @@ class WordPress extends Generator {
     this.fs.write(
       this.destinationPath('services/wp-cli/Dockerfile'),
       cliDockerfile.render(),
-    );
-
-    // As with the Drupal8 generator, we don't use anything from the filesystem when
-    // building this image, so we just ignore everything.
-    const ignore = new IgnoreEditor();
-    ignore.addEntry('*');
-    this.fs.write(
-      this.destinationPath('services/wordpress/.dockerignore'),
-      ignore.serialize(),
     );
 
     // For projects NOT using the web-starter, add a wp-cli.yml file.
@@ -390,6 +381,27 @@ class WordPress extends Generator {
     if (this.usesGesso) {
       await this._installGessoDependencies();
     }
+
+    // Create the .dockerignore file here, after everything has been installed
+    const wpIgnorePath = this.destinationPath('services/wordpress/.gitignore');
+
+    const ignoreEditor = new IgnoreEditor();
+    if (this.fs.exists(wpIgnorePath)) {
+      ignoreEditor.addContentsOfFile({
+        heading: 'WP Starter',
+        content: this.fs.read(wpIgnorePath),
+      });
+
+      if (this.usesGesso) {
+        const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
+        ignoreEditor.addEntry(`!${path}`);
+      }
+    }
+
+    this.fs.write(
+      this.destinationPath('services/wordpress/.dockerignore'),
+      ignoreEditor.serialize(),
+    );
   }
 }
 
