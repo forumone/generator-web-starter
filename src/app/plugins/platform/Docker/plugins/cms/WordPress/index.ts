@@ -233,11 +233,6 @@ class WordPress extends Generator {
   }
 
   async writing() {
-    this.fs.copy(
-      this.templatePath('wp-entrypoint.sh'),
-      this.destinationPath('services/wordpress/wp-entrypoint.sh'),
-    );
-
     // For project not using wp-starter, don't bother writing out composer.json
     // or a .env file.
     if (this.usesWpStarter) {
