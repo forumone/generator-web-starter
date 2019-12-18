@@ -55,7 +55,7 @@ function createDrupalDockerfile({
     : undefined;
 
   if (gessoPath) {
-    dockerfile.addGessoBuildStage(posix.join(documentRoot, 'themes/gesso'));
+    dockerfile.addGessoBuildStage(gessoPath);
   }
 
   dockerfile.addFinalCopyStage({
