@@ -6,7 +6,7 @@ export const composerTag = '1.7';
 /**
  * The name of the Composer image to use for projects.
  */
-export const composerImage = 'composer';
+export const composerImage = 'forumone/composer';
 
 /**
  * The full `<image>:<tag>` string for this image; useful for `docker run` or the `image:`
