@@ -59,7 +59,7 @@ async function spawnComposer(
       '-it',
       ...userOptions,
       ...mountOptions,
-      'composer:1.7',
+      'forumone/composer:1.9',
       ...args,
     ],
     {
