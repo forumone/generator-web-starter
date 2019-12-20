@@ -136,7 +136,7 @@ class ComposeEditor {
 
   addNamedComposer(name: string, directory: string) {
     this.addService(name, {
-      image: 'composer:1.7',
+      image: 'forumone/composer:1.9',
       volumes: [createBindMount(`./${directory}`, '/app')],
     });
   }
