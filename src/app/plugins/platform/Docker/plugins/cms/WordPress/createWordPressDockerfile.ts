@@ -1,6 +1,7 @@
 import { posix } from 'path';
 
 import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
+import { gessoWordPressPath } from '../../gesso/constants';
 
 export interface CreateWordPressDockerfileOptions {
   /**
@@ -60,7 +61,7 @@ function createWordPressDockerfile({
     });
   }
   const gessoPath = gesso
-    ? posix.join(documentRoot, 'wp-content/themes/gesso')
+    ? posix.join(documentRoot, gessoWordPressPath)
     : undefined;
 
   if (gessoPath) {

@@ -1,6 +1,7 @@
 import { posix } from 'path';
 
 import DockerfileHelper from '../../../dockerfile/DockerfileHelper';
+import { gessoDrupalPath } from '../../gesso/constants';
 
 export interface CreateDrupalDockerfileOptions {
   /**
@@ -51,7 +52,7 @@ function createDrupalDockerfile({
     });
 
   const gessoPath = gesso
-    ? posix.join(documentRoot, 'themes/gesso')
+    ? posix.join(documentRoot, gessoDrupalPath)
     : undefined;
 
   if (gessoPath) {
