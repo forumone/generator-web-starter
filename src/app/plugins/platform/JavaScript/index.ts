@@ -97,6 +97,7 @@ class JavaScript extends Generator {
         'eslint-config-prettier',
         'eslint-plugin-implicit-dependencies',
         'eslint-plugin-prettier',
+        'eslint-plugin-react',
         'prettier',
         'fork-ts-checker-webpack-plugin',
       ],
