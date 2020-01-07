@@ -7,7 +7,11 @@ import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestDrupal8Tag from '../../../registry/getLatestDrupal8Tag';
 import getLatestDrupal8CliTag from '../../../registry/getLatestDrupal8CliTag';
 import spawnComposer from '../../../spawnComposer';
-import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
+import {
+  enableXdebug,
+  enableXdebugProfiler,
+  xdebugEnvironment,
+} from '../../../xdebug';
 
 import installDrupal, {
   drupalProject,
@@ -196,6 +200,7 @@ class Drupal8 extends Generator {
     const drupalEntryCommand = [
       `chmod -R 0777 ${uploadPath}`,
       enableXdebug,
+      enableXdebugProfiler,
       'exec php-fpm',
     ].join('\n');
 

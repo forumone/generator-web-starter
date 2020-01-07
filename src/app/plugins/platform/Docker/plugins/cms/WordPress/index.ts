@@ -10,7 +10,11 @@ import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestWordPressCliTag from '../../../registry/getLatestWordPressCliTag';
 import getLatestWordPressTag from '../../../registry/getLatestWordPressTag';
 import spawnComposer from '../../../spawnComposer';
-import { enableXdebug, xdebugEnvironment } from '../../../xdebug';
+import {
+  enableXdebug,
+  enableXdebugProfiler,
+  xdebugEnvironment,
+} from '../../../xdebug';
 
 import createComposerFile from './createComposerFile';
 import getHashes from './getHashes';
@@ -189,6 +193,7 @@ class WordPress extends Generator {
     const wpEntryCommand = [
       `chmod -R 0777 ${uploadPath}`,
       enableXdebug,
+      enableXdebugProfiler,
       'exec php-fpm',
     ].join('\n');
 
