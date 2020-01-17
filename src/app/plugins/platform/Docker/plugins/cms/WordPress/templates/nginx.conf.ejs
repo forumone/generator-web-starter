@@ -24,4 +24,5 @@ server {
     fastcgi_intercept_errors on;
     fastcgi_pass wordpress:9000;
   }
+  client_max_body_size 200m;
 }
