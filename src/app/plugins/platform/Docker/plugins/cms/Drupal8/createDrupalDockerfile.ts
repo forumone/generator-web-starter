@@ -23,6 +23,11 @@ export interface CreateDrupalDockerfileOptions {
    * The name of the document root.
    */
   documentRoot: string;
+
+  /**
+   * Source files from the repository to copy into the final image.
+   */
+  sourceFiles: ReadonlyArray<string>;
 }
 
 function createDrupalDockerfile({
@@ -30,6 +35,7 @@ function createDrupalDockerfile({
   memcached,
   documentRoot,
   gesso,
+  sourceFiles,
 }: CreateDrupalDockerfileOptions) {
   const dockerfile = new DockerfileHelper()
     .from({
@@ -66,7 +72,7 @@ function createDrupalDockerfile({
     // directories' contents instead of replacing, so this lets us better utilize the
     // layer cache.
     sourceDirectories: [documentRoot, 'config', 'drush'],
-    sourceFiles: ['load.environment.php'],
+    sourceFiles,
   });
 
   return dockerfile;

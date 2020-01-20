@@ -281,11 +281,18 @@ class Drupal8 extends Generator {
   writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
 
+    // The Pantheon template doesn't create a load.environment.php file, so we have to
+    // account for that lest the Docker build fail (or worse, we remove the ability to load
+    // env vars when using drupal-composer).
+    const sourceFiles =
+      this.projectType === drupalProject ? ['load.environment.php'] : [];
+
     const drupalDockerfile = createDrupalDockerfile({
       memcached: needsMemcached,
       tag: this.latestDrupalTag,
       documentRoot: this.documentRoot,
       gesso: Boolean(this.useGesso),
+      sourceFiles,
     });
 
     const drushDockerfile = createDrushDockerfile({
