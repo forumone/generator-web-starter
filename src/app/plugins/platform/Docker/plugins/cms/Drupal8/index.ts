@@ -84,8 +84,8 @@ class Drupal8 extends Generator {
         type: 'confirm',
         name: 'shouldInstallDrupal',
         message: 'Install Drupal 8?',
-	store: true,
-	default: (answers: { documentRoot: string }) => {
+        store: true,
+        default: (answers: { documentRoot: string }) => {
           const targetPath = this.destinationPath(
             'services/drupal',
             answers.documentRoot,
