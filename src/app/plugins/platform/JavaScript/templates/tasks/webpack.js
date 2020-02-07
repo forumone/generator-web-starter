@@ -6,6 +6,6 @@ module.exports = async function webpackBuild() {
   const webpackConfig = require('../webpack.config')({mode: 'production'});
   const stats = await asyncWebpack(webpackConfig);
   if (stats.hasErrors()) {
-    throw new Error(stats.compilation.errors.map(i => i.rawMessage).join('\n'));
+    throw new Error(stats.compilation.errors.map(err => err.rawMessage).join('\n'));
   }
 };
