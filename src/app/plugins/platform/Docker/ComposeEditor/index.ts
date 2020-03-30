@@ -1,5 +1,7 @@
 import { stringify } from 'yaml';
 
+import { composer } from '../dockerfile/constants';
+
 import ComposeFile, { AnyService } from './ComposeFile';
 import composeVersion from './composeVersion';
 import createBindMount from './createBindMount';
@@ -136,7 +138,7 @@ class ComposeEditor {
 
   addNamedComposer(name: string, directory: string) {
     this.addService(name, {
-      image: 'forumone/composer:1.9',
+      image: composer,
       volumes: [createBindMount(`./${directory}`, '/app')],
     });
   }

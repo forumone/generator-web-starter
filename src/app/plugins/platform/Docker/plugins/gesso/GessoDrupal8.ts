@@ -1,4 +1,5 @@
 import createGessoGenerator from './createGessoGenerator';
+import { gessoDrupalPath } from './constants';
 
 const GessoDrupal8 = createGessoGenerator({
   git: {
@@ -9,7 +10,7 @@ const GessoDrupal8 = createGessoGenerator({
   // of the more appropriate 'install' phase.
   installPhase: 'default',
   serviceName: 'drupal',
-  themeDirectory: 'themes',
+  themeDirectory: gessoDrupalPath,
 });
 
 export = GessoDrupal8;

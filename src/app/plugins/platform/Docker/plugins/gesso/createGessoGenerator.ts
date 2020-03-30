@@ -1,6 +1,5 @@
 import assert from 'assert-plus';
 import { posix } from 'path';
-import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
 import ComposeEditor, {
@@ -33,8 +32,8 @@ interface CreateGeneratorOptions {
   serviceName: string;
 
   /**
-   * How to get to the theme from within the service document root. In WordPress, for
-   * example, this is the string `'wp-content/themes'`.
+   * The path to the theme from within the document root. For example, this is
+   * "themes/gesso" in Drupal.
    */
   themeDirectory: string;
 }
@@ -54,18 +53,14 @@ function createGessoGenerator({
     // Assigned to in initializing phase
     private documentRoot!: string;
 
-    // Assigned to in prompting phase
-    private themeName!: string;
-
     private shouldInstall: boolean | undefined = false;
 
-    private _getTargetThemePath(name = this.themeName) {
+    private _getTargetThemePath() {
       return this.destinationPath(
         'services',
         serviceName,
         this.documentRoot,
         themeDirectory,
-        name,
       );
     }
 
@@ -79,32 +74,21 @@ function createGessoGenerator({
     }
 
     async prompting() {
-      const { gessoThemeName, gessoShouldInstall } = await this.prompt([
-        {
-          type: 'input',
-          name: 'gessoThemeName',
-          validate: name => name !== '' && validFilename(name),
-          message: 'What is the theme name?',
-          default: 'gesso',
-          store: true,
-        },
+      const { gessoShouldInstall } = await this.prompt([
         {
           type: 'confirm',
           name: 'gessoShouldInstall',
           message: 'Install Gesso?',
           store: true,
           // Default to true if the theme isn't already installed
-          default: (answers: { gessoThemeName: string }) => {
-            return !this.fs.exists(
-              this._getTargetThemePath(answers.gessoThemeName),
-            );
+          default: () => {
+            return !this.fs.exists(this._getTargetThemePath());
           },
           when: !this.options.skipInstall,
         },
       ]);
 
       this.shouldInstall = gessoShouldInstall;
-      this.themeName = gessoThemeName;
     }
 
     configuring() {
@@ -113,7 +97,6 @@ function createGessoGenerator({
         '/var/www/html',
         this.documentRoot,
         themeDirectory,
-        this.themeName,
       );
 
       const patternLabPath = posix.join(root, 'pattern-lab');
@@ -161,7 +144,6 @@ function createGessoGenerator({
         serviceName,
         this.documentRoot,
         themeDirectory,
-        this.themeName,
       )}`;
 
       // Add the Gesso container here

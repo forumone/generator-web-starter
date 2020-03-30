@@ -4,6 +4,8 @@ import mkdir from 'make-dir';
 import os from 'os';
 import path from 'path';
 
+import { composer } from './dockerfile/constants';
+
 function getUserGroupOptions(): string[] {
   if (os.platform() === 'win32') {
     return [];
@@ -53,15 +55,7 @@ async function spawnComposer(
 
   return execa(
     'docker',
-    [
-      'run',
-      '--rm',
-      '-it',
-      ...userOptions,
-      ...mountOptions,
-      'forumone/composer:1.9',
-      ...args,
-    ],
+    ['run', '--rm', '-it', ...userOptions, ...mountOptions, composer, ...args],
     {
       stdio: 'inherit',
       ...execaOptions,

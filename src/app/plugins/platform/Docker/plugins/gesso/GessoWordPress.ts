@@ -1,3 +1,4 @@
+import { gessoWordPressPath } from './constants';
 import createGessoGenerator from './createGessoGenerator';
 
 const GessoWordPress = createGessoGenerator({
@@ -7,7 +8,7 @@ const GessoWordPress = createGessoGenerator({
   },
   installPhase: 'install',
   serviceName: 'wordpress',
-  themeDirectory: 'wp-content/themes',
+  themeDirectory: gessoWordPressPath,
 });
 
 export = GessoWordPress;
