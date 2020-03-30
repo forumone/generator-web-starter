@@ -1,7 +1,7 @@
 /**
  * Currently-supported Composer version.
  */
-export const composerTag = '1.7';
+export const composerTag = '1.9';
 
 /**
  * The name of the Composer image to use for projects.
