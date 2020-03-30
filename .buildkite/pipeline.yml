@@ -2,7 +2,8 @@ steps:
   - label: ':hammer: Build'
     command:
       - npm ci
-      - npm pack
+      # Allow npm to pack the tarball as root in this container
+      - npm pack --unsafe-perm
     plugins:
       - docker#v3.3.0:
           image: 'node:10'
