@@ -31,4 +31,5 @@ server {
   location ~ ^/sites/.*/files/(imagecache|styles)/ {
     try_files $uri @rewrite;
   }
+    client_max_body_size 200m;
 }

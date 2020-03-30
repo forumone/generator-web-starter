@@ -94,6 +94,7 @@ class WordPress extends Generator {
         type: 'confirm',
         name: 'shouldInstallWordPress',
         message: 'Install WordPress?',
+        store: true,
         default: () => {
           const servicePath = this.destinationPath('services/wordpress');
           return !this.fs.exists(servicePath);

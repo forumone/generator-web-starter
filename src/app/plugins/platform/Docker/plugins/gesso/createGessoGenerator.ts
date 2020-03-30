@@ -79,6 +79,7 @@ function createGessoGenerator({
           type: 'confirm',
           name: 'gessoShouldInstall',
           message: 'Install Gesso?',
+          store: true,
           // Default to true if the theme isn't already installed
           default: () => {
             return !this.fs.exists(this._getTargetThemePath());

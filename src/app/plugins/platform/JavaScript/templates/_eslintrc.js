@@ -9,11 +9,13 @@ module.exports = {
         "sourceType": "module"
     },
     "plugins": [
+        "react",
         "@typescript-eslint",
         "implicit-dependencies"
     ],
     "extends": [
         "eslint:recommended",
+        "plugin:react/recommended",
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:prettier/recommended",
@@ -24,6 +26,7 @@ module.exports = {
             "properties": "never",
             "ignoreDestructuring": true,
         }],
+        "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/no-require-imports": "error",
         "arrow-parens": [
             "off",
@@ -50,6 +53,11 @@ module.exports = {
             "error",
             "as-needed"
         ],
+
+        // TS already checks this and it causes problems
+        // https://github.com/yannickcr/eslint-plugin-react/issues/2353#issuecomment-513036364
+        "react/prop-types": 0,
+
         "sort-imports": ["error", {
             "ignoreCase": true,
             "ignoreDeclarationSort": true,
