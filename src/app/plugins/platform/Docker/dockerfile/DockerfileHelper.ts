@@ -150,7 +150,7 @@ class DockerfileHelper extends Dockerfile {
     }
 
     stage.copy({
-      src: ['composer.json', 'composer.lock'],
+      src: ['*.json', 'composer.*'],
       dest: './',
     });
 
