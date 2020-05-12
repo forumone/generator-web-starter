@@ -392,6 +392,9 @@ class WordPress extends Generator {
         const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
         ignoreEditor.addEntry(`!${path}`);
       }
+
+      // Ensure the Composer auth.json file doesn't get committed exposing credentials.
+      ignoreEditor.addEntry(`auth.json`);
     }
 
     this.fs.write(
