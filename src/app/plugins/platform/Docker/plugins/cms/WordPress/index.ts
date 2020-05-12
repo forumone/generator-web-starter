@@ -381,6 +381,18 @@ class WordPress extends Generator {
     // Create the .dockerignore file here, after everything has been installed
     const wpIgnorePath = this.destinationPath('services/wordpress/.gitignore');
 
+    const gitignoreEditor = new IgnoreEditor();
+    if (this.fs.exists(wpIgnorePath)) {
+      // Ensure the Composer auth.json file doesn't get committed exposing credentials.
+      gitignoreEditor.addEntry(`auth.json`);
+    }
+
+    // Append the additional gitignore entries to the WordPress service gitignore file.
+    this.fs.appendFile(
+      this.destinationPath(wpIgnorePath),
+      gitignoreEditor.serialize(),
+    );
+
     const ignoreEditor = new IgnoreEditor();
     if (this.fs.exists(wpIgnorePath)) {
       ignoreEditor.addContentsOfFile({
@@ -392,9 +404,6 @@ class WordPress extends Generator {
         const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
         ignoreEditor.addEntry(`!${path}`);
       }
-
-      // Ensure the Composer auth.json file doesn't get committed exposing credentials.
-      ignoreEditor.addEntry(`auth.json`);
     }
 
     this.fs.write(
