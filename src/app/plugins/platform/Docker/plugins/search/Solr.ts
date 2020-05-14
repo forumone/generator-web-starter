@@ -32,7 +32,7 @@ class Solr extends Generator {
   async initializing() {
     // NB. matches, e.g., "7-alpine" - we assume that for our purposes a major version tag is
     // enough.
-    const alpineTag = /^(\d+)-alpine$/;
+    const alpineTag = /^(\d+)-slim$/;
 
     const tags = await getImageTags('solr');
 
@@ -64,7 +64,7 @@ class Solr extends Generator {
     const editor = this.options.composeEditor as ComposeEditor;
 
     editor.addService('solr', {
-      image: `solr:${this.solrTag}-alpine`,
+      image: `solr:${this.solrTag}-slim`,
       entrypoint: ['/bin/bash', '-c', solrEntrypoint],
       ports: ['8983:8983'],
       volumes: [
