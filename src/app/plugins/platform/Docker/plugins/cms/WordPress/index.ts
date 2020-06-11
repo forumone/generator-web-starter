@@ -193,7 +193,7 @@ class WordPress extends Generator {
     ].join('\n');
 
     editor.addService('wordpress', {
-      build: './services/wordpress',
+      build: { context: './services/wordpress', target: 'dev' },
       depends_on: ['mysql'],
       command: ['-c', wpEntryCommand],
       entrypoint: '/bin/sh',
