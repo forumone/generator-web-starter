@@ -190,7 +190,7 @@ namespace :drush do
     task :import do
       on roles(:db) do
         within "#{release_path}/#{fetch(:app_webroot, 'public')}" do
-          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)}", 'config-import --partial'
+          execute :drush, "-y -p -r #{current_path}/#{fetch(:app_webroot, 'public')} -l #{fetch(:site_url)}", 'config-import'
         end
       end
 
