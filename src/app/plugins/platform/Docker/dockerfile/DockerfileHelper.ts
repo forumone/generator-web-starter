@@ -5,6 +5,8 @@ import { composerImage, composerTag, gessoImage, gessoTag } from './constants';
 
 const composerInstallStageName = 'deps';
 const gessoBuildStageName = 'gesso';
+const gessoCleanStageName = 'gesso-clean';
+const gessoDevStageName = 'gesso-dev';
 
 /**
  * Options to pass to the `addComposerInstallStage` method of `DockerfileHelper`.
@@ -90,13 +92,18 @@ class DockerfileHelper extends Dockerfile {
 
   /**
    * Add instructions necessary to perform a Gesso theme build. As a side effect, this
-   * method creates a new build stage named `gesso`. Ensure you're finished with the current
-   * stage before calling this method.
+   * method creates a three new build stages:
+   * * `gesso`: Installs production dependencies and builds Gesso.
+   * * `gesso-clean`: Removes all unnecessary dependencies for the production image.
+   * * `gesso-dev`: Adds all dev dependencies for the test image.
+   *
+   * Ensure you're finished with the current stage before calling this method.
    *
    * @param sourcePath The path to the Gesso theme (e.g., `web/themes/gesso`)
    */
   addGessoBuildStage(sourcePath: string): this {
     return this.stage()
+      // Create the initial gesso installation stage for production dependencies.
       .from({
         image: gessoImage,
         tag: gessoTag,
@@ -117,7 +124,35 @@ class DockerfileHelper extends Dockerfile {
         commands: [
           ['set', '-ex'],
           ['gulp', 'build'],
+        ],
+      })
+
+      // Create the production clean-up stage to remove all dependencies.
+      .comment('Use a temporary image to clean dev dependencies for production. This allows')
+      .comment('the gesso-dev stage to start with these files in place rather than rebuilding.')
+      .stage()
+      .from({
+        image: gessoBuildStageName,
+        stage: gessoCleanStageName,
+      })
+      .run({
+        commands: [
+          ['set', '-ex'],
           ['rm', '-rf', 'node_modules'],
+        ],
+      })
+
+      // Create the dev stage to add all dev dependencies.
+      .comment('Install all dev dependencies for the test image.')
+      .stage()
+      .from({
+        image: gessoBuildStageName,
+        stage: gessoDevStageName,
+      })
+      .run({
+        commands: [
+          ['set', '-ex'],
+          ['npm', 'install'],
         ],
       });
   }
