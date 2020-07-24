@@ -3,7 +3,8 @@ import { posix } from 'path';
 
 import { composerImage, composerTag, gessoImage, gessoTag } from './constants';
 
-const composerInstallStageName = 'deps';
+const composerInstallStageName = 'composer';
+const composerDevStageName = 'composer-dev'
 const gessoBuildStageName = 'gesso';
 const gessoCleanStageName = 'gesso-clean';
 const gessoDevStageName = 'gesso-dev';
@@ -159,14 +160,23 @@ class DockerfileHelper extends Dockerfile {
 
   /**
    * Add instructions necessary to install Composer dependencies. As a side effect, this
-   * method creates a new build stage named `deps`. Ensure you're finished with the current
-   * stage before calling this method.
+   * method creates two new build stages:
+   * * `composer`: Installs production Composer dependencies.
+   * * `composer-dev`: Installs additional Composer dev dependencies.
+   *
+   * Ensure you're finished with the current stage before calling this method.
+   *
+   * @param directories A list of directories to be copied into the build stage.
+   * @param installRoot An installation directory to ensure is present.
+   * @param postInstall Commands to be run after completion of `composer install`.
    */
   addComposerInstallStage({
     directories = [],
     installRoot,
     postInstall,
   }: AddComposerInstallStageOptions): this {
+
+    // Create the Composer stage for installing all production dependencies.
     const stage = this.stage().from({
       image: composerImage,
       tag: composerTag,
@@ -199,6 +209,19 @@ class DockerfileHelper extends Dockerfile {
     }
 
     stage.run({ commands });
+
+    // Create the next stage to install additional dev dependencies.
+    this.comment('Install additional dev dependencies for the test image.')
+    .stage().from({
+      image: composerInstallStageName,
+      stage: composerDevStageName,
+    })
+    .run({
+      commands: [
+        ['set', '-ex'],
+        ['composer', 'install', '--optimize-autoloader'],
+      ],
+    })
 
     return this;
   }
