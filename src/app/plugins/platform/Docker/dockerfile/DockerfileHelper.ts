@@ -4,7 +4,7 @@ import { posix } from 'path';
 import { composerImage, composerTag, gessoImage, gessoTag } from './constants';
 
 const composerInstallStageName = 'composer';
-const composerDevStageName = 'composer-dev'
+const composerDevStageName = 'composer-dev';
 const gessoBuildStageName = 'gesso';
 const gessoCleanStageName = 'gesso-clean';
 const gessoDevStageName = 'gesso-dev';
@@ -105,59 +105,56 @@ class DockerfileHelper extends Dockerfile {
    * @param sourcePath The path to the Gesso theme (e.g., `web/themes/gesso`)
    */
   addGessoBuildStage(sourcePath: string): this {
-    return this.stage()
-      // Create the initial gesso installation stage for production dependencies.
-      .from({
-        image: gessoImage,
-        tag: gessoTag,
-        stage: gessoBuildStageName,
-      })
-      .comment('Install npm dependencies')
-      .copy({
-        src: posix.join(sourcePath, 'package*.json'),
-        dest: './',
-      })
-      .run('if test -e package-lock.json; then npm ci; else npm i; fi')
-      .comment('Copy sources and build')
-      .copy({
-        src: sourcePath,
-        dest: './',
-      })
-      .run({
-        commands: [
-          ['set', '-ex'],
-          ['gulp', 'build'],
-        ],
-      })
+    return (
+      this.stage()
+        // Create the initial gesso installation stage for production dependencies.
+        .from({
+          image: gessoImage,
+          tag: gessoTag,
+          stage: gessoBuildStageName,
+        })
+        .comment('Install npm dependencies')
+        .copy({
+          src: posix.join(sourcePath, 'package*.json'),
+          dest: './',
+        })
+        .run('if test -e package-lock.json; then npm ci; else npm i; fi')
+        .comment('Copy sources and build')
+        .copy({
+          src: sourcePath,
+          dest: './',
+        })
+        .run({
+          commands: [['set', '-ex'], ['gulp', 'build']],
+        })
 
-      // Create the production clean-up stage to remove all dependencies.
-      .comment('Use a temporary image to clean dev dependencies for production. This allows')
-      .comment('the gesso-dev stage to start with these files in place rather than rebuilding.')
-      .stage()
-      .from({
-        image: gessoBuildStageName,
-        stage: gessoCleanStageName,
-      })
-      .run({
-        commands: [
-          ['set', '-ex'],
-          ['rm', '-rf', 'node_modules'],
-        ],
-      })
+        // Create the production clean-up stage to remove all dependencies.
+        .comment(
+          'Use a temporary image to clean dev dependencies for production. This allows',
+        )
+        .comment(
+          'the gesso-dev stage to start with these files in place rather than rebuilding.',
+        )
+        .stage()
+        .from({
+          image: gessoBuildStageName,
+          stage: gessoCleanStageName,
+        })
+        .run({
+          commands: [['set', '-ex'], ['rm', '-rf', 'node_modules']],
+        })
 
-      // Create the dev stage to add all dev dependencies.
-      .comment('Install all dev dependencies for the test image.')
-      .stage()
-      .from({
-        image: gessoBuildStageName,
-        stage: gessoDevStageName,
-      })
-      .run({
-        commands: [
-          ['set', '-ex'],
-          ['npm', 'install'],
-        ],
-      });
+        // Create the dev stage to add all dev dependencies.
+        .comment('Install all dev dependencies for the test image.')
+        .stage()
+        .from({
+          image: gessoBuildStageName,
+          stage: gessoDevStageName,
+        })
+        .run({
+          commands: [['set', '-ex'], ['npm', 'install']],
+        })
+    );
   }
 
   /**
@@ -177,7 +174,6 @@ class DockerfileHelper extends Dockerfile {
     installRoot,
     postInstall,
   }: AddComposerInstallStageOptions): this {
-
     // Create the Composer stage for installing all production dependencies.
     const stage = this.stage().from({
       image: composerImage,
@@ -214,16 +210,17 @@ class DockerfileHelper extends Dockerfile {
 
     // Create the next stage to install additional dev dependencies.
     this.comment('Install additional dev dependencies for the test image.')
-    .stage().from({
-      image: composerInstallStageName,
-      stage: composerDevStageName,
-    })
-    .run({
-      commands: [
-        ['set', '-ex'],
-        ['composer', 'install', '--optimize-autoloader'],
-      ],
-    })
+      .stage()
+      .from({
+        image: composerInstallStageName,
+        stage: composerDevStageName,
+      })
+      .run({
+        commands: [
+          ['set', '-ex'],
+          ['composer', 'install', '--optimize-autoloader'],
+        ],
+      });
 
     return this;
   }
@@ -246,11 +243,13 @@ class DockerfileHelper extends Dockerfile {
     sourceFiles = [],
   }: AddFinalCopyStageOptions): this {
     const stage = this.stage()
-    .comment('Copy all artifacts into the production-ready release stage for the final image.')
-    .from({
-      image: 'base',
-      stage: releaseStageName,
-    });
+      .comment(
+        'Copy all artifacts into the production-ready release stage for the final image.',
+      )
+      .from({
+        image: 'base',
+        stage: releaseStageName,
+      });
 
     for (const dir of buildDirectories) {
       stage.copy({
@@ -298,11 +297,11 @@ class DockerfileHelper extends Dockerfile {
     sourceFiles = [],
   }: AddFinalCopyStageOptions): this {
     const stage = this.stage()
-    .comment('Copy all dev dependencies into a stage for a testing image.')
-    .from({
-      image: releaseStageName,
-      stage: testStageName,
-    });
+      .comment('Copy all dev dependencies into a stage for a testing image.')
+      .from({
+        image: releaseStageName,
+        stage: testStageName,
+      });
 
     for (const dir of buildDirectories) {
       stage.copy({
@@ -329,11 +328,14 @@ class DockerfileHelper extends Dockerfile {
     }
 
     // Add a final reference back to the release image as a default.
-    this
-    .comment('Ensure the default image to be built is the release image so any builds')
-    .comment('not explicitly defining a target receive the production release image')
-    .stage()
-    .from({ image: releaseStageName });
+    this.comment(
+      'Ensure the default image to be built is the release image so any builds',
+    )
+      .comment(
+        'not explicitly defining a target receive the production release image',
+      )
+      .stage()
+      .from({ image: releaseStageName });
 
     return this;
   }
