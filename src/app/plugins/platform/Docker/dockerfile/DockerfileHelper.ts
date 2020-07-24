@@ -8,6 +8,8 @@ const composerDevStageName = 'composer-dev'
 const gessoBuildStageName = 'gesso';
 const gessoCleanStageName = 'gesso-clean';
 const gessoDevStageName = 'gesso-dev';
+const releaseStageName = 'release';
+const testStageName = 'test';
 
 /**
  * Options to pass to the `addComposerInstallStage` method of `DockerfileHelper`.
@@ -243,7 +245,12 @@ class DockerfileHelper extends Dockerfile {
     sourceDirectories = [],
     sourceFiles = [],
   }: AddFinalCopyStageOptions): this {
-    const stage = this.stage().from({ image: 'base' });
+    const stage = this.stage()
+    .comment('Copy all artifacts into the production-ready release stage for the final image.')
+    .from({
+      image: 'base',
+      stage: releaseStageName,
+    });
 
     for (const dir of buildDirectories) {
       stage.copy({
@@ -255,7 +262,7 @@ class DockerfileHelper extends Dockerfile {
 
     if (gessoPath !== undefined) {
       stage.copy({
-        from: gessoBuildStageName,
+        from: gessoCleanStageName,
         src: '/app',
         dest: gessoPath,
       });
@@ -268,6 +275,65 @@ class DockerfileHelper extends Dockerfile {
     if (sourceFiles.length > 0) {
       stage.copy({ src: sourceFiles, dest: './' });
     }
+
+    return this;
+  }
+
+  /**
+   * Create a final stage copying dependencies from dev build stages. Depending on the options
+   * passed to this method (see `AddFinalCopyStageOptions`), some other methods will need
+   * to have been called before this one:
+   *
+   * * `addComposerInstallStage`, if any built dependencies are to be copied
+   * * `addGessoBuildStage`, if Gesso is in use
+   * * `addFinalCopyStage`
+   *
+   * Note that this stage requires a previous stage named `release` to exist, since it's used
+   * as the base layer to extend.
+   */
+  addTestCopyStage({
+    buildDirectories = [],
+    gessoPath,
+    sourceDirectories = [],
+    sourceFiles = [],
+  }: AddFinalCopyStageOptions): this {
+    const stage = this.stage()
+    .comment('Copy all dev dependencies into a stage for a testing image.')
+    .from({
+      image: releaseStageName,
+      stage: testStageName,
+    });
+
+    for (const dir of buildDirectories) {
+      stage.copy({
+        from: composerDevStageName,
+        src: posix.join('/app', dir),
+        dest: dir,
+      });
+    }
+
+    if (gessoPath !== undefined) {
+      stage.copy({
+        from: gessoDevStageName,
+        src: '/app',
+        dest: gessoPath,
+      });
+    }
+
+    for (const dir of sourceDirectories) {
+      stage.copy({ src: dir, dest: dir });
+    }
+
+    if (sourceFiles.length > 0) {
+      stage.copy({ src: sourceFiles, dest: './' });
+    }
+
+    // Add a final reference back to the release image as a default.
+    this
+    .comment('Ensure the default image to be built is the release image so any builds')
+    .comment('not explicitly defining a target receive the production release image')
+    .stage()
+    .from({ image: releaseStageName });
 
     return this;
   }
