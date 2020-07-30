@@ -1,12 +1,28 @@
 import assert from 'assert-plus';
 import Generator from 'yeoman-generator';
+import { StageDefinition } from '../cap-stage';
 
 interface BranchMapping {
   readonly source: string;
   readonly target: string;
 }
 
+interface PipelineDeploymentData {
+  readonly method: 'artifact' | 'capistrano';
+  readonly branches: Array<BranchMapping>;
+}
+
+interface PipelineTemplateData {
+  readonly deploy?: PipelineDeploymentData | false;
+}
+
+interface GeneratorPromptResponses {
+  readonly deploymentMethod?: 'artifact' | 'capistrano';
+}
+
 class BuildkitePipeline extends Generator {
+  private answers = {} as GeneratorPromptResponses;
+
   /**
    * Execute the configuration phase of this generator.
    *
@@ -16,8 +32,21 @@ class BuildkitePipeline extends Generator {
     const projectName = this.config.get('projectName');
     assert.string(projectName, 'config.projectName');
 
-    await this._promptForDeploymentMethod();
-    await this._promptForBranchMapping();
+    const deploymentMethod = await this._promptForDeploymentMethod();
+    this.answers = Object.assign(this.answers, deploymentMethod);
+
+    // Prompt for branch mappings if we need to.
+    let branchMapping;
+    if (this.config.get('deploymentMethod') === 'artifact') {
+      branchMapping = await this._promptForArtifactBranchMapping();
+    } else {
+      // If we're deploying with Capistrano, infer mappings from defined stages.
+      this.log(
+        'Branch mappings will be identified from generated Capistrano stages.',
+      );
+      branchMapping = this._getCapistranoBranchMapping();
+    }
+    this.config.set('deployBranches', branchMapping);
   }
 
   /**
@@ -37,7 +66,7 @@ class BuildkitePipeline extends Generator {
       },
     ];
 
-    await this.prompt([
+    const answers = await this.prompt([
       {
         type: 'list',
         name: 'deploymentMethod',
@@ -46,6 +75,8 @@ class BuildkitePipeline extends Generator {
         store: true,
       },
     ]);
+
+    return answers;
   }
 
   /**
@@ -53,7 +84,7 @@ class BuildkitePipeline extends Generator {
    *
    * @memberof BuildkitePipeline
    */
-  async _promptForBranchMapping() {
+  async _promptForArtifactBranchMapping(): Promise<Array<BranchMapping>> {
     const deployBranches: Array<BranchMapping> =
       this.config.get('deployBranches') || [];
 
@@ -88,7 +119,46 @@ class BuildkitePipeline extends Generator {
       });
     }
 
-    this.config.set('deployBranches', deployBranches);
+    return deployBranches;
+  }
+
+  /**
+   * Load defined Capistrano stages from configuration.
+   *
+   * @returns {Record<string, StageDefinition>}
+   * @memberof BuildkitePipeline
+   */
+  _getCapistranoStages(): Record<string, StageDefinition> {
+    const configuredStages = this.config.get('stages') as Record<
+      string,
+      StageDefinition
+    >;
+
+    return configuredStages;
+  }
+
+  /**
+   * Parse branch mappings from configured Capistrano stages.
+   *
+   * @returns {Array<BranchMapping>}
+   * @memberof BuildkitePipeline
+   */
+  _getCapistranoBranchMapping(): Array<BranchMapping> {
+    const branchMapping = [] as Array<BranchMapping>;
+
+    // @todo Handle missing configuration value.
+    const configuredStages = this._getCapistranoStages();
+
+    // Extract stage and target branch mapping.
+    const stages = Object.entries(configuredStages);
+    for (const [stage, { branch }] of stages) {
+      branchMapping.push({
+        source: branch,
+        target: stage,
+      });
+    }
+
+    return branchMapping;
   }
 
   /**
@@ -126,15 +196,33 @@ class BuildkitePipeline extends Generator {
     }
 
     const templateData = {
-      capistrano: true,
-      deployBranches: branches,
-    };
+      deploy: this._getTemplateDeploymentData(),
+    } as PipelineTemplateData;
 
     this.fs.copyTpl(
       this.templatePath('pipeline.yml.ejs'),
       this.destinationPath('.buildkite/pipeline.yml'),
       templateData,
     );
+  }
+
+  /**
+   * Load deployment configuration from configuration.
+   *
+   * @returns {PipelineDeploymentData|false}
+   * @memberof BuildkitePipeline
+   */
+  _getTemplateDeploymentData(): PipelineDeploymentData | false {
+    const method = this.answers.deploymentMethod || false;
+
+    if (method) {
+      return {
+        method,
+        branches: this.config.get('deployBranches'),
+      };
+    } else {
+      return false;
+    }
   }
 }
 

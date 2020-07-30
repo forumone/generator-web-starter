@@ -3,7 +3,7 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 
-interface StageDefinition {
+export interface StageDefinition {
   readonly url: string;
   readonly deployPath: string;
   readonly branch: string;
@@ -95,4 +95,4 @@ class CapStage extends Generator {
   }
 }
 
-export = CapStage;
+export default CapStage;
