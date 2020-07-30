@@ -73,9 +73,9 @@ steps:
     concurrency: 1
     concurrency_group: '$BUILDKITE_PIPELINE_SLUG/$BUILDKITE_BRANCH/deploy'
     branches:
-      <% deployBranches.forEach(function(branch) { %>
-      - <%= branch _%>
-      <% }) %>
+      <% for (const mapping of deployBranches) { %>
+      - <%= mapping.source _%>
+      <% } %>
     plugins:
       # Log into ECR for this build step to access and push images.
       - *ecr
