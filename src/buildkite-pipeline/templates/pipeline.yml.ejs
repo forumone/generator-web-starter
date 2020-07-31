@@ -85,7 +85,7 @@ steps:
       - forumone/extract:
           image-service: release
           from: /var/www/html
-          to: services/drupal
+          to: <%= serviceDirectory %>
 
       # Execute a Capistrano deployment using the defined branch to
       # environment mapping.

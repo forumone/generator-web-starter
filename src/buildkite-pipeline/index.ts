@@ -13,6 +13,7 @@ interface PipelineDeploymentData {
 }
 
 interface PipelineTemplateData {
+  readonly serviceDirectory: string;
   readonly deploy?: PipelineDeploymentData | false;
 }
 
@@ -195,7 +196,13 @@ class BuildkitePipeline extends Generator {
       return;
     }
 
+    const serviceDirectory = this._getServiceDirectory();
+    if (serviceDirectory === '') {
+      throw 'Unable to determine the application service directory.';
+    }
+
     const templateData = {
+      serviceDirectory,
       deploy: this._getTemplateDeploymentData(),
     } as PipelineTemplateData;
 
@@ -204,6 +211,29 @@ class BuildkitePipeline extends Generator {
       this.destinationPath('.buildkite/pipeline.yml'),
       templateData,
     );
+  }
+
+  /**
+   * Get the path to the application's service directory.
+   *
+   * @returns {string}
+   * @memberof BuildkitePipeline
+   */
+  _getServiceDirectory(): string {
+    let servicesPath = '';
+
+    // Check for Dockerfiles since the exists method will not check for a directory.
+    if (this.fs.exists(this.destinationPath('services/drupal/Dockerfile'))) {
+      servicesPath = 'services/drupal';
+    } else if (
+      this.fs.exists(this.destinationPath('services/wordpress/Dockerfile'))
+    ) {
+      servicesPath = 'services/wordpress';
+    } else {
+      this.log('Unable to determine the application service path.');
+    }
+
+    return servicesPath;
   }
 
   /**
