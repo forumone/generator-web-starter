@@ -87,7 +87,7 @@ const platform = ['Docker', 'JavaScript'];
 
 class Manifest extends Generator {
   // private configuration: Partial<Manifest> = {};
-  private answers: inquirer.Answers = {};
+  private answers: Generator.Answers = {};
   repositories: RepositoryCollection = {};
   hostingEnvironments: HostingEnvironmentCollection = {};
   // private deployments: DeploymentCollection = {};
@@ -141,23 +141,45 @@ class Manifest extends Generator {
       },
     ]);
 
-    // eslint-disable-next-line no-console
-    console.log(this.answers);
-
-    this._promptForRepositories();
-    console.log(this.repositories);
+    await this._promptForRepositories();
   }
 
   async _promptForRepositories(): Promise<RepositoryCollection> {
-    // Loop to prompt for additional repositories.
+    // Loop to enable updates and creation of new repositories.
     let another = true;
     while (another === true) {
-      const itemConfigAnswers = await this._promptForRepositoryConfiguration();
+      // Select an entry to edit or create a new one.
+      const { edit } = await this.prompt([
+        {
+          type: 'list',
+          name: 'edit',
+          message: 'Would you like to update your repositories?',
+          choices: [...Object.keys(this.repositories), 'Add new', 'No'],
+        },
+      ]);
 
-      this.repositories[itemConfigAnswers.item.id] = itemConfigAnswers.item;
-      another = itemConfigAnswers.another;
+      let repositoryConfig;
+      if (edit === 'No') {
+        another = false;
+      } else {
+        if (edit === 'Add new') {
+          repositoryConfig = undefined;
+        } else {
+          repositoryConfig = this.repositories[edit];
+        }
+
+        // Prompt for the configuration changes with the existing config if available.
+        const itemConfigAnswers = await this._promptForRepositoryConfiguration(
+          repositoryConfig,
+        );
+
+        // Save the configuration and check whether to continue the loop.
+        this.repositories[itemConfigAnswers.item.id] = itemConfigAnswers.item;
+        another = itemConfigAnswers.another;
+      }
     }
 
+    // Save the repository configuration after all prompting has finished.
     this.config.set('repositories', this.repositories);
 
     return this.repositories;
@@ -169,28 +191,30 @@ class Manifest extends Generator {
    * @returns {Promise<ListEntry<RepositoryDefinition>>}
    * @memberof Manifest
    */
-  async _promptForRepositoryConfiguration(): Promise<
-    ListEntry<RepositoryDefinition>
-  > {
+  async _promptForRepositoryConfiguration(
+    repository: Partial<RepositoryDefinition> = {},
+  ): Promise<ListEntry<RepositoryDefinition>> {
     // Prompt for specific configuration options for each repository.
     const repositoryConfigQuestions: Generator.Questions = [
       {
         type: 'input',
-        name: `id`,
+        name: 'id',
         message:
           'What should this repository be referenced as? (Example: github, bitbucket)',
-        default: 'github',
+        default: repository.id || 'github',
       },
       {
         type: 'input',
-        name: `url`,
+        name: 'url',
         message: 'What is the clone URL for the repository?',
-        default: (answers: Generator.Answers) => `ssh://${answers.id}`,
+        default:
+          repository.url ||
+          ((answers: Generator.Answers) => `ssh://${answers.id}`),
       },
       {
         type: 'confirm',
         name: 'another',
-        message: 'Would you like to add another repository?',
+        message: 'Would you like to update another repository?',
         default: false,
       },
     ];
@@ -304,6 +328,8 @@ class Manifest extends Generator {
 
   configuring() {
     // Todo: Save all provided configuration.
+    console.log(this.answers);
+    console.log(this.config.getAll());
   }
 
   /**
