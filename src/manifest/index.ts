@@ -14,8 +14,18 @@ interface Manifest {
   hostingEnvironments: HostingEnvironmentCollection;
 }
 
-interface RepositoryDefinition {
-  readonly remote: string;
+interface ListEntry<T> {
+  item: T;
+  another: boolean;
+}
+
+interface DefinitionObject {
+  readonly id: string;
+}
+
+interface RepositoryDefinition extends DefinitionObject {
+  readonly id: string;
+  readonly url: string;
 }
 
 interface RepositoryCollection {
@@ -82,6 +92,13 @@ class Manifest extends Generator {
   hostingEnvironments: HostingEnvironmentCollection = {};
   // private deployments: DeploymentCollection = {};
 
+  async initializing() {
+    const config = this.config.getAll();
+
+    this.answers = config.promptAnswers;
+    this.repositories = config.repositories;
+  }
+
   /**
    * Execute the configuration phase of this generator.
    *
@@ -124,65 +141,76 @@ class Manifest extends Generator {
       },
     ]);
 
-    const repositoryAnswers = await this._promptForRepositories();
+    // eslint-disable-next-line no-console
+    console.log(this.answers);
 
-    this.answers = {
-      ...this.answers,
-      ...repositoryAnswers,
-    };
+    this._promptForRepositories();
+    console.log(this.repositories);
   }
 
-  async _promptForRepositories() {
-    // Prompt and save initial repository information.
-    let answers = await this._promptForRepositoryConfiguration();
-    this.repositories[answers.repositoryReference] = {
-      remote: answers.repositoryUrl,
-    };
-
+  async _promptForRepositories(): Promise<RepositoryCollection> {
     // Loop to prompt for additional repositories.
-    while (answers.anotherRepository === true) {
-      answers = await this._promptForRepositoryConfiguration();
+    let another = true;
+    while (another === true) {
+      const itemConfigAnswers = await this._promptForRepositoryConfiguration();
 
-      this.repositories[answers.repositoryReference] = {
-        remote: answers.repositoryUrl,
-      };
+      this.repositories[itemConfigAnswers.item.id] = itemConfigAnswers.item;
+      another = itemConfigAnswers.another;
     }
 
-    return answers;
+    this.config.set('repositories', this.repositories);
+
+    return this.repositories;
   }
 
-  async _promptForRepositoryConfiguration(): Promise<inquirer.Answers> {
+  /**
+   * Prompt for configuration of a specific repository.
+   *
+   * @returns {Promise<ListEntry<RepositoryDefinition>>}
+   * @memberof Manifest
+   */
+  async _promptForRepositoryConfiguration(): Promise<
+    ListEntry<RepositoryDefinition>
+  > {
     // Prompt for specific configuration options for each repository.
     const repositoryConfigQuestions: Generator.Questions = [
       {
         type: 'input',
-        name: 'repositoryReference',
+        name: `id`,
         message:
           'What should this repository be referenced as? (Example: github, bitbucket)',
         default: 'github',
-        store: true,
       },
       {
         type: 'input',
-        name: 'repositoryUrl',
+        name: `url`,
         message: 'What is the clone URL for the repository?',
-        store: true,
+        default: (answers: Generator.Answers) => `ssh://${answers.id}`,
       },
       {
         type: 'confirm',
-        name: 'anotherRepository',
+        name: 'another',
         message: 'Would you like to add another repository?',
         default: false,
       },
     ];
 
     const answers = await this.prompt(repositoryConfigQuestions);
-    return answers;
+
+    const repositoryDefinition: RepositoryDefinition = {
+      id: answers.id,
+      url: answers.url,
+    };
+
+    return {
+      item: repositoryDefinition,
+      another: answers.another,
+    };
   }
 
   async _promptForHostingEnvironments(): Promise<Generator.Answers> {
     // Prompt and save initial environment information.
-    let answers = await this._promptForRepositoryConfiguration();
+    let answers = await this._promptForHostingEnvironmentConfiguration();
     this.hostingEnvironments[answers.environmentReference] = {
       url: answers.url,
       branch: answers.branch,
@@ -240,7 +268,7 @@ class Manifest extends Generator {
       },
       {
         type: 'confirm',
-        name: '',
+        name: 'another',
         message: 'Would you like to add another environment?',
         default: false,
       },
