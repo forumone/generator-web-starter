@@ -50,7 +50,7 @@
     "valid-filename": "3.1.0",
     "validate-npm-package-name": "3.0.0",
     "yaml": "1.1.0",
-    "yeoman-generator": "3.1.1"
+    "yeoman-generator": "^4.11.0"
   },
   "devDependencies": {
     "@babel/core": "7.2.2",
@@ -66,14 +66,14 @@
     "@types/jest": "24.0.18",
     "@types/make-dir": "1.0.3",
     "@types/move-file": "1.0.0",
-    "@types/node": "^10.17.20",
+    "@types/node": "^10.17.28",
     "@types/node-fetch": "2.1.4",
     "@types/nodegit": "0.24.10",
     "@types/require-dir": "1.0.0",
     "@types/rimraf": "2.0.2",
     "@types/tmp": "0.0.33",
     "@types/yaml": "1.0.1",
-    "@types/yeoman-generator": "3.0.1",
+    "@types/yeoman-generator": "^4.11.1",
     "@typescript-eslint/eslint-plugin": "^2.1.0",
     "@typescript-eslint/parser": "^2.1.0",
     "eslint": "^6.3.0",
