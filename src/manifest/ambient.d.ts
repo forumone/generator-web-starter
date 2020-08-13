@@ -55,7 +55,7 @@ declare module 'generator-manifest' {
 
   export interface DeploymentDefinition extends DefinitionObject {}
 
-  export interface CapistranoConfiguration {
+  export interface CapistranoDeploymentDefinition extends DeploymentDefinition {
     readonly deployMethod: 'git' | 'rsync';
     readonly releasesToKeep: number;
     readonly repository: string;
@@ -69,7 +69,8 @@ declare module 'generator-manifest' {
     readonly role: string;
   }
 
-  export interface ArtifactRepositoryConfiguration {
+  export interface ArtifactRepositoryDeploymentDefinition
+    extends DeploymentDefinition {
     readonly sourceRepository: string;
     readonly targetRepository: string;
     readonly branchMapping: Array<BranchMapping>;

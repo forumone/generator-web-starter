@@ -1,20 +1,79 @@
-/* eslint-disable no-console */
 import Generator from 'yeoman-generator';
 import {
   DeploymentCollection,
+  DeploymentDefinition,
   EnvironmentCollection,
   EnvironmentDefinition,
   ListEntry,
   RepositoryCollection,
 } from 'generator-manifest';
+import { ListQuestion } from 'inquirer';
 
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
+const strategies = ['Capistrano', 'Artifact Repository'];
 
 class Deployment extends Generator {
   repositories: RepositoryCollection = {};
   environments: EnvironmentCollection = {};
   deployments: DeploymentCollection = {};
-  private answers: Generator.Answers = {};
+
+  _getRepositorySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
+    const repositoryOptions: string[] = Object.keys(this.repositories);
+
+    // @todo Add default selection support.
+    const prompt: Generator.Question = {
+      type: 'list',
+      name: 'repository',
+      message: 'What repository should be used?',
+      choices: repositoryOptions,
+      ...options,
+    };
+
+    return prompt;
+  }
+
+  _getEnvironmentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
+    const environmentOptions: string[] = Object.keys(this.environments);
+
+    // @todo Add default selection support.
+    const prompt: Generator.Question = {
+      type: 'list',
+      name: 'deployment',
+      message: 'What environment should be deployed to?',
+      choices: environmentOptions,
+      ...options,
+    };
+
+    return prompt;
+  }
+
+  _getDeploymentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
+    const deploymentOptions: string[] = Object.keys(this.deployments);
+
+    // @todo Add default selection support.
+    const prompt: ListQuestion = {
+      type: 'list',
+      name: 'deployment',
+      message: 'What deployment would you like to modify?',
+      choices: deploymentOptions,
+      ...options,
+    };
+
+    return prompt;
+  }
+
+  _getStrategySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
+    // @todo Add default selection support.
+    const prompt: ListQuestion = {
+      type: 'list',
+      name: 'deployment',
+      message: 'What deployment strategy should be used for this deployment?',
+      choices: strategies,
+      ...options,
+    };
+
+    return prompt;
+  }
 
   /**
    * Execute the configuration phase of this generator.
@@ -25,9 +84,9 @@ class Deployment extends Generator {
     // this.deployments = await this._promptForDeployments();
 
     this.debug({
-      generator: 'deployment',
+      generator: 'Deployment',
       repositories: this.repositories,
-      environments: this.environments,
+      deployments: this.deployments,
     });
   }
 
@@ -52,21 +111,21 @@ class Deployment extends Generator {
         if (edit === 'Add new') {
           deploymentConfig = undefined;
         } else {
-          deploymentConfig = this.environments[edit];
+          deploymentConfig = this.deployments[edit];
         }
 
         // Prompt for the configuration changes with the existing config if available.
-        const itemConfigAnswers = await this._promptForHostingEnvironmentConfiguration(
+        const itemConfigAnswers = await this._promptForDeploymentConfiguration(
           deploymentConfig,
         );
 
         // Save the configuration and check whether to continue the loop.
-        this.environments[itemConfigAnswers.item.id] = itemConfigAnswers.item;
+        this.deployments[itemConfigAnswers.item.id] = itemConfigAnswers.item;
         another = itemConfigAnswers.another;
       }
     }
 
-    return this.environments;
+    return this.deployments;
   }
 
   _promptForDeploymentStrategy() {
@@ -87,66 +146,68 @@ class Deployment extends Generator {
 
   _promptForArtifactDeployment() {
     // Todo: Prompt for configuration needed in an artifact deployment.
-    const artifactQuestions: Generator.Questions = [];
+    const artifactQuestions: Generator.Questions = [{}];
 
     const answers = this.prompt(artifactQuestions);
     return answers;
   }
 
-  async _promptForHostingEnvironmentConfiguration(
-    environment: Partial<EnvironmentDefinition> = {},
-  ): Promise<ListEntry<EnvironmentDefinition>> {
-    // Prompt for specifics of a given hosting environment.
-    const environmentQuestions: Generator.Questions = [
+  async _promptForDeploymentConfiguration(
+    deployment: Partial<DeploymentDefinition> = {},
+  ): Promise<ListEntry<DeploymentDefinition>> {
+    // Prompt for specifics of the deployment.
+    const deploymentQuestions: Generator.Questions = [
       {
         type: 'input',
         name: 'id',
         message:
-          'What should this environment be referenced as? (Example: dev, stage, production)',
-        default: environment.id,
+          'What should this deployment be referenced as? (Example: dev, stage, production)',
+        default: deployment.id,
       },
+      this._getEnvironmentSelectionPrompt({}),
+      this._getStrategySelectionPrompt({}),
       {
         type: 'list',
         name: 'type',
-        message: 'What type of hosting is used for this environment?',
-        choices: [...environments, 'Other'],
-        default: environment.type,
+        message: 'What type of hosting is used for this deployment?',
+        choices: [...deployments, 'Other'],
+        default: deployment.type,
       },
       {
         type: 'input',
         name: 'url',
-        message: 'What URL is used to access this environment?',
-        default: environment.url,
+        message: 'What URL is used to access this deployment?',
+        default: deployment.url,
       },
       {
         type: 'input',
         name: 'deployPath',
         message: 'What file path should the application deploy to?',
-        default: environment.deployPath,
+        default: deployment.deployPath,
       },
       {
         type: 'input',
         name: 'branch',
-        message: 'What branch should be deployed to this environment?',
-        default: environment.branch,
+        message: 'What branch should be deployed to this deployment?',
+        default: deployment.branch,
       },
       {
         type: 'input',
         name: 'login',
-        message: 'What is the login user for this environment?',
-        default: environment.login,
+        message: 'What is the login user for this deployment?',
+        default: deployment.login,
       },
       {
         type: 'confirm',
         name: 'another',
-        message: 'Would you like to add another environment?',
+        message: 'Would you like to add another deployment?',
         default: false,
       },
     ];
 
-    const answers = await this.prompt(environmentQuestions);
+    const answers = await this.prompt(deploymentQuestions);
 
-    const environmentDefinition: EnvironmentDefinition = {
+    const deploymentDefinition: DeploymentDefinition = {
       id: answers.id,
       type: answers.type,
       url: answers.url,
@@ -156,7 +217,7 @@ class Deployment extends Generator {
     };
 
     return {
-      item: environmentDefinition,
+      item: deploymentDefinition,
       another: answers.another,
     };
   }
@@ -168,12 +229,12 @@ class Deployment extends Generator {
    */
   configuring() {
     // Save the repository configuration after all prompting has finished.
-    this.config.set('environments', this.environments);
+    this.config.set('deployments', this.deployments);
 
     // Todo: Save all provided configuration.
     this.debug({
       generator: 'deployment',
-      answers: this.answers,
+      deployments: this.deployments,
     });
   }
 

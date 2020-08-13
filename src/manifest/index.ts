@@ -117,30 +117,6 @@ class Manifest extends Generator {
     ]);
   }
 
-  _promptForDeploymentStrategy() {
-    // Todo: Loop to prompt for multiple deployment strategies keyed by type.
-    const deploymentQuestions: Generator.Questions = [];
-
-    const answers = this.prompt(deploymentQuestions);
-    return answers;
-  }
-
-  _promptForCapistranoDeployment() {
-    // Todo: Prompt for configuration needed in a Capistrano deployment.
-    const capistranoQuestions: Generator.Questions = [];
-
-    const answers = this.prompt(capistranoQuestions);
-    return answers;
-  }
-
-  _promptForArtifactDeployment() {
-    // Todo: Prompt for configuration needed in an artifact deployment.
-    const artifactQuestions: Generator.Questions = [];
-
-    const answers = this.prompt(artifactQuestions);
-    return answers;
-  }
-
   /**
    * Execute the configuration phase of this generator.
    *
