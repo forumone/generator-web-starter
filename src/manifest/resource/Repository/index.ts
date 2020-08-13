@@ -7,13 +7,13 @@ import {
 } from 'generator-manifest';
 
 class Repository extends Generator {
-  private repositories: RepositoryCollection = {};
+  repositories: RepositoryCollection = {};
   private answers: Generator.Answers = {};
 
   /**
    * Execute initialization for this generator.
    *
-   * @memberof Manifest
+   * @memberof Repository
    */
   async initializing() {
     const config = this.config.getAll();
@@ -25,7 +25,7 @@ class Repository extends Generator {
   /**
    * Execute the configuration phase of this generator.
    *
-   * @memberof Manifest
+   * @memberof Repository
    */
   async prompting() {
     this.repositories = await this._promptForRepositories();
@@ -73,7 +73,7 @@ class Repository extends Generator {
    * Prompt for configuration of a specific repository.
    *
    * @returns {Promise<ListEntry<RepositoryDefinition>>}
-   * @memberof Manifest
+   * @memberof Repository
    */
   async _promptForRepositoryConfiguration(
     repository: Partial<RepositoryDefinition> = {},
@@ -119,7 +119,7 @@ class Repository extends Generator {
   /**
    * Execute the configuration phase of this generator.
    *
-   * @memberof Manifest
+   * @memberof Repository
    */
   configuring() {
     // Save the repository configuration after all prompting has finished.
@@ -132,7 +132,7 @@ class Repository extends Generator {
   /**
    * Execute the writing phase of this generator.
    *
-   * @memberof Manifest
+   * @memberof Repository
    */
   writing() {
     // Todo: Write generated files.

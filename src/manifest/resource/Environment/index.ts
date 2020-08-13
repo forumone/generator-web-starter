@@ -9,7 +9,7 @@ import {
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 
 class Environment extends Generator {
-  private environments: EnvironmentCollection = {};
+  environments: EnvironmentCollection = {};
   private answers: Generator.Answers = {};
 
   /**
