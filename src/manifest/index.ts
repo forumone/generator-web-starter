@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Generator from 'yeoman-generator';
 import Repository from './resource/Repository';
 import Environment from './resource/Environment';
@@ -149,8 +148,16 @@ class Manifest extends Generator {
    */
   configuring() {
     // Todo: Save all provided configuration.
-    console.log(this.answers);
-    console.log(this.config.getAll());
+    this.debug({
+      generator: 'Manifest',
+      answers: this.answers,
+    });
+    this.debug({
+      config: this.config.getAll(),
+    });
+    // this.debug({
+    //   generators: this.generators,
+    // });
   }
 
   /**

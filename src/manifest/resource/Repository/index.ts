@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Generator from 'yeoman-generator';
 import {
   ListEntry,
@@ -126,7 +125,10 @@ class Repository extends Generator {
     this.config.set('repositories', this.repositories);
 
     // Todo: Save all provided configuration.
-    console.log(this.answers);
+    this.debug({
+      generator: 'Repository',
+      answers: this.answers,
+    });
   }
 
   /**

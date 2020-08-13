@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import Generator from 'yeoman-generator';
 import {
   EnvironmentCollection,
@@ -149,7 +148,10 @@ class Environment extends Generator {
     this.config.set('environments', this.environments);
 
     // Todo: Save all provided configuration.
-    console.log(this.answers);
+    this.debug({
+      generator: 'Environment',
+      answers: this.answers,
+    });
   }
 
   /**
