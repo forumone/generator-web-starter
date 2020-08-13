@@ -68,9 +68,6 @@ class Environment extends Generator {
       }
     }
 
-    // Save the repository configuration after all prompting has finished.
-    this.config.set('environments', this.environments);
-
     return this.environments;
   }
 
@@ -148,6 +145,9 @@ class Environment extends Generator {
    * @memberof Manifest
    */
   configuring() {
+    // Save the repository configuration after all prompting has finished.
+    this.config.set('environments', this.environments);
+
     // Todo: Save all provided configuration.
     console.log(this.answers);
   }

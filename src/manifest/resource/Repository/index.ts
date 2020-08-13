@@ -66,9 +66,6 @@ class Repository extends Generator {
       }
     }
 
-    // Save the repository configuration after all prompting has finished.
-    this.config.set('repositories', this.repositories);
-
     return this.repositories;
   }
 
@@ -125,6 +122,9 @@ class Repository extends Generator {
    * @memberof Manifest
    */
   configuring() {
+    // Save the repository configuration after all prompting has finished.
+    this.config.set('repositories', this.repositories);
+
     // Todo: Save all provided configuration.
     console.log(this.answers);
   }
