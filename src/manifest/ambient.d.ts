@@ -25,10 +25,6 @@ declare module 'generator-manifest' {
     readonly url: string;
   }
 
-  export interface RepositoryCollection {
-    [index: string]: RepositoryDefinition;
-  }
-
   export interface EnvironmentDefinition extends DefinitionObject {
     readonly type: string;
     readonly url: string;
@@ -47,14 +43,17 @@ declare module 'generator-manifest' {
     readonly deploymentSubdirectory?: string;
   }
 
-  export interface EnvironmentCollection {
-    [index: string]: EnvironmentDefinition;
+  export interface ConfigCollection<T extends DefinitionObject> {
+    [index: string]: T;
   }
 
-  export interface DeploymentCollection {
-    readonly capistrano?: Array<CapistranoConfiguration>;
-    readonly artifactRepository?: Array<ArtifactRepositoryConfiguration>;
-  }
+  export type RepositoryCollection = ConfigCollection<RepositoryDefinition>;
+
+  export type EnvironmentCollection = ConfigCollection<EnvironmentDefinition>;
+
+  export type DeploymentCollection = ConfigCollection<DeploymentDefinition>;
+
+  export interface DeploymentDefinition extends DefinitionObject {}
 
   export interface CapistranoConfiguration {
     readonly deployMethod: 'git' | 'rsync';
