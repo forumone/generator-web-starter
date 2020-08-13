@@ -9,24 +9,22 @@ const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 
 class Environment extends Generator {
   environments: EnvironmentCollection = {};
-  private answers: Generator.Answers = {};
 
   /**
    * Execute initialization for this generator.
    *
-   * @memberof Manifest
+   * @memberof Environment
    */
   async initializing() {
     const config = this.config.getAll();
 
-    this.answers = config.promptAnswers;
     this.environments = config.environments;
   }
 
   /**
    * Execute the configuration phase of this generator.
    *
-   * @memberof Manifest
+   * @memberof Environment
    */
   async prompting() {
     this.environments = await this._promptForEnvironments();
@@ -123,6 +121,7 @@ class Environment extends Generator {
 
     const answers = await this.prompt(environmentQuestions);
 
+    // @todo The deployPath option doesn't seem to be getting saved.
     const environmentDefinition: EnvironmentDefinition = {
       id: answers.id,
       type: answers.type,
@@ -141,7 +140,7 @@ class Environment extends Generator {
   /**
    * Execute the configuration phase of this generator.
    *
-   * @memberof Manifest
+   * @memberof Environment
    */
   configuring() {
     // Save the repository configuration after all prompting has finished.
@@ -150,14 +149,14 @@ class Environment extends Generator {
     // Todo: Save all provided configuration.
     this.debug({
       generator: 'Environment',
-      answers: this.answers,
+      answers: this.environments,
     });
   }
 
   /**
    * Execute the writing phase of this generator.
    *
-   * @memberof Manifest
+   * @memberof Environment
    */
   writing() {
     // Todo: Write generated files.
