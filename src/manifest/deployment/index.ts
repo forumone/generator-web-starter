@@ -2,13 +2,36 @@ import Generator from 'yeoman-generator';
 import {
   DeploymentCollection,
   DeploymentDefinition,
+  DeploymentStrategy,
   EnvironmentCollection,
   ListEntry,
   RepositoryCollection,
 } from 'generator-manifest';
-import { ListQuestion } from 'inquirer';
+import {
+  Answers,
+  ListChoiceOptions,
+  ListQuestion,
+  QuestionCollection,
+} from 'inquirer';
 
-const strategies = ['Capistrano', 'Artifact Repository'];
+interface DeploymentDefinitionAnswers extends Answers {
+  readonly id: string;
+  readonly environment: string;
+  readonly strategy: DeploymentStrategy;
+}
+
+type DeploymentConfigurationEntry = ListEntry<DeploymentDefinition>;
+
+const strategies: Array<ListChoiceOptions> = [
+  {
+    name: 'Capistrano',
+    value: 'capistrano',
+  },
+  {
+    name: 'Artifact Repository',
+    value: 'artifact',
+  },
+];
 
 class Deployment extends Generator {
   private repositories: RepositoryCollection = {};
@@ -188,35 +211,18 @@ class Deployment extends Generator {
     return this.deployments;
   }
 
-  _promptForCapistranoDeployment() {
-    // Todo: Prompt for configuration needed in a Capistrano deployment.
-    const capistranoQuestions: Generator.Questions = [];
-
-    const answers = this.prompt(capistranoQuestions);
-    return answers;
-  }
-
-  _promptForArtifactDeployment() {
-    // Todo: Prompt for configuration needed in an artifact deployment.
-    const artifactQuestions: Generator.Questions = [{}];
-
-    const answers = this.prompt(artifactQuestions);
-    return answers;
-  }
-
   /**
    * Prompt for configuration details of a specific deployment.
    *
    * @param {Partial<DeploymentDefinition>} [deployment={}]
    *   Optional deployment details to populate default answers for editing.
-   * @returns {Promise<ListEntry<DeploymentDefinition>>}
+   * @returns {Promise<DeploymentConfigurationEntry>}
    * @memberof Deployment
    */
   async _promptForDeploymentConfiguration(
     deployment: Partial<DeploymentDefinition> = {},
-  ): Promise<ListEntry<DeploymentDefinition>> {
-    // Prompt for specifics of the deployment.
-    const deploymentQuestions: Generator.Questions = [
+  ): Promise<DeploymentConfigurationEntry> {
+    const prompts: QuestionCollection<DeploymentDefinitionAnswers> = [
       {
         type: 'input',
         name: 'id',
@@ -226,30 +232,135 @@ class Deployment extends Generator {
       },
       this._getEnvironmentSelectionPrompt({
         message: 'What environment is being deployed to?',
+        default: deployment.environment,
       }),
       this._getStrategySelectionPrompt({
         message: 'What deployment method should be used for this deployment?',
+        default: deployment.strategy,
       }),
-      {
-        type: 'confirm',
-        name: 'another',
-        message: 'Would you like to add or update another deployment?',
-        default: false,
-      },
     ];
 
-    const answers = await this.prompt(deploymentQuestions);
+    // Prompt for specifics of the deployment.
+    const answers = await this.prompt(prompts)
+      .then(async answers => {
+        const strategyPrompts = this._getStrategyPrompts(answers.strategy);
 
-    const deploymentDefinition: DeploymentDefinition = {
-      id: answers.id,
-      environment: answers.environment,
-      strategy: answers.strategy,
-    };
+        // Trigger additional prompts and combine answers with previous responses.
+        const strategyAnswers = await this.prompt(strategyPrompts);
+        return {
+          ...answers,
+          ...strategyAnswers,
+        };
+      })
+      .then(async answers => {
+        const { another } = await this.prompt([
+          {
+            type: 'confirm',
+            name: 'another',
+            message: 'Would you like to add or update another deployment?',
+            default: false,
+          },
+        ]);
+
+        return {
+          ...answers,
+          another,
+        };
+      });
+
+    // Spread to capture all properties automatically regardless of questions prompted.
+    const { another, ...deploymentDefinition } = answers;
 
     return {
       item: deploymentDefinition,
-      another: answers.another,
+      another,
     };
+  }
+
+  /**
+   * Get additional prompts specific to the strategy being used.
+   *
+   * @param {DeploymentStrategy} strategy
+   * @param {Answers} [answers={}]
+   * @returns {QuestionCollection}
+   * @memberof Deployment
+   */
+  _getStrategyPrompts(
+    strategy: DeploymentStrategy,
+    answers: Answers = {},
+  ): QuestionCollection {
+    switch (strategy) {
+      case 'artifact':
+        return this._getArtifactDeploymentPrompts(answers);
+
+      case 'capistrano':
+        return this._getCapistranoDeploymentPrompts(answers);
+
+      default:
+        throw new Error(`Unknown deployment strategy: ${strategy}`);
+    }
+  }
+
+  /**
+   * Get prompts for customizing the Capistrano deployment strategy.
+   *
+   * @param {Answers} [answers={}]
+   * @returns {QuestionCollection}
+   * @memberof Deployment
+   */
+  _getCapistranoDeploymentPrompts(answers: Answers = {}): QuestionCollection {
+    const $prompts: QuestionCollection = [
+      {
+        type: 'number',
+        name: 'releasesToKeep',
+        message: 'How many past releases should be kept?',
+        default: answers.releasesToKeep || 3,
+      },
+    ];
+
+    return $prompts;
+  }
+
+  /**
+   * Get prompts for customizing the Artifact Deployment strategy.
+   *
+   * @param {Answers} [answers={}]
+   * @returns {QuestionCollection}
+   * @memberof Deployment
+   */
+  _getArtifactDeploymentPrompts(answers: Answers = {}): QuestionCollection {
+    const $prompts: QuestionCollection = [
+      this._getRepositorySelectionPrompt({
+        name: 'sourceRepository',
+        message: 'What source repository is being deployed from?',
+        default: answers.sourceRepository,
+      }),
+      {
+        type: 'input',
+        name: 'sourceBranch',
+        message: 'What source branch is being deployed from?',
+        default: answers.sourceBranch,
+      },
+      this._getRepositorySelectionPrompt({
+        name: 'targetRepository',
+        message: 'What remote repository is being deployed to?',
+        default: answers.targetRepository,
+      }),
+      {
+        type: 'input',
+        name: 'targetBranch',
+        message: 'What target branch is being deployed from?',
+        default: answers.targetBranch,
+      },
+      {
+        type: 'input',
+        name: 'sourceSubdirectory',
+        message: 'What path within the source repository should be deployed?',
+        default: answers.sourceSubdirectory,
+      },
+    ];
+
+    return $prompts;
   }
 
   /**

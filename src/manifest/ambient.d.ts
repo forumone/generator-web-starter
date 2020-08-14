@@ -53,12 +53,25 @@ declare module 'generator-manifest' {
 
   export type DeploymentCollection = ConfigCollection<DeploymentDefinition>;
 
+  /**
+   * Defines valid keys for deployment strategies.
+   */
+  export type DeploymentStrategy = 'capistrano' | 'artifact';
+
+  /**
+   * A generic definition of configuration for any deployment type.
+   */
   export interface DeploymentDefinition extends DefinitionObject {
     readonly environment: string;
-    readonly strategy: string;
+    readonly strategy: DeploymentStrategy;
   }
 
+  /**
+   * Deployment configuration for the Capistrano deployment strategy.
+   */
   export interface CapistranoDeploymentDefinition extends DeploymentDefinition {
+    readonly environment: string;
+    readonly strategy: 'capistrano';
     readonly deployMethod: 'git' | 'rsync';
     readonly releasesToKeep: number;
     readonly repository: string;
@@ -72,12 +85,17 @@ declare module 'generator-manifest' {
     readonly role: string;
   }
 
+  /**
+   * Deployment configuration for the Artifact Repository deployment strategy.
+   */
   export interface ArtifactRepositoryDeploymentDefinition
     extends DeploymentDefinition {
+    readonly strategy: 'artifact';
     readonly sourceRepository: string;
     readonly targetRepository: string;
-    readonly branchMapping: Array<BranchMapping>;
-    readonly sourceDirectory?: string;
+    readonly sourceBranch: string;
+    readonly targetBranch: string;
+    readonly sourceSubdirectory?: string;
   }
 
   export interface BranchMapping {
