@@ -53,7 +53,10 @@ declare module 'generator-manifest' {
 
   export type DeploymentCollection = ConfigCollection<DeploymentDefinition>;
 
-  export interface DeploymentDefinition extends DefinitionObject {}
+  export interface DeploymentDefinition extends DefinitionObject {
+    readonly environment: string;
+    readonly strategy: string;
+  }
 
   export interface CapistranoDeploymentDefinition extends DeploymentDefinition {
     readonly deployMethod: 'git' | 'rsync';

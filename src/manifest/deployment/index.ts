@@ -3,13 +3,11 @@ import {
   DeploymentCollection,
   DeploymentDefinition,
   EnvironmentCollection,
-  EnvironmentDefinition,
   ListEntry,
   RepositoryCollection,
 } from 'generator-manifest';
 import { ListQuestion } from 'inquirer';
 
-const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 const strategies = ['Capistrano', 'Artifact Repository'];
 
 class Deployment extends Generator {
@@ -61,13 +59,22 @@ class Deployment extends Generator {
     return prompt;
   }
 
+  /**
+   * Create a standardized prompt for selecting a configured environment.
+   *
+   * @param {Partial<ListQuestion>} options
+   *   Override options to contextualize the presentation of the prompt.
+   * @returns {ListQuestion}
+   *   The contextualized prompt ready to be used.
+   * @memberof Deployment
+   */
   _getEnvironmentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const environmentOptions: string[] = Object.keys(this.environments);
 
     // @todo Add default selection support.
     const prompt: Generator.Question = {
       type: 'list',
-      name: 'deployment',
+      name: 'environment',
       message: 'What environment should be deployed to?',
       choices: environmentOptions,
       ...options,
@@ -100,11 +107,20 @@ class Deployment extends Generator {
     return prompt;
   }
 
+  /**
+   * Create a standardized prompt for selecting an available deployment strategy.
+   *
+   * @param {Partial<ListQuestion>} options
+   *   Override options to contextualize the presentation of the prompt.
+   * @returns {ListQuestion}
+   *   The contextualized prompt ready to be used.
+   * @memberof Deployment
+   */
   _getStrategySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     // @todo Add default selection support.
     const prompt: ListQuestion = {
       type: 'list',
-      name: 'deployment',
+      name: 'strategy',
       message: 'What deployment strategy should be used for this deployment?',
       choices: strategies,
       ...options,
@@ -119,7 +135,7 @@ class Deployment extends Generator {
    * @memberof Deployment
    */
   async prompting() {
-    // this.deployments = await this._promptForDeployments();
+    this.deployments = await this._promptForDeployments();
 
     this.debug({
       generator: 'Deployment',
@@ -208,43 +224,16 @@ class Deployment extends Generator {
           'What should this deployment be referenced as? (Example: dev, stage, production)',
         default: deployment.id,
       },
-      this._getEnvironmentSelectionPrompt({}),
-      this._getStrategySelectionPrompt({}),
-      {
-        type: 'list',
-        name: 'type',
-        message: 'What type of hosting is used for this deployment?',
-        choices: [...deployments, 'Other'],
-        default: deployment.type,
-      },
-      {
-        type: 'input',
-        name: 'url',
-        message: 'What URL is used to access this deployment?',
-        default: deployment.url,
-      },
-      {
-        type: 'input',
-        name: 'deployPath',
-        message: 'What file path should the application deploy to?',
-        default: deployment.deployPath,
-      },
-      {
-        type: 'input',
-        name: 'branch',
-        message: 'What branch should be deployed to this deployment?',
-        default: deployment.branch,
-      },
-      {
-        type: 'input',
-        name: 'login',
-        message: 'What is the login user for this deployment?',
-        default: deployment.login,
-      },
+      this._getEnvironmentSelectionPrompt({
+        message: 'What environment is being deployed to?',
+      }),
+      this._getStrategySelectionPrompt({
+        message: 'What deployment method should be used for this deployment?',
+      }),
       {
         type: 'confirm',
         name: 'another',
-        message: 'Would you like to add another deployment?',
+        message: 'Would you like to add or update another deployment?',
         default: false,
       },
     ];
@@ -253,11 +242,8 @@ class Deployment extends Generator {
 
     const deploymentDefinition: DeploymentDefinition = {
       id: answers.id,
-      type: answers.type,
-      url: answers.url,
-      deployPath: answers.deployPath,
-      branch: answers.branch,
-      login: answers.login,
+      environment: answers.environment,
+      strategy: answers.strategy,
     };
 
     return {
