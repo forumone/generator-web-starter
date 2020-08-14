@@ -37,6 +37,15 @@ class Deployment extends Generator {
     this.environments = environments;
   }
 
+  /**
+   * Create a standardized prompt for selecting a configured repository.
+   *
+   * @param {Partial<ListQuestion>} options
+   *   Override options to contextualize the presentation of the prompt.
+   * @returns {ListQuestion}
+   *   The contextualized prompt ready to be used.
+   * @memberof Deployment
+   */
   _getRepositorySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const repositoryOptions: string[] = Object.keys(this.repositories);
 
@@ -67,6 +76,15 @@ class Deployment extends Generator {
     return prompt;
   }
 
+  /**
+   * Create a standardized prompt for selecting a configured deployment.
+   *
+   * @param {Partial<ListQuestion>} options
+   *   Override options to contextualize the presentation of the prompt.
+   * @returns {ListQuestion}
+   *   The contextualized prompt ready to be used.
+   * @memberof Deployment
+   */
   _getDeploymentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const deploymentOptions: string[] = Object.keys(this.deployments);
 
@@ -96,7 +114,7 @@ class Deployment extends Generator {
   }
 
   /**
-   * Execute the configuration phase of this generator.
+   * Execute the prompting phase of this generator.
    *
    * @memberof Deployment
    */
@@ -110,6 +128,12 @@ class Deployment extends Generator {
     });
   }
 
+  /**
+   * Execute looped prompting for editing and creating deployments.
+   *
+   * @returns {Promise<DeploymentCollection>}
+   * @memberof Deployment
+   */
   async _promptForDeployments(): Promise<DeploymentCollection> {
     // Loop to enable updates and creation of new deployments.
     let another = true;
@@ -148,14 +172,6 @@ class Deployment extends Generator {
     return this.deployments;
   }
 
-  _promptForDeploymentStrategy() {
-    // Todo: Loop to prompt for multiple deployment strategies keyed by type.
-    const deploymentQuestions: Generator.Questions = [];
-
-    const answers = this.prompt(deploymentQuestions);
-    return answers;
-  }
-
   _promptForCapistranoDeployment() {
     // Todo: Prompt for configuration needed in a Capistrano deployment.
     const capistranoQuestions: Generator.Questions = [];
@@ -172,6 +188,14 @@ class Deployment extends Generator {
     return answers;
   }
 
+  /**
+   * Prompt for configuration details of a specific deployment.
+   *
+   * @param {Partial<DeploymentDefinition>} [deployment={}]
+   *   Optional deployment details to populate default answers for editing.
+   * @returns {Promise<ListEntry<DeploymentDefinition>>}
+   * @memberof Deployment
+   */
   async _promptForDeploymentConfiguration(
     deployment: Partial<DeploymentDefinition> = {},
   ): Promise<ListEntry<DeploymentDefinition>> {
