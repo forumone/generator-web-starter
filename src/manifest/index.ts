@@ -56,11 +56,11 @@ class Manifest extends Generator {
 
         // Pull resources from resource generators for propogation to remaining
         // generators dependent on them.
-        const repositories = this.generators.repository.repositories;
-        const environments = this.generators.environment.environments;
+        const repositories = this.generators.repository.getRepositories();
+        const environments = this.generators.environment.getEnvironments();
 
-        this.generators.deployment.repositories = repositories;
-        this.generators.deployment.environments = environments;
+        this.generators.deployment.setRepositories(repositories);
+        this.generators.deployment.setEnvironments(environments);
       },
     });
 

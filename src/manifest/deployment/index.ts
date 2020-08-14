@@ -13,9 +13,29 @@ const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 const strategies = ['Capistrano', 'Artifact Repository'];
 
 class Deployment extends Generator {
-  repositories: RepositoryCollection = {};
-  environments: EnvironmentCollection = {};
-  deployments: DeploymentCollection = {};
+  private repositories: RepositoryCollection = {};
+  private environments: EnvironmentCollection = {};
+  private deployments: DeploymentCollection = {};
+
+  /**
+   * Set the known repositories for configuration usage.
+   *
+   * @param {RepositoryCollection} repositories
+   * @memberof Deployment
+   */
+  public setRepositories(repositories: RepositoryCollection) {
+    this.repositories = repositories;
+  }
+
+  /**
+   * Set the known environments for configuration usage.
+   *
+   * @param {EnvironmentCollection} environments
+   * @memberof Deployment
+   */
+  public setEnvironments(environments: EnvironmentCollection) {
+    this.environments = environments;
+  }
 
   _getRepositorySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const repositoryOptions: string[] = Object.keys(this.repositories);

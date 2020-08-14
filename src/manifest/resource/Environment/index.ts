@@ -8,7 +8,7 @@ import {
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 
 class Environment extends Generator {
-  environments: EnvironmentCollection = {};
+  private environments: EnvironmentCollection = {};
 
   /**
    * Execute initialization for this generator.
@@ -18,7 +18,17 @@ class Environment extends Generator {
   async initializing() {
     const config = this.config.getAll();
 
-    this.environments = config.environments;
+    this.environments = config.environments || {};
+  }
+
+  /**
+   * Get the known environment configurations.
+   *
+   * @returns {EnvironmentCollection}
+   * @memberof Environment
+   */
+  public getEnvironments(): EnvironmentCollection {
+    return this.environments;
   }
 
   /**

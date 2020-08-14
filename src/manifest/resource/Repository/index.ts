@@ -6,7 +6,7 @@ import {
 } from 'generator-manifest';
 
 class Repository extends Generator {
-  repositories: RepositoryCollection = {};
+  private repositories: RepositoryCollection = {};
   private answers: Generator.Answers = {};
 
   /**
@@ -17,8 +17,18 @@ class Repository extends Generator {
   async initializing() {
     const config = this.config.getAll();
 
-    this.answers = config.promptAnswers;
-    this.repositories = config.repositories;
+    this.answers = config.promptAnswers || {};
+    this.repositories = config.repositories || {};
+  }
+
+  /**
+   * Get the known repository configurations.
+   *
+   * @returns {RepositoryCollection}
+   * @memberof Repository
+   */
+  public getRepositories(): RepositoryCollection {
+    return this.repositories;
   }
 
   /**
