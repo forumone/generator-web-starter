@@ -3,7 +3,7 @@ import {
   EnvironmentCollection,
   EnvironmentDefinition,
   ListEntry,
-} from 'generator-manifest';
+} from '../../ambient';
 
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 

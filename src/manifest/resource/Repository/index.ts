@@ -3,7 +3,7 @@ import {
   ListEntry,
   RepositoryCollection,
   RepositoryDefinition,
-} from 'generator-manifest';
+} from '../../ambient';
 
 class Repository extends Generator {
   private repositories: RepositoryCollection = {};

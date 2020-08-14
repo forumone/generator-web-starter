@@ -6,7 +6,7 @@ import {
   EnvironmentCollection,
   ListEntry,
   RepositoryCollection,
-} from 'generator-manifest';
+} from '../ambient';
 import {
   Answers,
   ListChoiceOptions,

@@ -1,105 +1,109 @@
-declare module 'generator-manifest' {
-  export interface ListEntry<T> {
-    item: T;
+import Generator from 'yeoman-generator';
+
+/**
+ * Answer and question types and interfaces for Manifests and subgenerators.
+ */
+declare namespace ManifestInquirer {
+  interface EditAnotherAnswer extends Generator.Answers {
     another: boolean;
   }
+}
 
-  export interface DefinitionObject {
-    readonly id: string;
-  }
+export interface ListEntry<T> {
+  item: T;
+  another: boolean;
+}
 
-  export interface Manifest {
-    readonly version: 'v1';
-    readonly projectName: string;
-    readonly projectCode?: string;
-    readonly platform: 'Docker' | 'JavaScript';
-    readonly cms?: 'Drupal7' | 'Drupal8' | 'WordPress';
-    // readonly deployment?: DeploymentCollection;
-    readonly gesso: boolean;
-    repositories: RepositoryCollection;
-    environments: EnvironmentCollection;
-  }
+export interface DefinitionObject {
+  readonly id: string;
+}
 
-  export interface RepositoryDefinition extends DefinitionObject {
-    readonly id: string;
-    readonly url: string;
-  }
+export interface Manifest {
+  readonly version: 'v1';
+  readonly projectName: string;
+  readonly projectCode?: string;
+  readonly platform: 'Docker' | 'JavaScript';
+  readonly cms?: 'Drupal7' | 'Drupal8' | 'WordPress';
+  readonly gesso: boolean;
+  repositories: RepositoryCollection;
+  environments: EnvironmentCollection;
+  deployments: DeploymentCollection;
+}
 
-  export interface EnvironmentDefinition extends DefinitionObject {
-    readonly type: string;
-    readonly url: string;
-    readonly deployPath?: string;
-    readonly branch?: string;
-    readonly login?: string;
-  }
+export interface RepositoryDefinition extends DefinitionObject {
+  readonly id: string;
+  readonly url: string;
+}
 
-  export interface ForumOneEnvironment extends EnvironmentDefinition {
-    readonly deployPath?: string;
-    readonly login?: string;
-  }
+export interface EnvironmentDefinition extends DefinitionObject {
+  readonly type: string;
+  readonly url: string;
+  readonly deployPath?: string;
+  readonly branch?: string;
+  readonly login?: string;
+}
 
-  export interface RemoteRepositoryEnvironment extends EnvironmentDefinition {
-    readonly service?: string;
-    readonly deploymentSubdirectory?: string;
-  }
+export interface ForumOneEnvironment extends EnvironmentDefinition {
+  readonly deployPath?: string;
+  readonly login?: string;
+}
 
-  export interface ConfigCollection<T extends DefinitionObject> {
-    [index: string]: T;
-  }
+export interface RemoteRepositoryEnvironment extends EnvironmentDefinition {
+  readonly service?: string;
+  readonly deploymentSubdirectory?: string;
+}
 
-  export type RepositoryCollection = ConfigCollection<RepositoryDefinition>;
+export interface ConfigCollection<T extends DefinitionObject> {
+  [index: string]: T;
+}
 
-  export type EnvironmentCollection = ConfigCollection<EnvironmentDefinition>;
+export type RepositoryCollection = ConfigCollection<RepositoryDefinition>;
 
-  export type DeploymentCollection = ConfigCollection<DeploymentDefinition>;
+export type EnvironmentCollection = ConfigCollection<EnvironmentDefinition>;
 
-  /**
-   * Defines valid keys for deployment strategies.
-   */
-  export type DeploymentStrategy = 'capistrano' | 'artifact';
+export type DeploymentCollection = ConfigCollection<DeploymentDefinition>;
 
-  /**
-   * A generic definition of configuration for any deployment type.
-   */
-  export interface DeploymentDefinition extends DefinitionObject {
-    readonly environment: string;
-    readonly strategy: DeploymentStrategy;
-  }
+/**
+ * Defines valid keys for deployment strategies.
+ */
+export type DeploymentStrategy = 'capistrano' | 'artifact';
 
-  /**
-   * Deployment configuration for the Capistrano deployment strategy.
-   */
-  export interface CapistranoDeploymentDefinition extends DeploymentDefinition {
-    readonly environment: string;
-    readonly strategy: 'capistrano';
-    readonly deployMethod: 'git' | 'rsync';
-    readonly releasesToKeep: number;
-    readonly repository: string;
-    readonly stages: Record<string, CapistranoStage>;
-  }
+/**
+ * A generic definition of configuration for any deployment type.
+ */
+export interface DeploymentDefinition extends DefinitionObject {
+  readonly environment: string;
+  readonly strategy: DeploymentStrategy;
+}
 
-  export interface CapistranoStage {
-    readonly url: string;
-    readonly deployPath: string;
-    readonly branch: string;
-    readonly role: string;
-  }
+/**
+ * Deployment configuration for the Capistrano deployment strategy.
+ */
+export interface CapistranoDeploymentDefinition extends DeploymentDefinition {
+  readonly environment: string;
+  readonly strategy: 'capistrano';
+  readonly deployMethod: 'git' | 'rsync';
+  readonly releasesToKeep: number;
+  readonly repository: string;
+  readonly stages: Record<string, CapistranoStage>;
+}
 
-  /**
-   * Deployment configuration for the Artifact Repository deployment strategy.
-   */
-  export interface ArtifactRepositoryDeploymentDefinition
-    extends DeploymentDefinition {
-    readonly strategy: 'artifact';
-    readonly sourceRepository: string;
-    readonly targetRepository: string;
-    readonly sourceBranch: string;
-    readonly targetBranch: string;
-    readonly sourceSubdirectory?: string;
-  }
+export interface CapistranoStage {
+  readonly url: string;
+  readonly deployPath: string;
+  readonly branch: string;
+  readonly role: string;
+}
 
-  export interface BranchMapping {
-    readonly source: string;
-    readonly target: string;
-  }
+/**
+ * Deployment configuration for the Artifact Repository deployment strategy.
+ */
+export interface ArtifactRepositoryDeploymentDefinition
+  extends DeploymentDefinition {
+  readonly strategy: 'artifact';
+  readonly sourceRepository: string;
+  readonly targetRepository: string;
+  readonly sourceBranch: string;
+  readonly targetBranch: string;
+  readonly sourceSubdirectory?: string;
 }
