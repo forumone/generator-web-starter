@@ -4,7 +4,7 @@ import {
   DeploymentDefinition,
   DeploymentStrategy,
   EnvironmentCollection,
-  ListEntry,
+  ManifestInquirer,
   RepositoryCollection,
 } from '../ambient';
 import {
@@ -14,13 +14,12 @@ import {
   QuestionCollection,
 } from 'inquirer';
 
-interface DeploymentDefinitionAnswers extends Answers {
-  readonly id: string;
-  readonly environment: string;
-  readonly strategy: DeploymentStrategy;
-}
-
-type DeploymentConfigurationEntry = ListEntry<DeploymentDefinition>;
+type DeploymentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
+  DeploymentDefinition
+>;
+type EditAnotherDeploymentQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
+  DeploymentDefinition
+>;
 
 const strategies: Array<ListChoiceOptions> = [
   {
@@ -233,7 +232,7 @@ class Deployment extends Generator {
   async _promptForDeploymentConfiguration(
     deployment: Partial<DeploymentDefinition> = {},
   ): Promise<DeploymentConfigurationEntry> {
-    const prompts: QuestionCollection<DeploymentDefinitionAnswers> = [
+    const prompts: EditAnotherDeploymentQuestionSet = [
       {
         type: 'input',
         name: 'id',

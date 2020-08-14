@@ -1,9 +1,16 @@
 import Generator from 'yeoman-generator';
 import {
-  ListEntry,
+  ManifestInquirer,
   RepositoryCollection,
   RepositoryDefinition,
 } from '../../ambient';
+
+type RepositoryConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
+  RepositoryDefinition
+>;
+type EditAnotherRepositoryQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
+  RepositoryDefinition
+>;
 
 class Repository extends Generator {
   private repositories: RepositoryCollection = {};
@@ -81,14 +88,14 @@ class Repository extends Generator {
   /**
    * Prompt for configuration of a specific repository.
    *
-   * @returns {Promise<ListEntry<RepositoryDefinition>>}
+   * @returns {Promise<RepositoryConfigurationEntry>}
    * @memberof Repository
    */
   async _promptForRepositoryConfiguration(
     repository: Partial<RepositoryDefinition> = {},
-  ): Promise<ListEntry<RepositoryDefinition>> {
+  ): Promise<RepositoryConfigurationEntry> {
     // Prompt for specific configuration options for each repository.
-    const repositoryConfigQuestions: Generator.Questions = [
+    const repositoryConfigQuestions: EditAnotherRepositoryQuestionSet = [
       {
         type: 'input',
         name: 'id',
@@ -114,14 +121,12 @@ class Repository extends Generator {
 
     const answers = await this.prompt(repositoryConfigQuestions);
 
-    const repositoryDefinition: RepositoryDefinition = {
-      id: answers.id,
-      url: answers.url,
-    };
+    // Spread to capture all properties automatically regardless of questions prompted.
+    const { another, ...repositoryDefinition } = answers;
 
     return {
+      another,
       item: repositoryDefinition,
-      another: answers.another,
     };
   }
 

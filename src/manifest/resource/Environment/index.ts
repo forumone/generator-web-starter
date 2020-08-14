@@ -2,8 +2,15 @@ import Generator from 'yeoman-generator';
 import {
   EnvironmentCollection,
   EnvironmentDefinition,
-  ListEntry,
+  ManifestInquirer,
 } from '../../ambient';
+
+type EnvironmentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
+  EnvironmentDefinition
+>;
+type EditAnotherEnvironmentQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
+  EnvironmentDefinition
+>;
 
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 
@@ -80,9 +87,9 @@ class Environment extends Generator {
 
   async _promptForHostingEnvironmentConfiguration(
     environment: Partial<EnvironmentDefinition> = {},
-  ): Promise<ListEntry<EnvironmentDefinition>> {
+  ): Promise<EnvironmentConfigurationEntry> {
     // Prompt for specifics of a given hosting environment.
-    const environmentQuestions: Generator.Questions = [
+    const environmentQuestions: EditAnotherEnvironmentQuestionSet = [
       {
         type: 'input',
         name: 'id',
@@ -131,19 +138,12 @@ class Environment extends Generator {
 
     const answers = await this.prompt(environmentQuestions);
 
-    // @todo The deployPath option doesn't seem to be getting saved.
-    const environmentDefinition: EnvironmentDefinition = {
-      id: answers.id,
-      type: answers.type,
-      url: answers.url,
-      deployPath: answers.deployPath,
-      branch: answers.branch,
-      login: answers.login,
-    };
+    // Spread to capture all properties automatically regardless of questions prompted.
+    const { another, ...environmentDefinition } = answers;
 
     return {
+      another,
       item: environmentDefinition,
-      another: answers.another,
     };
   }
 
