@@ -39,6 +39,17 @@ class Deployment extends Generator {
   private deployments: DeploymentCollection = {};
 
   /**
+   * Execute initialization for this generator.
+   *
+   * @memberof Deployment
+   */
+  async initializing() {
+    const config = this.config.getAll();
+
+    this.deployments = config.deployments || {};
+  }
+
+  /**
    * Set the known repositories for configuration usage.
    *
    * @param {RepositoryCollection} repositories
@@ -272,8 +283,8 @@ class Deployment extends Generator {
     const { another, ...deploymentDefinition } = answers;
 
     return {
-      item: deploymentDefinition,
       another,
+      item: deploymentDefinition,
     };
   }
 
