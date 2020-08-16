@@ -1,5 +1,7 @@
 import Generator from 'yeoman-generator';
 import {
+  ArtifactDeploymentDefinition,
+  CapistranoDeploymentDefinition,
   DeploymentCollection,
   DeploymentDefinition,
   DeploymentStrategy,
@@ -81,7 +83,7 @@ class Deployment extends Generator {
     const repositoryOptions: string[] = Object.keys(this.repositories);
 
     // @todo Add default selection support.
-    const prompt: Generator.Question = {
+    const prompt: ListQuestion = {
       type: 'list',
       name: 'repository',
       message: 'What repository should be used?',
@@ -105,7 +107,7 @@ class Deployment extends Generator {
     const environmentOptions: string[] = Object.keys(this.environments);
 
     // @todo Add default selection support.
-    const prompt: Generator.Question = {
+    const prompt: ListQuestion = {
       type: 'list',
       name: 'environment',
       message: 'What environment should be deployed to?',
@@ -188,7 +190,7 @@ class Deployment extends Generator {
     let another = true;
     while (another === true) {
       // Select an entry to edit or create a new one.
-      const { edit } = await this.prompt([
+      const { edit }: { edit: string } = await this.prompt([
         {
           type: 'list',
           name: 'edit',
@@ -253,7 +255,10 @@ class Deployment extends Generator {
     // Prompt for specifics of the deployment.
     const answers = await this.prompt(prompts)
       .then(async answers => {
-        const strategyPrompts = this._getStrategyPrompts(answers.strategy);
+        const strategyPrompts = this._getStrategyPrompts(
+          answers.strategy,
+          deployment,
+        );
 
         // Trigger additional prompts and combine answers with previous responses.
         const strategyAnswers = await this.prompt(strategyPrompts);
@@ -263,7 +268,7 @@ class Deployment extends Generator {
         };
       })
       .then(async answers => {
-        const { another } = await this.prompt([
+        const { another }: { another: boolean } = await this.prompt([
           {
             type: 'confirm',
             name: 'another',
@@ -292,13 +297,13 @@ class Deployment extends Generator {
    *
    * @param {DeploymentStrategy} strategy
    * @param {Answers} [answers={}]
-   * @returns {QuestionCollection}
+   * @returns {QuestionCollection<DeploymentDefinition>}
    * @memberof Deployment
    */
   _getStrategyPrompts(
     strategy: DeploymentStrategy,
     answers: Answers = {},
-  ): QuestionCollection {
+  ): QuestionCollection<DeploymentDefinition> {
     switch (strategy) {
       case 'artifact':
         return this._getArtifactDeploymentPrompts(answers);
@@ -314,12 +319,14 @@ class Deployment extends Generator {
   /**
    * Get prompts for customizing the Capistrano deployment strategy.
    *
-   * @param {Answers} [answers={}]
-   * @returns {QuestionCollection}
+   * @param {Partial<CapistranoDeploymentDefinition>} [answers={}]
+   * @returns {QuestionCollection<DeploymentDefinition>}
    * @memberof Deployment
    */
-  _getCapistranoDeploymentPrompts(answers: Answers = {}): QuestionCollection {
-    const $prompts: QuestionCollection = [
+  _getCapistranoDeploymentPrompts(
+    answers: Partial<CapistranoDeploymentDefinition> = {},
+  ): QuestionCollection<DeploymentDefinition> {
+    const $prompts: QuestionCollection<DeploymentDefinition> = [
       {
         type: 'number',
         name: 'releasesToKeep',
@@ -334,11 +341,13 @@ class Deployment extends Generator {
   /**
    * Get prompts for customizing the Artifact Deployment strategy.
    *
-   * @param {Answers} [answers={}]
-   * @returns {QuestionCollection}
+   * @param {Partial<ArtifactDeploymentDefinition>} [answers={}]
+   * @returns {QuestionCollection<DeploymentDefinition>}
    * @memberof Deployment
    */
-  _getArtifactDeploymentPrompts(answers: Answers = {}): QuestionCollection {
+  _getArtifactDeploymentPrompts(
+    answers: Partial<ArtifactDeploymentDefinition> = {},
+  ): QuestionCollection<DeploymentDefinition> {
     const $prompts: QuestionCollection = [
       this._getRepositorySelectionPrompt({
         name: 'sourceRepository',
@@ -359,7 +368,7 @@ class Deployment extends Generator {
       {
         type: 'input',
         name: 'targetBranch',
-        message: 'What target branch is being deployed from?',
+        message: 'What target branch is being deployed to?',
         default: answers.targetBranch,
       },
       {
