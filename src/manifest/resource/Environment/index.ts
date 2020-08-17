@@ -13,7 +13,7 @@ type EditAnotherEnvironmentQuestionSet = ManifestInquirer.EditAnotherQuestionSet
   EnvironmentDefinition
 >;
 
-const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
+const environments = ['Forum One', 'Pantheon', 'Acquia', 'WPEngine'];
 
 class Environment extends SubGenerator {
   private environments: EnvironmentCollection = {};
@@ -47,10 +47,7 @@ class Environment extends SubGenerator {
   }
 
   /**
-   * Propogate the manifest object in to assign values we're responsible for.
-   *
-   * @param {Partial<ManifestDefinition>} manifest
-   * @memberof Deployment
+   * @inheritdoc
    */
   public _setManifest(manifest: Partial<ManifestDefinition>) {
     this.manifest = manifest;
@@ -65,8 +62,13 @@ class Environment extends SubGenerator {
     this.environments = await this._promptForEnvironments();
   }
 
+  /**
+   * Loop to enable updates and creation of new environments.
+   *
+   * @returns {Promise<EnvironmentCollection>}
+   * @memberof Environment
+   */
   async _promptForEnvironments(): Promise<EnvironmentCollection> {
-    // Loop to enable updates and creation of new environments.
     let another = true;
     while (another === true) {
       // Select an entry to edit or create a new one.
@@ -103,24 +105,30 @@ class Environment extends SubGenerator {
     return this.environments;
   }
 
+  /**
+   * Prompt for the specifics of a given hosting environment.
+   *
+   * @param {Partial<EnvironmentDefinition>} [environment={}]
+   * @returns {Promise<EnvironmentConfigurationEntry>}
+   * @memberof Environment
+   */
   async _promptForHostingEnvironmentConfiguration(
     environment: Partial<EnvironmentDefinition> = {},
   ): Promise<EnvironmentConfigurationEntry> {
-    // Prompt for specifics of a given hosting environment.
     const environmentQuestions: EditAnotherEnvironmentQuestionSet = [
       {
         type: 'input',
         name: 'id',
         message:
           'What should this environment be referenced as? (Example: dev, stage, production)',
-        default: environment.id,
+        default: environment.id || 'dev',
       },
       {
         type: 'list',
         name: 'type',
         message: 'What type of hosting is used for this environment?',
         choices: [...environments, 'Other'],
-        default: environment.type,
+        default: environment.type || 'Forum One',
       },
       {
         type: 'input',
@@ -130,21 +138,31 @@ class Environment extends SubGenerator {
       },
       {
         type: 'input',
-        name: 'deployPath',
-        message: 'What file path should the application deploy to?',
-        default: environment.deployPath,
-      },
-      {
-        type: 'input',
         name: 'branch',
         message: 'What branch should be deployed to this environment?',
         default: environment.branch,
+      },
+      // @todo: Add subdirectory suggestions based on the known CMS type.
+      {
+        type: 'input',
+        name: 'sourceSubdirectory',
+        message:
+          'What path within the source repository should be deployed to this environment?',
+        default: environment.sourceSubdirectory,
       },
       {
         type: 'input',
         name: 'login',
         message: 'What is the login user for this environment?',
         default: environment.login,
+        when: answers => answers.type === 'Forum One',
+      },
+      {
+        type: 'input',
+        name: 'deployPath',
+        message: 'What file path should the application deploy to?',
+        default: environment.deployPath,
+        when: answers => answers.type === 'Forum One',
       },
       {
         type: 'confirm',
@@ -182,15 +200,6 @@ class Environment extends SubGenerator {
       generator: 'Environment',
       answers: this.environments,
     });
-  }
-
-  /**
-   * Execute the writing phase of this generator.
-   *
-   * @memberof Environment
-   */
-  writing() {
-    // Todo: Write generated files.
   }
 }
 
