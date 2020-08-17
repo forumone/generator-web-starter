@@ -1,11 +1,10 @@
+import { ManifestInquirer } from '../../ambient';
 import {
-  EnvironmentCollection,
-  EnvironmentDefinition,
   ManifestDefinition,
-  ManifestInquirer,
   ResourceCollection,
   SubGenerator,
-} from '../../ambient';
+} from '../../types';
+import { EnvironmentCollection, EnvironmentDefinition } from './types';
 
 type EnvironmentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
   EnvironmentDefinition

@@ -1,22 +1,20 @@
-import {
-  ArtifactDeploymentDefinition,
-  CapistranoDeploymentDefinition,
-  DeploymentCollection,
-  DeploymentDefinition,
-  DeploymentStrategy,
-  EnvironmentCollection,
-  ManifestDefinition,
-  ManifestInquirer,
-  RepositoryCollection,
-  ResourceCollection,
-  SubGenerator,
-} from '../ambient';
+import { ManifestInquirer } from '../ambient';
+import { ManifestDefinition, ResourceCollection, SubGenerator } from '../types';
 import {
   Answers,
   ListChoiceOptions,
   ListQuestion,
   QuestionCollection,
 } from 'inquirer';
+import {
+  ArtifactDeploymentDefinition,
+  CapistranoDeploymentDefinition,
+  DeploymentCollection,
+  DeploymentDefinition,
+  DeploymentStrategy,
+} from './types';
+import { RepositoryCollection } from '../resource/Repository/types';
+import { EnvironmentCollection } from '../resource/Environment/types';
 
 type DeploymentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
   DeploymentDefinition

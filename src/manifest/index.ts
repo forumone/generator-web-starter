@@ -2,7 +2,7 @@ import Generator from 'yeoman-generator';
 import Repository from './resource/Repository';
 import Environment from './resource/Environment';
 import Deployment from './deployment';
-import { ManifestDefinition, SubGenerator } from './ambient';
+import { ManifestDefinition, SubGenerator } from './types';
 
 const cmsPlugins = ['Drupal7', 'Drupal8', 'WordPress'];
 const platform = ['Docker', 'JavaScript'];

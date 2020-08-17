@@ -1,12 +1,11 @@
 import Generator from 'yeoman-generator';
+import { ManifestInquirer } from '../../ambient';
+import { RepositoryCollection, RepositoryDefinition } from './types';
 import {
   ManifestDefinition,
-  ManifestInquirer,
-  RepositoryCollection,
-  RepositoryDefinition,
   ResourceCollection,
   SubGenerator,
-} from '../../ambient';
+} from '../../types';
 
 type RepositoryConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
   RepositoryDefinition
