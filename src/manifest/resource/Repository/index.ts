@@ -1,5 +1,6 @@
 import Generator from 'yeoman-generator';
 import {
+  ManifestDefinition,
   ManifestInquirer,
   RepositoryCollection,
   RepositoryDefinition,
@@ -17,6 +18,7 @@ type EditAnotherRepositoryQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
 class Repository extends SubGenerator {
   private repositories: RepositoryCollection = {};
   private answers: Generator.Answers = {};
+  private manifest!: Partial<ManifestDefinition>;
 
   /**
    * Execute initialization for this generator.
@@ -44,6 +46,16 @@ class Repository extends SubGenerator {
    */
   public setResources(resources: Record<string, ResourceCollection>): void {
     this.repositories = resources.repositories as RepositoryCollection;
+  }
+
+  /**
+   * Propogate the manifest object in to assign values we're responsible for.
+   *
+   * @param {Partial<ManifestDefinition>} manifest
+   * @memberof Deployment
+   */
+  public setManifest(manifest: Partial<ManifestDefinition>) {
+    this.manifest = manifest;
   }
 
   /**
@@ -146,6 +158,9 @@ class Repository extends SubGenerator {
   configuring() {
     // Save the repository configuration after all prompting has finished.
     this.config.set('repositories', this.repositories);
+
+    // Expose all configured repositories into the manifest.
+    this.manifest.repositories = this.repositories;
 
     // Todo: Save all provided configuration.
     this.debug({

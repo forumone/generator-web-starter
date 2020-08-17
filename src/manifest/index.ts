@@ -2,16 +2,18 @@ import Generator from 'yeoman-generator';
 import Repository from './resource/Repository';
 import Environment from './resource/Environment';
 import Deployment from './deployment';
-import { SubGenerator } from './ambient';
+import { ManifestDefinition, SubGenerator } from './ambient';
 
 const cmsPlugins = ['Drupal7', 'Drupal8', 'WordPress'];
 const platform = ['Docker', 'JavaScript'];
+const manifestVersion = 'v1';
 
 type ManifestGeneratorCollection = Record<string, SubGenerator>;
 
 class Manifest extends Generator {
   private answers: Generator.Answers = {};
   private generators!: ManifestGeneratorCollection;
+  private manifest!: Partial<ManifestDefinition>;
 
   /**
    * Execute initialization for this generator and trigger subgenerators.
@@ -121,17 +123,42 @@ class Manifest extends Generator {
    * @memberof Manifest
    */
   configuring() {
+    const config = this.config.getAll();
+
     // Todo: Save all provided configuration.
     this.debug({
       generator: 'Manifest',
       answers: this.answers,
     });
     this.debug({
-      config: this.config.getAll(),
+      config,
     });
     // this.debug({
     //   generators: this.generators,
     // });
+
+    const manifest: Partial<ManifestDefinition> = {
+      version: manifestVersion,
+      ...config.promptValues,
+    };
+
+    this._propogateManifestDefinition(manifest);
+
+    this.manifest = manifest as ManifestDefinition;
+  }
+
+  /**
+   * Push the manifest into all generators for delegated definition of values.
+   *
+   * @memberof Manifest
+   */
+  _propogateManifestDefinition(manifest: Partial<ManifestDefinition>) {
+    for (const key in this.generators) {
+      if (Object.prototype.hasOwnProperty.call(this.generators, key)) {
+        const generator = this.generators[key] as SubGenerator;
+        generator.setManifest(manifest);
+      }
+    }
   }
 
   /**
@@ -141,6 +168,7 @@ class Manifest extends Generator {
    */
   writing() {
     // Todo: Write generated files.
+    this.debug(this.manifest);
   }
 }
 

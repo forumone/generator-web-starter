@@ -52,6 +52,14 @@ export class SubGenerator extends Generator {
    * @memberof SubGenerator
    */
   public setResources(resources: Record<string, ResourceCollection>): void;
+
+  /**
+   * Pass in the manifest object for completion.
+   *
+   * @param {Partial<ManifestDefinition>} manifest
+   * @memberof SubGenerator
+   */
+  public setManifest(manifest: Partial<ManifestDefinition>): void;
 }
 
 /**
@@ -155,9 +163,9 @@ export type DeploymentDefinition =
  */
 export type CapistranoDeploymentDefinition = {
   readonly id: string;
-  readonly environment: string;
+  readonly environment: string | EnvironmentDefinition;
   readonly strategy: 'capistrano';
-  readonly sourceRepository: string;
+  readonly sourceRepository: string | RepositoryDefinition;
   readonly deployMethod: 'git' | 'rsync';
   readonly releasesToKeep: number;
   readonly sourceSubdirectory?: string;
@@ -168,10 +176,10 @@ export type CapistranoDeploymentDefinition = {
  */
 export type ArtifactDeploymentDefinition = {
   readonly id: string;
-  readonly environment: string;
+  readonly environment: string | EnvironmentDefinition;
   readonly strategy: 'artifact';
-  readonly sourceRepository: string;
-  readonly targetRepository: string;
+  readonly sourceRepository: string | RepositoryDefinition;
+  readonly targetRepository: string | RepositoryDefinition;
   readonly sourceBranch: string;
   readonly targetBranch: string;
   readonly sourceSubdirectory?: string;

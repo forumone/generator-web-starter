@@ -1,6 +1,7 @@
 import {
   EnvironmentCollection,
   EnvironmentDefinition,
+  ManifestDefinition,
   ManifestInquirer,
   ResourceCollection,
   SubGenerator,
@@ -17,6 +18,7 @@ const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 
 class Environment extends SubGenerator {
   private environments: EnvironmentCollection = {};
+  private manifest!: Partial<ManifestDefinition>;
 
   /**
    * Execute initialization for this generator.
@@ -43,6 +45,16 @@ class Environment extends SubGenerator {
    */
   public setResources(resources: Record<string, ResourceCollection>): void {
     this.environments = resources.environments as EnvironmentCollection;
+  }
+
+  /**
+   * Propogate the manifest object in to assign values we're responsible for.
+   *
+   * @param {Partial<ManifestDefinition>} manifest
+   * @memberof Deployment
+   */
+  public setManifest(manifest: Partial<ManifestDefinition>) {
+    this.manifest = manifest;
   }
 
   /**
@@ -162,6 +174,9 @@ class Environment extends SubGenerator {
   configuring() {
     // Save the repository configuration after all prompting has finished.
     this.config.set('environments', this.environments);
+
+    // Expose all configured environments into the manifest.
+    this.manifest.environments = this.environments;
 
     // Todo: Save all provided configuration.
     this.debug({

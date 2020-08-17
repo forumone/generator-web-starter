@@ -5,6 +5,7 @@ import {
   DeploymentDefinition,
   DeploymentStrategy,
   EnvironmentCollection,
+  ManifestDefinition,
   ManifestInquirer,
   RepositoryCollection,
   ResourceCollection,
@@ -39,6 +40,7 @@ class Deployment extends SubGenerator {
   private repositories: RepositoryCollection = {};
   private environments: EnvironmentCollection = {};
   private deployments: DeploymentCollection = {};
+  private manifest!: Partial<ManifestDefinition>;
 
   /**
    * Execute initialization for this generator.
@@ -66,6 +68,16 @@ class Deployment extends SubGenerator {
   public setResources(resources: Record<string, ResourceCollection>): void {
     this.repositories = resources.repositories as RepositoryCollection;
     this.environments = resources.environments as EnvironmentCollection;
+  }
+
+  /**
+   * Propogate the manifest object in to assign values we're responsible for.
+   *
+   * @param {Partial<ManifestDefinition>} manifest
+   * @memberof Deployment
+   */
+  public setManifest(manifest: Partial<ManifestDefinition>) {
+    this.manifest = manifest;
   }
 
   /**
@@ -388,6 +400,40 @@ class Deployment extends SubGenerator {
   configuring() {
     // Save the repository configuration after all prompting has finished.
     this.config.set('deployments', this.deployments);
+
+    this.manifest.deployments = {
+      ...this.deployments,
+    };
+
+    // Expand reference values into each deployment configuration.
+    for (const [id, deployment] of Object.entries(this.deployments)) {
+      const expandedDeployment = {
+        ...deployment,
+      };
+
+      // Expand the environment definition.
+      if (typeof deployment.environment === 'string') {
+        const envId = deployment.environment;
+        expandedDeployment.environment = this.environments[envId];
+      }
+
+      // Expand the source repository definition.
+      if (typeof deployment.sourceRepository === 'string') {
+        const repoId = deployment.sourceRepository;
+        expandedDeployment.sourceRepository = this.repositories[repoId];
+      }
+
+      // Expand the target repository definition if it exists.
+      if (
+        expandedDeployment.strategy === 'artifact' &&
+        typeof expandedDeployment.targetRepository === 'string'
+      ) {
+        const repoId = expandedDeployment.targetRepository;
+        expandedDeployment.targetRepository = this.repositories[repoId];
+      }
+
+      this.manifest.deployments[id] = expandedDeployment;
+    }
 
     // Todo: Save all provided configuration.
     this.debug({
