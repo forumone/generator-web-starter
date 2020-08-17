@@ -1,8 +1,9 @@
-import Generator from 'yeoman-generator';
 import {
   EnvironmentCollection,
   EnvironmentDefinition,
   ManifestInquirer,
+  ResourceCollection,
+  SubGenerator,
 } from '../../ambient';
 
 type EnvironmentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
@@ -14,7 +15,7 @@ type EditAnotherEnvironmentQuestionSet = ManifestInquirer.EditAnotherQuestionSet
 
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WP-Engine'];
 
-class Environment extends Generator {
+class Environment extends SubGenerator {
   private environments: EnvironmentCollection = {};
 
   /**
@@ -29,13 +30,19 @@ class Environment extends Generator {
   }
 
   /**
-   * Get the known environment configurations.
-   *
-   * @returns {EnvironmentCollection}
-   * @memberof Environment
+   * @inheritdoc
    */
-  public getEnvironments(): EnvironmentCollection {
-    return this.environments;
+  public getResources(): Record<string, ResourceCollection> {
+    return {
+      environments: this.environments,
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public setResources(resources: Record<string, ResourceCollection>): void {
+    this.environments = resources.environments as EnvironmentCollection;
   }
 
   /**

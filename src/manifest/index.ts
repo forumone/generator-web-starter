@@ -2,15 +2,12 @@ import Generator from 'yeoman-generator';
 import Repository from './resource/Repository';
 import Environment from './resource/Environment';
 import Deployment from './deployment';
+import { SubGenerator } from './ambient';
 
 const cmsPlugins = ['Drupal7', 'Drupal8', 'WordPress'];
 const platform = ['Docker', 'JavaScript'];
 
-interface ManifestGeneratorCollection {
-  repository: Repository;
-  environment: Environment;
-  deployment: Deployment;
-}
+type ManifestGeneratorCollection = Record<string, SubGenerator>;
 
 class Manifest extends Generator {
   private answers: Generator.Answers = {};
@@ -56,11 +53,12 @@ class Manifest extends Generator {
 
         // Pull resources from resource generators for propogation to remaining
         // generators dependent on them.
-        const repositories = this.generators.repository.getRepositories();
-        const environments = this.generators.environment.getEnvironments();
+        const resources = {
+          ...this.generators.repository.getResources(),
+          ...this.generators.environment.getResources(),
+        };
 
-        this.generators.deployment.setRepositories(repositories);
-        this.generators.deployment.setEnvironments(environments);
+        this.generators.deployment.setResources(resources);
       },
     });
 

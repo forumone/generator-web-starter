@@ -24,7 +24,7 @@ export interface DefinitionObject {
   readonly id: string;
 }
 
-export interface Manifest {
+export interface ManifestDefinition {
   readonly version: 'v1';
   readonly projectName: string;
   readonly projectCode?: string;
@@ -34,6 +34,24 @@ export interface Manifest {
   repositories: RepositoryCollection;
   environments: EnvironmentCollection;
   deployments: DeploymentCollection;
+}
+
+export class SubGenerator extends Generator {
+  /**
+   * Get defined resources this generator is responsible for.
+   *
+   * @returns {Record<string, ResourceCollection>}
+   * @memberof SubGenerator
+   */
+  public getResources(): Record<string, ResourceCollection>;
+
+  /**
+   * Share known resources for access by this generator.
+   *
+   * @param {Record<string, ResourceCollection>} resources
+   * @memberof SubGenerator
+   */
+  public setResources(resources: Record<string, ResourceCollection>): void;
 }
 
 /**
@@ -96,6 +114,14 @@ export interface ArtifactRepositoryEnvironment extends EnvironmentDefinition {
 export interface ConfigCollection<T extends DefinitionObject> {
   [index: string]: T;
 }
+
+/**
+ * A generic type encompassing all know resource config collections.
+ */
+export type ResourceCollection =
+  | RepositoryCollection
+  | EnvironmentCollection
+  | DeploymentCollection;
 
 /**
  * A collection of Repository configuration definitions.

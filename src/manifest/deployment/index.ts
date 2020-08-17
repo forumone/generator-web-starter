@@ -1,4 +1,3 @@
-import Generator from 'yeoman-generator';
 import {
   ArtifactDeploymentDefinition,
   CapistranoDeploymentDefinition,
@@ -8,6 +7,8 @@ import {
   EnvironmentCollection,
   ManifestInquirer,
   RepositoryCollection,
+  ResourceCollection,
+  SubGenerator,
 } from '../ambient';
 import {
   Answers,
@@ -34,7 +35,7 @@ const strategies: Array<ListChoiceOptions> = [
   },
 ];
 
-class Deployment extends Generator {
+class Deployment extends SubGenerator {
   private repositories: RepositoryCollection = {};
   private environments: EnvironmentCollection = {};
   private deployments: DeploymentCollection = {};
@@ -51,23 +52,20 @@ class Deployment extends Generator {
   }
 
   /**
-   * Set the known repositories for configuration usage.
-   *
-   * @param {RepositoryCollection} repositories
-   * @memberof Deployment
+   * @inheritdoc
    */
-  public setRepositories(repositories: RepositoryCollection) {
-    this.repositories = repositories;
+  public getResources(): Record<string, ResourceCollection> {
+    return {
+      deployments: this.deployments,
+    };
   }
 
   /**
-   * Set the known environments for configuration usage.
-   *
-   * @param {EnvironmentCollection} environments
-   * @memberof Deployment
+   * @inheritdoc
    */
-  public setEnvironments(environments: EnvironmentCollection) {
-    this.environments = environments;
+  public setResources(resources: Record<string, ResourceCollection>): void {
+    this.repositories = resources.repositories as RepositoryCollection;
+    this.environments = resources.environments as EnvironmentCollection;
   }
 
   /**

@@ -3,6 +3,8 @@ import {
   ManifestInquirer,
   RepositoryCollection,
   RepositoryDefinition,
+  ResourceCollection,
+  SubGenerator,
 } from '../../ambient';
 
 type RepositoryConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
@@ -12,7 +14,7 @@ type EditAnotherRepositoryQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
   RepositoryDefinition
 >;
 
-class Repository extends Generator {
+class Repository extends SubGenerator {
   private repositories: RepositoryCollection = {};
   private answers: Generator.Answers = {};
 
@@ -29,13 +31,19 @@ class Repository extends Generator {
   }
 
   /**
-   * Get the known repository configurations.
-   *
-   * @returns {RepositoryCollection}
-   * @memberof Repository
+   * @inheritdoc
    */
-  public getRepositories(): RepositoryCollection {
-    return this.repositories;
+  public getResources(): Record<string, ResourceCollection> {
+    return {
+      repositories: this.repositories,
+    };
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public setResources(resources: Record<string, ResourceCollection>): void {
+    this.repositories = resources.repositories as RepositoryCollection;
   }
 
   /**
