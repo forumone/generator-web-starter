@@ -1,6 +1,6 @@
 import { EnvironmentDefinition } from '../resource/Environment/types';
 import { RepositoryDefinition } from '../resource/Repository/types';
-import { ConfigCollection } from '../types';
+import { ConfigCollection, DefinitionObject } from '../types';
 
 /**
  * A collection of Deployement configuration definitions.
@@ -15,14 +15,22 @@ export type DeploymentStrategy = 'capistrano' | 'artifact';
 /**
  * A generic definition of configuration for any deployment type.
  */
-export type DeploymentDefinition =
-  | CapistranoDeploymentDefinition
-  | ArtifactDeploymentDefinition;
+export interface DeploymentDefinition extends DefinitionObject {
+  readonly environment: string | EnvironmentDefinition;
+  readonly strategy: DeploymentStrategy;
+  readonly sourceRepository: string | RepositoryDefinition;
+  readonly sourceBranch: string;
+  readonly targetRepository?: string | RepositoryDefinition;
+  readonly targetBranch?: string;
+  readonly deployMethod?: 'git' | 'rsync';
+  readonly releasesToKeep?: number;
+  readonly sourceSubdirectory?: string;
+}
 
 /**
  * Deployment configuration for the Capistrano deployment strategy.
  */
-export type CapistranoDeploymentDefinition = {
+export interface CapistranoDeploymentDefinition extends DeploymentDefinition {
   readonly id: string;
   readonly environment: string | EnvironmentDefinition;
   readonly strategy: 'capistrano';
@@ -30,12 +38,12 @@ export type CapistranoDeploymentDefinition = {
   readonly deployMethod: 'git' | 'rsync';
   readonly releasesToKeep: number;
   readonly sourceSubdirectory?: string;
-};
+}
 
 /**
  * Deployment configuration for the Artifact Repository deployment strategy.
  */
-export type ArtifactDeploymentDefinition = {
+export interface ArtifactDeploymentDefinition extends DeploymentDefinition {
   readonly id: string;
   readonly environment: string | EnvironmentDefinition;
   readonly strategy: 'artifact';
@@ -44,4 +52,4 @@ export type ArtifactDeploymentDefinition = {
   readonly sourceBranch: string;
   readonly targetBranch: string;
   readonly sourceSubdirectory?: string;
-};
+}

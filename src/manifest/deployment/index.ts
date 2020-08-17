@@ -1,25 +1,12 @@
 import { ManifestInquirer } from '../ambient';
 import { ManifestDefinition, ResourceCollection, SubGenerator } from '../types';
-import {
-  Answers,
-  ListChoiceOptions,
-  ListQuestion,
-  QuestionCollection,
-} from 'inquirer';
-import {
-  ArtifactDeploymentDefinition,
-  CapistranoDeploymentDefinition,
-  DeploymentCollection,
-  DeploymentDefinition,
-  DeploymentStrategy,
-} from './types';
+import { ListChoiceOptions, ListQuestion } from 'inquirer';
+import { DeploymentCollection, DeploymentDefinition } from './types';
 import { RepositoryCollection } from '../resource/Repository/types';
 import { EnvironmentCollection } from '../resource/Environment/types';
+import { Questions } from 'yeoman-generator';
 
 type DeploymentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
-  DeploymentDefinition
->;
-type EditAnotherDeploymentQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
   DeploymentDefinition
 >;
 
@@ -114,7 +101,6 @@ class Deployment extends SubGenerator {
   _getEnvironmentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const environmentOptions: string[] = Object.keys(this.environments);
 
-    // @todo Add default selection support.
     const prompt: ListQuestion = {
       type: 'list',
       name: 'environment',
@@ -138,7 +124,6 @@ class Deployment extends SubGenerator {
   _getDeploymentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const deploymentOptions: string[] = Object.keys(this.deployments);
 
-    // @todo Add default selection support.
     const prompt: ListQuestion = {
       type: 'list',
       name: 'deployment',
@@ -160,7 +145,6 @@ class Deployment extends SubGenerator {
    * @memberof Deployment
    */
   _getStrategySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
-    // @todo Add default selection support.
     const prompt: ListQuestion = {
       type: 'list',
       name: 'strategy',
@@ -242,7 +226,7 @@ class Deployment extends SubGenerator {
   async _promptForDeploymentConfiguration(
     deployment: Partial<DeploymentDefinition> = {},
   ): Promise<DeploymentConfigurationEntry> {
-    const prompts: EditAnotherDeploymentQuestionSet = [
+    const prompts: Questions<DeploymentDefinition> = [
       {
         type: 'input',
         name: 'id',
@@ -258,38 +242,61 @@ class Deployment extends SubGenerator {
         message: 'What deployment method should be used for this deployment?',
         default: deployment.strategy,
       }),
+      this._getRepositorySelectionPrompt({
+        name: 'sourceRepository',
+        message: 'What source repository is being deployed from?',
+        default: deployment.sourceRepository,
+      }),
+      {
+        type: 'input',
+        name: 'sourceBranch',
+        message: 'What source branch is being deployed from?',
+        default: deployment.sourceBranch,
+      },
+      this._getRepositorySelectionPrompt({
+        name: 'targetRepository',
+        message: 'What remote repository is being deployed to?',
+        default: deployment.targetRepository,
+        when: answers => answers.strategy === 'artifact',
+      }),
+      {
+        type: 'input',
+        name: 'targetBranch',
+        message: 'What target branch is being deployed to?',
+        default: deployment.targetBranch,
+        when: answers => answers.strategy === 'artifact',
+      },
+      {
+        type: 'input',
+        name: 'sourceSubdirectory',
+        message: 'What path within the source repository should be deployed?',
+        default: deployment.sourceSubdirectory,
+      },
+      {
+        type: 'number',
+        name: 'releasesToKeep',
+        message: 'How many past releases should be kept?',
+        default: deployment.releasesToKeep || 3,
+        when: answers => answers.strategy === 'capistrano',
+      },
     ];
 
     // Prompt for specifics of the deployment.
-    const answers = await this.prompt(prompts)
-      .then(async answers => {
-        const strategyPrompts = this._getStrategyPrompts(
-          answers.strategy,
-          deployment,
-        );
+    const answers = await this.prompt(prompts).then(async answers => {
+      const { another }: { another: boolean } = await this.prompt([
+        {
+          type: 'confirm',
+          name: 'another',
+          message: 'Would you like to add or update another deployment?',
+          default: false,
+        },
+      ]);
 
-        // Trigger additional prompts and combine answers with previous responses.
-        const strategyAnswers = await this.prompt(strategyPrompts);
-        return {
-          ...answers,
-          ...strategyAnswers,
-        };
-      })
-      .then(async answers => {
-        const { another }: { another: boolean } = await this.prompt([
-          {
-            type: 'confirm',
-            name: 'another',
-            message: 'Would you like to add or update another deployment?',
-            default: false,
-          },
-        ]);
-
-        return {
-          ...answers,
-          another,
-        };
-      });
+      return {
+        ...answers,
+        another,
+      };
+    });
 
     // Spread to capture all properties automatically regardless of questions prompted.
     const { another, ...deploymentDefinition } = answers;
@@ -298,96 +305,6 @@ class Deployment extends SubGenerator {
       another,
       item: deploymentDefinition,
     };
-  }
-
-  /**
-   * Get additional prompts specific to the strategy being used.
-   *
-   * @param {DeploymentStrategy} strategy
-   * @param {Answers} [answers={}]
-   * @returns {QuestionCollection<DeploymentDefinition>}
-   * @memberof Deployment
-   */
-  _getStrategyPrompts(
-    strategy: DeploymentStrategy,
-    answers: Answers = {},
-  ): QuestionCollection<DeploymentDefinition> {
-    switch (strategy) {
-      case 'artifact':
-        return this._getArtifactDeploymentPrompts(answers);
-
-      case 'capistrano':
-        return this._getCapistranoDeploymentPrompts(answers);
-
-      default:
-        throw new Error(`Unknown deployment strategy: ${strategy}`);
-    }
-  }
-
-  /**
-   * Get prompts for customizing the Capistrano deployment strategy.
-   *
-   * @param {Partial<CapistranoDeploymentDefinition>} [answers={}]
-   * @returns {QuestionCollection<DeploymentDefinition>}
-   * @memberof Deployment
-   */
-  _getCapistranoDeploymentPrompts(
-    answers: Partial<CapistranoDeploymentDefinition> = {},
-  ): QuestionCollection<DeploymentDefinition> {
-    const $prompts: QuestionCollection<DeploymentDefinition> = [
-      {
-        type: 'number',
-        name: 'releasesToKeep',
-        message: 'How many past releases should be kept?',
-        default: answers.releasesToKeep || 3,
-      },
-    ];
-
-    return $prompts;
-  }
-
-  /**
-   * Get prompts for customizing the Artifact Deployment strategy.
-   *
-   * @param {Partial<ArtifactDeploymentDefinition>} [answers={}]
-   * @returns {QuestionCollection<DeploymentDefinition>}
-   * @memberof Deployment
-   */
-  _getArtifactDeploymentPrompts(
-    answers: Partial<ArtifactDeploymentDefinition> = {},
-  ): QuestionCollection<DeploymentDefinition> {
-    const $prompts: QuestionCollection = [
-      this._getRepositorySelectionPrompt({
-        name: 'sourceRepository',
-        message: 'What source repository is being deployed from?',
-        default: answers.sourceRepository,
-      }),
-      {
-        type: 'input',
-        name: 'sourceBranch',
-        message: 'What source branch is being deployed from?',
-        default: answers.sourceBranch,
-      },
-      this._getRepositorySelectionPrompt({
-        name: 'targetRepository',
-        message: 'What remote repository is being deployed to?',
-        default: answers.targetRepository,
-      }),
-      {
-        type: 'input',
-        name: 'targetBranch',
-        message: 'What target branch is being deployed to?',
-        default: answers.targetBranch,
-      },
-      {
-        type: 'input',
-        name: 'sourceSubdirectory',
-        message: 'What path within the source repository should be deployed?',
-        default: answers.sourceSubdirectory,
-      },
-    ];
-
-    return $prompts;
   }
 
   /**
@@ -438,15 +355,6 @@ class Deployment extends SubGenerator {
       generator: 'deployment',
       deployments: this.deployments,
     });
-  }
-
-  /**
-   * Execute the writing phase of this generator.
-   *
-   * @memberof Deployment
-   */
-  writing() {
-    // Todo: Write generated files.
   }
 }
 

@@ -143,6 +143,7 @@ class Manifest extends Generator {
       ...config.promptValues,
     };
 
+    // Delegate completion of manifest sections into subgenerators.
     this._propogateManifestDefinition(manifest);
 
     this.manifest = manifest as ManifestDefinition;
