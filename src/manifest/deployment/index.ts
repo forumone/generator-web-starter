@@ -54,7 +54,7 @@ class Deployment extends SubGenerator {
   /**
    * @inheritdoc
    */
-  public getResources(): Record<string, ResourceCollection> {
+  public _getResources(): Record<string, ResourceCollection> {
     return {
       deployments: this.deployments,
     };
@@ -63,7 +63,7 @@ class Deployment extends SubGenerator {
   /**
    * @inheritdoc
    */
-  public setResources(resources: Record<string, ResourceCollection>): void {
+  public _setResources(resources: Record<string, ResourceCollection>): void {
     this.repositories = resources.repositories as RepositoryCollection;
     this.environments = resources.environments as EnvironmentCollection;
   }
@@ -74,7 +74,7 @@ class Deployment extends SubGenerator {
    * @param {Partial<ManifestDefinition>} manifest
    * @memberof Deployment
    */
-  public setManifest(manifest: Partial<ManifestDefinition>) {
+  public _setManifest(manifest: Partial<ManifestDefinition>) {
     this.manifest = manifest;
   }
 

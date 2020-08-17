@@ -56,11 +56,11 @@ class Manifest extends Generator {
         // Pull resources from resource generators for propogation to remaining
         // generators dependent on them.
         const resources = {
-          ...this.generators.repository.getResources(),
-          ...this.generators.environment.getResources(),
+          ...this.generators.repository._getResources(),
+          ...this.generators.environment._getResources(),
         };
 
-        this.generators.deployment.setResources(resources);
+        this.generators.deployment._setResources(resources);
       },
     });
 
@@ -156,7 +156,7 @@ class Manifest extends Generator {
     for (const key in this.generators) {
       if (Object.prototype.hasOwnProperty.call(this.generators, key)) {
         const generator = this.generators[key] as SubGenerator;
-        generator.setManifest(manifest);
+        generator._setManifest(manifest);
       }
     }
   }

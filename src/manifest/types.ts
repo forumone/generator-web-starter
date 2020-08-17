@@ -36,7 +36,7 @@ export interface SubGenerator extends Generator {
    * @returns {Record<string, ResourceCollection>}
    * @memberof SubGenerator
    */
-  getResources(): Record<string, ResourceCollection>;
+  _getResources(): Record<string, ResourceCollection>;
 
   /**
    * Share known resources for access by this generator.
@@ -44,7 +44,7 @@ export interface SubGenerator extends Generator {
    * @param {Record<string, ResourceCollection>} resources
    * @memberof SubGenerator
    */
-  setResources(resources: Record<string, ResourceCollection>): void;
+  _setResources(resources: Record<string, ResourceCollection>): void;
 
   /**
    * Pass in the manifest object for completion.
@@ -52,7 +52,7 @@ export interface SubGenerator extends Generator {
    * @param {Partial<ManifestDefinition>} manifest
    * @memberof SubGenerator
    */
-  setManifest(manifest: Partial<ManifestDefinition>): void;
+  _setManifest(manifest: Partial<ManifestDefinition>): void;
 }
 
 /**
