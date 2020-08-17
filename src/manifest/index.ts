@@ -3,6 +3,7 @@ import Repository from './resource/Repository';
 import Environment from './resource/Environment';
 import Deployment from './deployment';
 import { ManifestDefinition, SubGenerator } from './types';
+import YAML from 'yaml';
 
 const cmsPlugins = ['Drupal7', 'Drupal8', 'WordPress'];
 const platform = ['Docker', 'JavaScript'];
@@ -169,6 +170,9 @@ class Manifest extends Generator {
   writing() {
     // Todo: Write generated files.
     this.debug(this.manifest);
+
+    // Write all manifest content to a YAML file.
+    this.fs.write('.f1-manifest.yml', YAML.stringify(this.manifest));
   }
 }
 
