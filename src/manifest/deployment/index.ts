@@ -1,4 +1,4 @@
-import { ManifestInquirer } from '../ambient';
+import { ConfigurationListEntry } from '../ambient';
 import { ManifestDefinition, ResourceCollection, SubGenerator } from '../types';
 import { ListChoiceOptions, ListQuestion } from 'inquirer';
 import { DeploymentCollection, DeploymentDefinition } from './types';
@@ -6,7 +6,7 @@ import { RepositoryCollection } from '../resource/Repository/types';
 import { EnvironmentCollection } from '../resource/Environment/types';
 import { Questions } from 'yeoman-generator';
 
-type DeploymentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
+type DeploymentConfigurationEntry = ConfigurationListEntry<
   DeploymentDefinition
 >;
 

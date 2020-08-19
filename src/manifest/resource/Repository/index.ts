@@ -1,5 +1,5 @@
 import Generator from 'yeoman-generator';
-import { ManifestInquirer } from '../../ambient';
+import { ConfigurationListEntry, EditAnotherQuestionSet } from '../../ambient';
 import { RepositoryCollection, RepositoryDefinition } from './types';
 import {
   ManifestDefinition,
@@ -7,10 +7,10 @@ import {
   SubGenerator,
 } from '../../types';
 
-type RepositoryConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
+type RepositoryConfigurationEntry = ConfigurationListEntry<
   RepositoryDefinition
 >;
-type EditAnotherRepositoryQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
+type EditAnotherRepositoryQuestionSet = EditAnotherQuestionSet<
   RepositoryDefinition
 >;
 

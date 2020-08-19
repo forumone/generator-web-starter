@@ -1,4 +1,4 @@
-import { ManifestInquirer } from '../../ambient';
+import { ConfigurationListEntry, EditAnotherQuestionSet } from '../../ambient';
 import {
   ManifestDefinition,
   ResourceCollection,
@@ -6,10 +6,10 @@ import {
 } from '../../types';
 import { EnvironmentCollection, EnvironmentDefinition } from './types';
 
-type EnvironmentConfigurationEntry = ManifestInquirer.ConfigurationListEntry<
+type EnvironmentConfigurationEntry = ConfigurationListEntry<
   EnvironmentDefinition
 >;
-type EditAnotherEnvironmentQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
+type EditAnotherEnvironmentQuestionSet = EditAnotherQuestionSet<
   EnvironmentDefinition
 >;
 
