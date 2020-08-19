@@ -1,0 +1,98 @@
+# Consolidate the common configuration for reuse across multiple steps.
+definitions:
+  # Configure some default step values.
+  step-defaults: &step-defaults
+    timeout_in_minutes: 15
+
+  # Specify common agent queue parameters.
+  queues:
+    # Docker-based tasks should run in the Docker queue.
+    docker-agents: &docker-agents
+      agents:
+        queue: "docker-builders"
+
+  # Specify common plugin configurations.
+  plugins:
+    ecr: &ecr
+      ecr#v2.0.0:
+        login: true
+        no-include-email: true
+
+env:
+  # Identify the address for the shared Buildkite ECR repository.
+  IMAGE_REPOSITORY: "165761832703.dkr.ecr.us-east-1.amazonaws.com/buildkite"
+
+  # Set this as an environment variable for automatic usage by default for all
+  # docker-compose buildkite plugin executions.
+  BUILDKITE_PLUGIN_DOCKER_COMPOSE_IMAGE_REPOSITORY: "$IMAGE_REPOSITORY"
+
+steps:
+  - label: ":hammer: :docker: Build"
+    key: "build"
+    <<: *step-defaults
+    <<: *docker-agents
+    plugins:
+      # Log into ECR for this build step to access and push images.
+      - *ecr
+
+      # Prebuild and upload the listed services defined in the buildkite
+      # Docker Compose configuration. In this case, the various stages
+      # of the multi-stage build for the `drupal` service are uploaded in
+      # addition to the final image.
+      - docker-compose#v3.4.0:
+          build:
+            - test
+            - release
+          config:
+            - docker-compose.buildkite.yml
+          upload-container-logs: "on-error"
+          build-parallel: true
+
+  - wait: ~
+
+  - label: ":codeclimate: Code Climate Scans"
+    key: "codeclimate"
+    <<: *step-defaults
+    <<: *docker-agents
+    artifact_paths:
+      - ".buildkite/artifacts/codeclimate/*"
+    plugins:
+      - docker-compose#v3.4.0:
+          run: codeclimate
+          config:
+            - docker-compose.yml
+            - docker-compose.cli.yml
+
+      # Display an annotation linking the Code Climate report for improved visibility.
+      - improbable-eng/metahook#v0.4.0:
+          post-artifact: ".buildkite/scripts/codeclimate/annotate-results.sh"
+
+  <% if (deploy.capistrano) { %>
+  - label: ":capistrano: Deploy"
+    <<: *step-defaults
+    concurrency: 1
+    concurrency_group: '$BUILDKITE_PIPELINE_SLUG/$BUILDKITE_BRANCH/deploy'
+    branches:
+      <%_ for (const {source, target} of deploy.capistrano) { _%>
+      - <%= source %>
+      <%_ } _%>
+    plugins:
+      # Log into ECR for this build step to access and push images.
+      - *ecr
+
+      # Download the prebuilt image and extract project files to the
+      # local filesystem for further operations.
+      - forumone/extract:
+          image-service: release
+          from: /var/www/html
+          to: <%= serviceDirectory %>
+
+      # Execute a Capistrano deployment using the defined branch to
+      # environment mapping.
+      - forumone/capistrano:
+          require-stage: true
+          branches:
+            <%_ for (const {source, target} of deploy.capistrano) { _%>
+            <%= source %>: <%= target %>
+            <%_ } _%>
+  <%_ } _%>
