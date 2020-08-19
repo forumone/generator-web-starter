@@ -85,7 +85,7 @@ class BuildkitePipeline extends Generator {
    */
   writing() {
     this._createBuildkiteDirectories();
-    // this._generateBuildkiteDockerComposeFile();
+    this._generateBuildkiteDockerComposeFile();
     this._generatePipelineFile();
   }
 
@@ -125,7 +125,15 @@ class BuildkitePipeline extends Generator {
    * @memberof BuildkitePipeline
    */
   _generateBuildkiteDockerComposeFile(): void {
-    throw new Error('Not yet implemented.');
+    const templateData = {
+      serviceDirectory: this.answers.serviceDirectory,
+    };
+
+    this.fs.copyTpl(
+      this.templatePath('docker-compose.buildkite.yml.ejs'),
+      this.destinationPath('docker-compose.buildkite.yml'),
+      templateData,
+    );
   }
 
   /**
