@@ -72,13 +72,6 @@ export interface SubGenerator extends Generator {
 export class SubGenerator extends Generator implements SubGenerator {}
 
 /**
- * A generic collection of configuration for saving resources.
- */
-export interface ConfigCollection<T extends DefinitionObject> {
-  [index: string]: T;
-}
-
-/**
  * A generic type encompassing all know resource config collections.
  */
 export type ResourceCollection =

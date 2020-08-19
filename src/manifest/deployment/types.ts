@@ -1,11 +1,11 @@
 import { EnvironmentDefinition } from '../resource/Environment/types';
 import { RepositoryDefinition } from '../resource/Repository/types';
-import { ConfigCollection, DefinitionObject } from '../types';
+import { DefinitionObject } from '../types';
 
 /**
  * A collection of Deployement configuration definitions.
  */
-export type DeploymentCollection = ConfigCollection<DeploymentDefinition>;
+export type DeploymentCollection = Record<string, DeploymentDefinition>;
 
 /**
  * Defines valid keys for deployment strategies.

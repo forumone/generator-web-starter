@@ -1,4 +1,4 @@
-import { ConfigCollection, DefinitionObject } from '../../types';
+import { DefinitionObject } from '../../types';
 
 /**
  * Base information defining a repository for use.
@@ -11,4 +11,4 @@ export interface RepositoryDefinition extends DefinitionObject {
 /**
  * A collection of Repository configuration definitions.
  */
-export type RepositoryCollection = ConfigCollection<RepositoryDefinition>;
+export type RepositoryCollection = Record<string, RepositoryDefinition>;

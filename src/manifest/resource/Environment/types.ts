@@ -1,4 +1,4 @@
-import { ConfigCollection, DefinitionObject } from '../../types';
+import { DefinitionObject } from '../../types';
 
 /**
  * The types of environments that are supported.
@@ -90,4 +90,4 @@ export interface ArtifactRepositoryEnvironment extends EnvironmentDefinition {
 /**
  * A collection of Environment configuration definitions.
  */
-export type EnvironmentCollection = ConfigCollection<EnvironmentDefinition>;
+export type EnvironmentCollection = Record<string, EnvironmentDefinition>;
