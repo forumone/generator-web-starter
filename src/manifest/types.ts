@@ -10,6 +10,12 @@ export interface DefinitionObject {
   readonly id: string;
 }
 
+/**
+ * A structured interface to capture final Manifest content.
+ *
+ * @export
+ * @interface ManifestDefinition
+ */
 export interface ManifestDefinition {
   readonly version: 'v1';
   readonly projectName: string;

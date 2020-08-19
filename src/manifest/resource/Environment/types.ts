@@ -8,7 +8,7 @@ type EnvironmentType = 'Forum One' | 'Artifact Repository';
 /**
  * Known remote repository services to supported for deployments.
  */
-type HostingService =
+export type HostingService =
   | 'Pantheon'
   | 'Acquia'
   | 'WPEngine'

@@ -14,20 +14,26 @@ type EditAnotherRepositoryQuestionSet = ManifestInquirer.EditAnotherQuestionSet<
   RepositoryDefinition
 >;
 
+/**
+ * A manifest sub-generator responsible for prompting and configuration of repositories.
+ *
+ * @class Repository
+ * @extends {SubGenerator}
+ */
 class Repository extends SubGenerator {
   private repositories: RepositoryCollection = {};
-  private answers: Generator.Answers = {};
   private manifest!: Partial<ManifestDefinition>;
 
   /**
    * Execute initialization for this generator.
    *
    * @memberof Repository
+   *
+   * @todo Pre-load configuration from the YAML manifest file.
    */
   async initializing() {
     const config = this.config.getAll();
 
-    this.answers = config.promptAnswers || {};
     this.repositories = config.repositories || {};
   }
 
@@ -66,6 +72,14 @@ class Repository extends SubGenerator {
     this.repositories = await this._promptForRepositories();
   }
 
+  /**
+   * Loop to enable updates and creation of new repositories.
+   *
+   * @returns {Promise<RepositoryCollection>}
+   * @memberof Environment
+   *
+   * @todo Consolidate this edit loop into a reusable prompt type.
+   */
   async _promptForRepositories(): Promise<RepositoryCollection> {
     // Loop to enable updates and creation of new repositories.
     let another = true;
@@ -119,13 +133,14 @@ class Repository extends SubGenerator {
         type: 'input',
         name: 'id',
         message:
-          'What should this repository be referenced as? (Example: github, bitbucket)',
+          'What should this repository be referenced as? (Example: github, pantheon)',
         default: repository.id || 'github',
       },
       {
         type: 'input',
         name: 'url',
         message: 'What is the clone URL for the repository?',
+        // Pre-fill an answer to ease testing.
         default:
           repository.url ||
           ((answers: Generator.Answers) => `ssh://${answers.id}`),
@@ -161,20 +176,10 @@ class Repository extends SubGenerator {
     // Expose all configured repositories into the manifest.
     this.manifest.repositories = this.repositories;
 
-    // Todo: Save all provided configuration.
     this.debug({
       generator: 'Repository',
-      answers: this.answers,
+      answers: this.repositories,
     });
-  }
-
-  /**
-   * Execute the writing phase of this generator.
-   *
-   * @memberof Repository
-   */
-  writing() {
-    // Todo: Write generated files.
   }
 }
 

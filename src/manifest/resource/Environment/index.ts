@@ -15,6 +15,12 @@ type EditAnotherEnvironmentQuestionSet = ManifestInquirer.EditAnotherQuestionSet
 
 const environments = ['Forum One', 'Pantheon', 'Acquia', 'WPEngine'];
 
+/**
+ * A manifest sub-generator responsible for prompting and configuration of environments.
+ *
+ * @class Environment
+ * @extends {SubGenerator}
+ */
 class Environment extends SubGenerator {
   private environments: EnvironmentCollection = {};
   private manifest!: Partial<ManifestDefinition>;
@@ -23,6 +29,8 @@ class Environment extends SubGenerator {
    * Execute initialization for this generator.
    *
    * @memberof Environment
+   *
+   * @todo Pre-load configuration from the YAML manifest file.
    */
   async initializing() {
     const config = this.config.getAll();
@@ -67,6 +75,8 @@ class Environment extends SubGenerator {
    *
    * @returns {Promise<EnvironmentCollection>}
    * @memberof Environment
+   *
+   * @todo Consolidate this edit loop into a reusable prompt type.
    */
   async _promptForEnvironments(): Promise<EnvironmentCollection> {
     let another = true;
@@ -157,6 +167,7 @@ class Environment extends SubGenerator {
         default: environment.login,
         when: answers => answers.type === 'Forum One',
       },
+      // @todo: Pre-fill this with a suggested path.
       {
         type: 'input',
         name: 'deployPath',

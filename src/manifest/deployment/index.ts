@@ -21,6 +21,14 @@ const strategies: Array<ListChoiceOptions> = [
   },
 ];
 
+/**
+ * A Manifest sub-generator responsible for prompting and configuration of deployments.
+ *
+ * This generator is dependent on both the Environment and Repository sub-generators as well.
+ *
+ * @class Deployment
+ * @extends {SubGenerator}
+ */
 class Deployment extends SubGenerator {
   private repositories: RepositoryCollection = {};
   private environments: EnvironmentCollection = {};
@@ -31,6 +39,8 @@ class Deployment extends SubGenerator {
    * Execute initialization for this generator.
    *
    * @memberof Deployment
+   *
+   * @todo Pre-load configuration from the YAML manifest file.
    */
   async initializing() {
     const config = this.config.getAll();
@@ -176,6 +186,8 @@ class Deployment extends SubGenerator {
    *
    * @returns {Promise<DeploymentCollection>}
    * @memberof Deployment
+   *
+   * @todo Consolidate this edit loop into a reusable prompt type.
    */
   async _promptForDeployments(): Promise<DeploymentCollection> {
     // Loop to enable updates and creation of new deployments.
@@ -247,6 +259,7 @@ class Deployment extends SubGenerator {
         message: 'What source repository is being deployed from?',
         default: deployment.sourceRepository,
       }),
+      // @todo Add suggestions for the source branch based on common deployment ID values.
       {
         type: 'input',
         name: 'sourceBranch',
@@ -259,6 +272,8 @@ class Deployment extends SubGenerator {
         default: deployment.targetRepository,
         when: answers => answers.strategy === 'artifact',
       }),
+      // @todo Add suggestions for the target branch based on common deployment ID values.
+      // @todo Pre-fill this from the branch value in the environment definition.
       {
         type: 'input',
         name: 'targetBranch',
@@ -266,6 +281,8 @@ class Deployment extends SubGenerator {
         default: deployment.targetBranch,
         when: answers => answers.strategy === 'artifact',
       },
+      // @todo Add suggestions for the source subdirectory based on target environment values.
+      // @todo Pre-fill this from the sourceSubdirectory value in the environment definition.
       {
         type: 'input',
         name: 'sourceSubdirectory',
@@ -322,6 +339,7 @@ class Deployment extends SubGenerator {
 
     // Expand reference values into each deployment configuration.
     for (const [id, deployment] of Object.entries(this.deployments)) {
+      // Spread into a new object to avoid changing the original copy.
       const expandedDeployment = {
         ...deployment,
       };
@@ -350,9 +368,8 @@ class Deployment extends SubGenerator {
       this.manifest.deployments[id] = expandedDeployment;
     }
 
-    // Todo: Save all provided configuration.
     this.debug({
-      generator: 'deployment',
+      generator: 'Deployment',
       deployments: this.deployments,
     });
   }

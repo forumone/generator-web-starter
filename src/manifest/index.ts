@@ -126,17 +126,10 @@ class Manifest extends Generator {
   configuring() {
     const config = this.config.getAll();
 
-    // Todo: Save all provided configuration.
     this.debug({
       generator: 'Manifest',
       answers: this.answers,
     });
-    this.debug({
-      config,
-    });
-    // this.debug({
-    //   generators: this.generators,
-    // });
 
     const manifest: Partial<ManifestDefinition> = {
       version: manifestVersion,
@@ -169,9 +162,6 @@ class Manifest extends Generator {
    * @memberof Manifest
    */
   writing() {
-    // Todo: Write generated files.
-    this.debug(this.manifest);
-
     // Write all manifest content to a YAML file.
     this.fs.write('.f1-manifest.yml', YAML.stringify(this.manifest));
   }
