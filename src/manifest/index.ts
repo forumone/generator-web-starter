@@ -2,14 +2,18 @@ import Generator from 'yeoman-generator';
 import Repository from './resource/Repository';
 import Environment from './resource/Environment';
 import Deployment from './deployment';
-import { ManifestDefinition, SubGenerator } from './types';
+import { ManifestDefinition } from './types';
 import YAML from 'yaml';
 
 const cmsPlugins = ['Drupal7', 'Drupal8', 'WordPress'];
 const platform = ['Docker', 'JavaScript'];
 const manifestVersion = 'v1';
 
-type ManifestGeneratorCollection = Record<string, SubGenerator>;
+type ManifestGeneratorCollection = {
+  repository: Repository;
+  environment: Environment;
+  deployment: Deployment;
+};
 
 class Manifest extends Generator {
   private answers: Generator.Answers = {};
@@ -20,9 +24,7 @@ class Manifest extends Generator {
    * Execute initialization for this generator and trigger subgenerators.
    */
   async initializing() {
-    const config = this.config.getAll();
-
-    this.answers = config.promptAnswers;
+    this.answers = this.config.get('promptAnswers');
 
     // Assert the assignment as a complete object to circumvent type errors below
     // until the remaining generators are available for assignment as well.
@@ -55,8 +57,8 @@ class Manifest extends Generator {
         // Pull resources from resource generators for propogation to remaining
         // generators dependent on them.
         const resources = {
-          ...this.generators.repository._getResources(),
-          ...this.generators.environment._getResources(),
+          repositories: this.generators.repository._getCollection(),
+          environments: this.generators.environment._getCollection(),
         };
 
         this.generators.deployment._setResources(resources);
@@ -118,8 +120,6 @@ class Manifest extends Generator {
    * Execute the configuration phase of this generator.
    */
   configuring() {
-    const config = this.config.getAll();
-
     this.debug({
       generator: 'Manifest',
       answers: this.answers,
@@ -127,7 +127,7 @@ class Manifest extends Generator {
 
     const manifest: Partial<ManifestDefinition> = {
       version: manifestVersion,
-      ...config.promptValues,
+      ...this.config.get('promptValues'),
     };
 
     // Delegate completion of manifest sections into subgenerators.

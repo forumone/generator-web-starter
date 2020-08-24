@@ -1,4 +1,3 @@
-import Generator from 'yeoman-generator';
 import { RepositoryCollection } from './resource/Repository/types';
 import { EnvironmentCollection } from './resource/Environment/types';
 import { DeploymentCollection } from './deployment/types';
@@ -24,31 +23,6 @@ export interface ManifestDefinition {
   environments: EnvironmentCollection;
   deployments: DeploymentCollection;
 }
-
-/**
- * A common interface for all sub-generators to adhere to.
- */
-export interface SubGenerator extends Generator {
-  /**
-   * Get defined resources this generator is responsible for.
-   */
-  _getResources(): Record<string, ResourceCollection>;
-
-  /**
-   * Share known resources for access by this generator.
-   */
-  _setResources(resources: Record<string, ResourceCollection>): void;
-
-  /**
-   * Pass in the manifest object for completion.
-   */
-  _setManifest(manifest: Partial<ManifestDefinition>): void;
-}
-
-/**
- * Base implementation of a common Generator for all sub-generators to extend.
- */
-export class SubGenerator extends Generator implements SubGenerator {}
 
 /**
  * A generic type encompassing all known resource config collections.
