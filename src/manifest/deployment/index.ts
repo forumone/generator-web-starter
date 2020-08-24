@@ -25,9 +25,6 @@ const strategies: Array<ListChoiceOptions> = [
  * A Manifest sub-generator responsible for prompting and configuration of deployments.
  *
  * This generator is dependent on both the Environment and Repository sub-generators as well.
- *
- * @class Deployment
- * @extends {SubGenerator}
  */
 class Deployment extends SubGenerator {
   private repositories: RepositoryCollection = {};
@@ -38,8 +35,6 @@ class Deployment extends SubGenerator {
   /**
    * Execute initialization for this generator.
    *
-   * @memberof Deployment
-   *
    * @todo Pre-load configuration from the YAML manifest file.
    */
   async initializing() {
@@ -48,29 +43,17 @@ class Deployment extends SubGenerator {
     this.deployments = config.deployments || {};
   }
 
-  /**
-   * @inheritdoc
-   */
   public _getResources(): Record<string, ResourceCollection> {
     return {
       deployments: this.deployments,
     };
   }
 
-  /**
-   * @inheritdoc
-   */
   public _setResources(resources: Record<string, ResourceCollection>): void {
     this.repositories = resources.repositories as RepositoryCollection;
     this.environments = resources.environments as EnvironmentCollection;
   }
 
-  /**
-   * Propogate the manifest object in to assign values we're responsible for.
-   *
-   * @param {Partial<ManifestDefinition>} manifest
-   * @memberof Deployment
-   */
   public _setManifest(manifest: Partial<ManifestDefinition>) {
     this.manifest = manifest;
   }
@@ -78,10 +61,8 @@ class Deployment extends SubGenerator {
   /**
    * Create a standardized prompt for selecting a configured repository.
    *
-   * @param {Partial<ListQuestion>} options
-   *   Override options to contextualize the presentation of the prompt.
-   * @returns {ListQuestion}
-   *   The contextualized prompt ready to be used.
+   * @param options Override options to contextualize the presentation of the prompt.
+   * @returns The contextualized prompt ready to be used.
    * @memberof Deployment
    */
   _getRepositorySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
@@ -102,11 +83,8 @@ class Deployment extends SubGenerator {
   /**
    * Create a standardized prompt for selecting a configured environment.
    *
-   * @param {Partial<ListQuestion>} options
-   *   Override options to contextualize the presentation of the prompt.
-   * @returns {ListQuestion}
-   *   The contextualized prompt ready to be used.
-   * @memberof Deployment
+   * @param options Override options to contextualize the presentation of the prompt.
+   * @returns The contextualized prompt ready to be used.
    */
   _getEnvironmentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const environmentOptions: string[] = Object.keys(this.environments);
@@ -125,11 +103,8 @@ class Deployment extends SubGenerator {
   /**
    * Create a standardized prompt for selecting a configured deployment.
    *
-   * @param {Partial<ListQuestion>} options
-   *   Override options to contextualize the presentation of the prompt.
-   * @returns {ListQuestion}
-   *   The contextualized prompt ready to be used.
-   * @memberof Deployment
+   * @param options Override options to contextualize the presentation of the prompt.
+   * @returns The contextualized prompt ready to be used.
    */
   _getDeploymentSelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const deploymentOptions: string[] = Object.keys(this.deployments);
@@ -148,11 +123,8 @@ class Deployment extends SubGenerator {
   /**
    * Create a standardized prompt for selecting an available deployment strategy.
    *
-   * @param {Partial<ListQuestion>} options
-   *   Override options to contextualize the presentation of the prompt.
-   * @returns {ListQuestion}
-   *   The contextualized prompt ready to be used.
-   * @memberof Deployment
+   * @param options Override options to contextualize the presentation of the prompt.
+   * @returns The contextualized prompt ready to be used.
    */
   _getStrategySelectionPrompt(options: Partial<ListQuestion>): ListQuestion {
     const prompt: ListQuestion = {
@@ -168,8 +140,6 @@ class Deployment extends SubGenerator {
 
   /**
    * Execute the prompting phase of this generator.
-   *
-   * @memberof Deployment
    */
   async prompting() {
     this.deployments = await this._promptForDeployments();
@@ -183,9 +153,6 @@ class Deployment extends SubGenerator {
 
   /**
    * Execute looped prompting for editing and creating deployments.
-   *
-   * @returns {Promise<DeploymentCollection>}
-   * @memberof Deployment
    *
    * @todo Consolidate this edit loop into a reusable prompt type.
    */
@@ -230,10 +197,7 @@ class Deployment extends SubGenerator {
   /**
    * Prompt for configuration details of a specific deployment.
    *
-   * @param {Partial<DeploymentDefinition>} [deployment={}]
-   *   Optional deployment details to populate default answers for editing.
-   * @returns {Promise<DeploymentConfigurationEntry>}
-   * @memberof Deployment
+   * @param deployment Optional deployment details to populate default answers for editing.
    */
   async _promptForDeploymentConfiguration(
     deployment: Partial<DeploymentDefinition> = {},

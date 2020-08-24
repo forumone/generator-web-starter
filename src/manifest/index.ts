@@ -18,8 +18,6 @@ class Manifest extends Generator {
 
   /**
    * Execute initialization for this generator and trigger subgenerators.
-   *
-   * @memberof Manifest
    */
   async initializing() {
     const config = this.config.getAll();
@@ -49,10 +47,10 @@ class Manifest extends Generator {
     // Use the closure created below to access the generator collection for the assignments
     // between generator instances.
     this.queueTask({
-      taskName: 'propogateResources',
+      taskName: 'propagateResources',
       queueName: 'prompting',
       method: () => {
-        this.debug('Running propogateResources task.');
+        this.debug('Running propagateResources task.');
 
         // Pull resources from resource generators for propogation to remaining
         // generators dependent on them.
@@ -77,8 +75,6 @@ class Manifest extends Generator {
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof Manifest
    */
   async prompting() {
     this.answers = await this.prompt([
@@ -120,8 +116,6 @@ class Manifest extends Generator {
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof Manifest
    */
   configuring() {
     const config = this.config.getAll();
@@ -137,33 +131,27 @@ class Manifest extends Generator {
     };
 
     // Delegate completion of manifest sections into subgenerators.
-    this._propogateManifestDefinition(manifest);
+    this._propagateManifestDefinition(manifest);
 
     this.manifest = manifest as ManifestDefinition;
   }
 
   /**
    * Push the manifest into all generators for delegated definition of values.
-   *
-   * @memberof Manifest
    */
-  _propogateManifestDefinition(manifest: Partial<ManifestDefinition>) {
-    for (const key in this.generators) {
-      if (Object.prototype.hasOwnProperty.call(this.generators, key)) {
-        const generator = this.generators[key] as SubGenerator;
-        generator._setManifest(manifest);
-      }
+  _propagateManifestDefinition(manifest: Partial<ManifestDefinition>) {
+    for (const generator of Object.values(this.generators)) {
+      generator._setManifest(manifest);
     }
   }
 
   /**
    * Execute the writing phase of this generator.
-   *
-   * @memberof Manifest
    */
   writing() {
     // Write all manifest content to a YAML file.
-    this.fs.write('.f1-manifest.yml', YAML.stringify(this.manifest));
+    const manifestPath = this.destinationPath('.f1-manifest.yml');
+    this.fs.write(manifestPath, YAML.stringify(this.manifest));
   }
 }
 

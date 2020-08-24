@@ -16,9 +16,6 @@ type EditAnotherRepositoryQuestionSet = EditAnotherQuestionSet<
 
 /**
  * A manifest sub-generator responsible for prompting and configuration of repositories.
- *
- * @class Repository
- * @extends {SubGenerator}
  */
 class Repository extends SubGenerator {
   private repositories: RepositoryCollection = {};
@@ -26,8 +23,6 @@ class Repository extends SubGenerator {
 
   /**
    * Execute initialization for this generator.
-   *
-   * @memberof Repository
    *
    * @todo Pre-load configuration from the YAML manifest file.
    */
@@ -37,27 +32,18 @@ class Repository extends SubGenerator {
     this.repositories = config.repositories || {};
   }
 
-  /**
-   * @inheritdoc
-   */
   public _getResources(): Record<string, ResourceCollection> {
     return {
       repositories: this.repositories,
     };
   }
 
-  /**
-   * @inheritdoc
-   */
   public _setResources(resources: Record<string, ResourceCollection>): void {
     this.repositories = resources.repositories as RepositoryCollection;
   }
 
   /**
-   * Propogate the manifest object in to assign values we're responsible for.
-   *
-   * @param {Partial<ManifestDefinition>} manifest
-   * @memberof Deployment
+   * Propagate the manifest object in to assign values we're responsible for.
    */
   public _setManifest(manifest: Partial<ManifestDefinition>) {
     this.manifest = manifest;
@@ -65,8 +51,6 @@ class Repository extends SubGenerator {
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof Repository
    */
   async prompting() {
     this.repositories = await this._promptForRepositories();
@@ -74,9 +58,6 @@ class Repository extends SubGenerator {
 
   /**
    * Loop to enable updates and creation of new repositories.
-   *
-   * @returns {Promise<RepositoryCollection>}
-   * @memberof Environment
    *
    * @todo Consolidate this edit loop into a reusable prompt type.
    */
@@ -120,9 +101,6 @@ class Repository extends SubGenerator {
 
   /**
    * Prompt for configuration of a specific repository.
-   *
-   * @returns {Promise<RepositoryConfigurationEntry>}
-   * @memberof Repository
    */
   async _promptForRepositoryConfiguration(
     repository: Partial<RepositoryDefinition> = {},
@@ -166,8 +144,6 @@ class Repository extends SubGenerator {
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof Repository
    */
   configuring() {
     // Save the repository configuration after all prompting has finished.

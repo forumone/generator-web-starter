@@ -23,22 +23,21 @@ class BuildkitePipeline extends Generator {
 
   constructor(args: string | string[], options: Generator.GeneratorOptions) {
     super(args, options);
+    const manifestPath = this.destinationPath('.f1-manifest.yml');
 
     // Confirm the manifest file exists or abort.
-    if (!this.fs.exists('.f1-manifest.yml')) {
+    if (!this.fs.exists(manifestPath)) {
       throw new Error("Manifest file '.f1-manifest.yml' does not exist.");
     }
 
     // Read in the manifest file and save the deployment configuration.
-    this.manifest = YAML.parse(this.fs.read('.f1-manifest.yml'));
+    this.manifest = YAML.parse(this.fs.read(manifestPath));
     this.deployments = this.manifest.deployments || {};
     this.answers = {};
   }
 
   /**
    * Execute initializaition for this generator.
-   *
-   * @memberof BuildkitePipeline
    */
   async initializing() {
     this.answers = this.config.get('promptAnswers') || {};
@@ -46,8 +45,6 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof BuildkitePipeline
    */
   async prompting() {
     const answers = await this.prompt([
@@ -64,15 +61,12 @@ class BuildkitePipeline extends Generator {
       },
     ]);
 
-    this.log(answers);
-
+    this.debug(answers);
     this.answers = answers;
   }
 
   /**
    * Prepare configuration for this generator.
-   *
-   * @memberof BuildkitePipeline
    */
   async configuring() {
     // throw new Error('Method not yet implemented.');
@@ -80,8 +74,6 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Execute the writing phase of this generator.
-   *
-   * @memberof BuildkitePipeline
    */
   writing() {
     this._createBuildkiteDirectories();
@@ -91,21 +83,17 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Ensure required Buildkite directories exist within the repository.
-   *
-   * @memberof BuildkitePipeline
    */
   _createBuildkiteDirectories(): void {
-    const destinationPath = this.destinationRoot();
-
     // Create the Buildkite artifacts directory.
-    const artifactsDirectory = `${destinationPath}/.buildkite/artifacts/.gitignore`;
+    const artifactsDirectory = this.destinationPath(
+      '.buildkite/artifacts/.gitignore',
+    );
     this.fs.write(artifactsDirectory, '*');
   }
 
   /**
    * Generate the templated pipeline.yml file based on configuration options.
-   *
-   * @memberof BuildkitePipeline
    */
   _generatePipelineFile(): void {
     const templateData = this._getTemplateDeploymentData();
@@ -121,8 +109,6 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Generate the required Docker Compose file for Buildkite usage.
-   *
-   * @memberof BuildkitePipeline
    */
   _generateBuildkiteDockerComposeFile(): void {
     const templateData = {
@@ -138,12 +124,9 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Get the path to the application's service directory.
-   *
-   * @returns {string | false}
-   * @memberof BuildkitePipeline
    */
-  _getServiceDirectory(): string | false {
-    let servicesPath: string | false = false;
+  _getServiceDirectory(): string | undefined {
+    let servicesPath;
 
     // Check for Dockerfiles since the exists method will not check for a directory.
     if (this.fs.exists(this.destinationPath('services/drupal/Dockerfile'))) {
@@ -161,9 +144,6 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Load deployment configuration from configuration.
-   *
-   * @returns {PipelineTemplateData}
-   * @memberof BuildkitePipeline
    */
   _getTemplateDeploymentData(): PipelineTemplateData {
     const capistranoDeployments: {

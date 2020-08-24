@@ -17,9 +17,6 @@ const environments = ['Forum One', 'Pantheon', 'Acquia', 'WPEngine'];
 
 /**
  * A manifest sub-generator responsible for prompting and configuration of environments.
- *
- * @class Environment
- * @extends {SubGenerator}
  */
 class Environment extends SubGenerator {
   private environments: EnvironmentCollection = {};
@@ -27,8 +24,6 @@ class Environment extends SubGenerator {
 
   /**
    * Execute initialization for this generator.
-   *
-   * @memberof Environment
    *
    * @todo Pre-load configuration from the YAML manifest file.
    */
@@ -38,33 +33,22 @@ class Environment extends SubGenerator {
     this.environments = config.environments || {};
   }
 
-  /**
-   * @inheritdoc
-   */
   public _getResources(): Record<string, ResourceCollection> {
     return {
       environments: this.environments,
     };
   }
 
-  /**
-   * @inheritdoc
-   */
   public _setResources(resources: Record<string, ResourceCollection>): void {
     this.environments = resources.environments as EnvironmentCollection;
   }
 
-  /**
-   * @inheritdoc
-   */
   public _setManifest(manifest: Partial<ManifestDefinition>) {
     this.manifest = manifest;
   }
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof Environment
    */
   async prompting() {
     this.environments = await this._promptForEnvironments();
@@ -72,9 +56,6 @@ class Environment extends SubGenerator {
 
   /**
    * Loop to enable updates and creation of new environments.
-   *
-   * @returns {Promise<EnvironmentCollection>}
-   * @memberof Environment
    *
    * @todo Consolidate this edit loop into a reusable prompt type.
    */
@@ -117,10 +98,6 @@ class Environment extends SubGenerator {
 
   /**
    * Prompt for the specifics of a given hosting environment.
-   *
-   * @param {Partial<EnvironmentDefinition>} [environment={}]
-   * @returns {Promise<EnvironmentConfigurationEntry>}
-   * @memberof Environment
    */
   async _promptForHostingEnvironmentConfiguration(
     environment: Partial<EnvironmentDefinition> = {},
@@ -196,8 +173,6 @@ class Environment extends SubGenerator {
 
   /**
    * Execute the configuration phase of this generator.
-   *
-   * @memberof Environment
    */
   configuring() {
     // Save the repository configuration after all prompting has finished.

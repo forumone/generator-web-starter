@@ -12,9 +12,6 @@ export interface DefinitionObject {
 
 /**
  * A structured interface to capture final Manifest content.
- *
- * @export
- * @interface ManifestDefinition
  */
 export interface ManifestDefinition {
   readonly version: 'v1';
@@ -30,49 +27,31 @@ export interface ManifestDefinition {
 
 /**
  * A common interface for all sub-generators to adhere to.
- *
- * @export
- * @interface SubGenerator
- * @extends {Generator}
  */
 export interface SubGenerator extends Generator {
   /**
    * Get defined resources this generator is responsible for.
-   *
-   * @returns {Record<string, ResourceCollection>}
-   * @memberof SubGenerator
    */
   _getResources(): Record<string, ResourceCollection>;
 
   /**
    * Share known resources for access by this generator.
-   *
-   * @param {Record<string, ResourceCollection>} resources
-   * @memberof SubGenerator
    */
   _setResources(resources: Record<string, ResourceCollection>): void;
 
   /**
    * Pass in the manifest object for completion.
-   *
-   * @param {Partial<ManifestDefinition>} manifest
-   * @memberof SubGenerator
    */
   _setManifest(manifest: Partial<ManifestDefinition>): void;
 }
 
 /**
  * Base implementation of a common Generator for all sub-generators to extend.
- *
- * @export
- * @class SubGenerator
- * @extends {Generator}
- * @implements {SubGenerator}
  */
 export class SubGenerator extends Generator implements SubGenerator {}
 
 /**
- * A generic type encompassing all know resource config collections.
+ * A generic type encompassing all known resource config collections.
  */
 export type ResourceCollection =
   | RepositoryCollection

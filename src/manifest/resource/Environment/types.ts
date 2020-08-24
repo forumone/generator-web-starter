@@ -21,49 +21,31 @@ export type HostingService =
 export interface EnvironmentDefinition extends DefinitionObject {
   /**
    * The specific type of hosting environment being deployed to.
-   *
-   * @type {EnvironmentType}
-   * @memberof EnvironmentDefinition
    */
   readonly type: EnvironmentType;
 
   /**
    * The primary URL used for accessing this environment.
-   *
-   * @type {string}
-   * @memberof EnvironmentDefinition
    */
   readonly url: string;
 
   /**
    * The server path application code should be deployed to.
-   *
-   * @type {string}
-   * @memberof EnvironmentDefinition
    */
   readonly deployPath?: string;
 
   /**
    * The repository branch that should be deployed to this environment.
-   *
-   * @type {string}
-   * @memberof EnvironmentDefinition
    */
   readonly branch?: string;
 
   /**
    * The login user to access this environment for deployment.
-   *
-   * @type {string}
-   * @memberof EnvironmentDefinition
    */
   readonly login?: string;
 
   /**
    * A subdirectory of the source repository to deploy if needed.
-   *
-   * @type {string}
-   * @memberof EnvironmentDefinition
    */
   readonly sourceSubdirectory?: string;
 }
