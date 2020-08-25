@@ -35,19 +35,9 @@ export interface EnvironmentDefinition extends DefinitionObject {
   readonly deployPath?: string;
 
   /**
-   * The repository branch that should be deployed to this environment.
-   */
-  readonly branch?: string;
-
-  /**
    * The login user to access this environment for deployment.
    */
   readonly login?: string;
-
-  /**
-   * A subdirectory of the source repository to deploy if needed.
-   */
-  readonly sourceSubdirectory?: string;
 }
 
 /**
@@ -57,7 +47,6 @@ export interface ForumOneEnvironment extends EnvironmentDefinition {
   readonly type: 'Forum One';
   readonly deployPath: string;
   readonly login: string;
-  readonly sourceSubdirectory?: string;
 }
 
 /**
@@ -66,7 +55,6 @@ export interface ForumOneEnvironment extends EnvironmentDefinition {
 export interface ArtifactRepositoryEnvironment extends EnvironmentDefinition {
   readonly type: 'Artifact Repository';
   readonly service?: HostingService;
-  readonly sourceSubdirectory?: string;
 }
 
 /**

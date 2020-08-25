@@ -95,7 +95,6 @@ class Deployment extends SubGenerator<DeploymentDefinition> {
         when: answers => answers.strategy === 'artifact',
       },
       // @todo Add suggestions for the target branch based on common deployment ID values.
-      // @todo Pre-fill this from the branch value in the environment definition.
       {
         type: 'input',
         name: 'targetBranch',
@@ -103,8 +102,6 @@ class Deployment extends SubGenerator<DeploymentDefinition> {
         default: item.targetBranch,
         when: answers => answers.strategy === 'artifact',
       },
-      // @todo Add suggestions for the source subdirectory based on target environment values.
-      // @todo Pre-fill this from the sourceSubdirectory value in the environment definition.
       {
         type: 'input',
         name: 'sourceSubdirectory',

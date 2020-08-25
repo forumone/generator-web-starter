@@ -40,25 +40,12 @@ class Environment extends SubGenerator<EnvironmentDefinition> {
         choices: [...environments, 'Other'],
         default: item.type || 'Forum One',
       },
+      // @todo Add some form of URL masking or suggestions.
       {
         type: 'input',
         name: 'url',
         message: 'What URL is used to access this environment?',
         default: item.url,
-      },
-      {
-        type: 'input',
-        name: 'branch',
-        message: 'What branch should be deployed to this environment?',
-        default: item.branch,
-      },
-      // @todo: Add subdirectory suggestions based on the known CMS type.
-      {
-        type: 'input',
-        name: 'sourceSubdirectory',
-        message:
-          'What path within the source repository should be deployed to this environment?',
-        default: item.sourceSubdirectory,
       },
       {
         type: 'input',
