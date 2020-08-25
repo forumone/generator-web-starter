@@ -50,8 +50,7 @@ function createGessoGenerator({
   installPhase,
   serviceName,
   themeDirectory,
-}: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-CreateGeneratorOptions): any {
+}: CreateGeneratorOptions) {
   class Gesso extends Generator {
     // Assigned to in initializing phase
     private documentRoot!: string;
