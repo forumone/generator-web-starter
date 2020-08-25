@@ -28,6 +28,14 @@ class Deployment extends SubGenerator<DeploymentDefinition> {
   protected configName = 'deployments';
   protected editPrompt = 'Would you like to update your deployments?';
 
+  initializing() {
+    return this._doInitializing();
+  }
+
+  async prompting() {
+    return this._doPrompting();
+  }
+
   _setResources(resources: Record<string, ResourceCollection>): void {
     this.repositories = resources.repositories as RepositoryCollection;
     this.environments = resources.environments as EnvironmentCollection;

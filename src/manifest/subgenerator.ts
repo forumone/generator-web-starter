@@ -68,14 +68,14 @@ export abstract class SubGenerator<
   /**
    * Execute the initialization phase for this generator.
    */
-  initializing() {
+  _doInitializing() {
     this.collection = this.config.get(this.configName) || {};
   }
 
   /**
    * Execute the prompting phase for this generator.
    */
-  async prompting() {
+  async _doPrompting() {
     // Loop prompting until the user selects to end editing.
     while (true) {
       const { edit } = await this.prompt({
@@ -110,8 +110,35 @@ export abstract class SubGenerator<
   /**
    * Execute the configuration phase for this generator.
    */
-  configuring() {
+  _doConfiguring() {
     this.config.set(this.configName, this.collection);
     this._updateManifest();
   }
+
+  // Implement these methods as abstract to enforce visibility of them on
+  // sub-generators when it comes time for their methods to be queued as
+  // tasks by Yeoman for execution.
+  //
+  // By default, Yeoman is not seeing inherited methods since they are
+  // captured on the object prototype instead of the instance directly.
+  //
+  // Implementation of the inherited functionality for these methods has
+  // been provided in prefixed `_do<Stage>` methods to simplify the
+  // generator-level implementation of these methods to little more than
+  // a public declaration of the method to make it discoverable.
+
+  /**
+   * Execute the Initializing stage of this generator.
+   */
+  abstract initializing(): void;
+
+  /**
+   * Execute the Prompting stage of this generator.
+   */
+  abstract async prompting(): Promise<void>;
+
+  /**
+   * Execute the Configuring stage of this generator.
+   */
+  abstract configuring(): void;
 }

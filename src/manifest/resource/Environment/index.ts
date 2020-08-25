@@ -11,6 +11,17 @@ class Environment extends SubGenerator<EnvironmentDefinition> {
   protected configName = 'environments';
   protected editPrompt = 'Would you like to update your environments?';
 
+  initializing() {
+    return this._doInitializing();
+  }
+
+  async prompting() {
+    return this._doPrompting();
+  }
+
+  async configuring() {
+    return this._doConfiguring();
+  }
   public _setResources(resources: Record<string, ResourceCollection>): void {
     this.collection = resources.environments as EnvironmentCollection;
   }

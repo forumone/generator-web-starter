@@ -10,6 +10,18 @@ class Repository extends SubGenerator<RepositoryDefinition> {
   protected configName = 'repositories';
   protected editPrompt = 'Would you like to update your repositories?';
 
+  initializing() {
+    return this._doInitializing();
+  }
+
+  async prompting() {
+    return this._doPrompting();
+  }
+
+  async configuring() {
+    return this._doConfiguring();
+  }
+
   public _setResources(resources: Record<string, ResourceCollection>): void {
     this.collection = resources.repositories as RepositoryCollection;
   }
