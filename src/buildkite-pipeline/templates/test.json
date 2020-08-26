@@ -1,8 +1,0 @@
-{
-  "deployBranches": [
-    "master",
-    "dev",
-    "stage"
-  ],
-  "capistrano": true
-}
