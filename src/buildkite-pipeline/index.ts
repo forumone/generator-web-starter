@@ -1,18 +1,35 @@
 import Generator from 'yeoman-generator';
-import { DeploymentCollection } from '../manifest/deployment/types';
+import {
+  ArtifactDeploymentCollection,
+  ArtifactDeploymentDefinition,
+  CapistranoDeploymentCollection,
+  CapistranoDeploymentDefinition,
+  DeploymentCollection,
+} from '../manifest/deployment/types';
 import { ManifestDefinition } from '../manifest/types';
 import YAML from 'yaml';
+import { RepositoryDefinition } from '../manifest/resource/Repository/types';
 
 interface BranchMapping {
   readonly source: string;
   readonly target: string;
+  readonly remote?: string;
+}
+
+interface CapistranoTemplateData {
+  readonly branches: Record<string, BranchMapping>;
+}
+
+interface ArtifactTemplateData {
+  readonly remote?: string;
+  readonly branches: Record<string, BranchMapping>;
 }
 
 interface PipelineTemplateData {
   readonly serviceDirectory: string;
   readonly deploy: {
-    capistrano: false | Array<BranchMapping>;
-    artifact: false | {};
+    readonly capistrano?: CapistranoTemplateData;
+    readonly artifact?: ArtifactTemplateData;
   };
 }
 
@@ -146,55 +163,104 @@ class BuildkitePipeline extends Generator {
    * Load deployment configuration from configuration.
    */
   _getTemplateDeploymentData(): PipelineTemplateData {
-    const capistranoDeployments: {
-      deployments: DeploymentCollection;
-      branches: Array<BranchMapping>;
-    } = {
-      deployments: {},
-      branches: [],
-    };
-    const artifactDeployments = [];
+    const capistranoDeployments: CapistranoDeploymentCollection = {};
+    const artifactDeployments: ArtifactDeploymentCollection = {};
 
     // Organize all deployment data.
     for (const [key, deployment] of Object.entries(this.deployments)) {
       if (deployment.strategy === 'capistrano') {
-        capistranoDeployments.deployments[key] = deployment;
-
-        let targetEnvironment: string;
-        if (typeof deployment.environment === 'string') {
-          targetEnvironment = deployment.environment;
-        } else {
-          targetEnvironment = deployment.environment.id;
-        }
-
-        // Map branches to deployment targets.
-        capistranoDeployments.branches.push({
-          source: deployment.sourceBranch,
-          target: targetEnvironment,
-        });
+        capistranoDeployments[
+          key
+        ] = deployment as CapistranoDeploymentDefinition;
       } else if (deployment.strategy === 'artifact') {
-        artifactDeployments.push(deployment);
+        artifactDeployments[key] = deployment as ArtifactDeploymentDefinition;
       } else {
         throw new Error(
-          `Unknown deployment type ${deployment} for deployment ${key}`,
+          `Unknown deployment type "${deployment}" for deployment "${key}".`,
         );
       }
     }
 
+    const capistranoDeploymentData = this._prepareCapistranoDeploymentData(
+      capistranoDeployments,
+    );
+    const artifactDeploymentData = this._prepareArtifactDeploymentData(
+      artifactDeployments,
+    );
+
     // Organize data into the template data structure.
-    const deployData: Omit<PipelineTemplateData, 'serviceDirectory'> = {
+    const templateData: PipelineTemplateData = {
+      serviceDirectory: this.answers.serviceDirectory,
       deploy: {
-        capistrano: capistranoDeployments.branches,
-        artifact: false,
+        capistrano: capistranoDeploymentData,
+        artifact: artifactDeploymentData,
       },
     };
 
-    const templateData: PipelineTemplateData = {
-      serviceDirectory: this.answers.serviceDirectory,
-      ...deployData,
-    };
-
     return templateData;
+  }
+
+  /**
+   * Organize Capistrano deployment data for template usage.
+   *
+   * @param capistranoDeployments A collection of Capistrano deployments for output.
+   * @return Template data for output of Capistrano deployment configuration.
+   */
+  _prepareCapistranoDeploymentData(
+    capistranoDeployments: CapistranoDeploymentCollection,
+  ): CapistranoTemplateData | undefined {
+    const branches: Record<string, BranchMapping> = {};
+
+    for (const [id, deployment] of Object.entries(capistranoDeployments)) {
+      let targetEnvironment: string;
+      if (typeof deployment.environment === 'string') {
+        targetEnvironment = deployment.environment;
+      } else {
+        targetEnvironment = deployment.environment.id;
+      }
+
+      // Map branches to deployment targets.
+      branches[id] = {
+        source: deployment.sourceBranch,
+        target: targetEnvironment,
+      };
+    }
+
+    return Object.keys(branches) ? { branches } : undefined;
+  }
+
+  /**
+   * Organize artifact repository data for template usage.
+   *
+   * @param artifactDeployments A collection of artifact deployments for output.
+   * @return Template data for output of artifact deployment configuration.
+   *
+   * @todo Streamline output and definition of a singular remote repository.
+   */
+  _prepareArtifactDeploymentData(
+    artifactDeployments: ArtifactDeploymentCollection,
+  ): ArtifactTemplateData | undefined {
+    const branches: Record<string, BranchMapping> = {};
+    const remotes: Record<string, string | RepositoryDefinition> = {};
+
+    for (const [id, deployment] of Object.entries(artifactDeployments)) {
+      // @todo Use this to check for only one target repository and cut down output.
+      remotes[id] = deployment.targetRepository;
+
+      const targetRepository =
+        typeof deployment.targetRepository === 'string'
+          ? deployment.targetRepository
+          : deployment.targetRepository.url;
+
+      // Map branches to deployment targets.
+      branches[id] = {
+        source: deployment.sourceBranch,
+        target: deployment.targetBranch,
+        remote: targetRepository,
+      };
+    }
+
+    return Object.keys(branches) ? { branches } : undefined;
   }
 }
 

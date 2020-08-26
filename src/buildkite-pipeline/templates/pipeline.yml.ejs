@@ -67,13 +67,13 @@ steps:
       - improbable-eng/metahook#v0.4.0:
           post-artifact: ".buildkite/scripts/codeclimate/annotate-results.sh"
 
-  <% if (deploy.capistrano) { %>
+  <%_ if (deploy.capistrano) { _%>
   - label: ":capistrano: Deploy"
     <<: *step-defaults
     concurrency: 1
     concurrency_group: '$BUILDKITE_PIPELINE_SLUG/$BUILDKITE_BRANCH/deploy'
     branches:
-      <%_ for (const {source, target} of deploy.capistrano) { _%>
+      <%_ for (const { source } of Object.values(deploy.capistrano.branches)) { _%>
       - <%= source %>
       <%_ } _%>
     plugins:
@@ -92,7 +92,39 @@ steps:
       - forumone/capistrano:
           require-stage: true
           branches:
-            <%_ for (const {source, target} of deploy.capistrano) { _%>
+            <%_ for (const {source, target} of Object.values(deploy.capistrano.branches)) { _%>
             <%= source %>: <%= target %>
             <%_ } _%>
   <%_ } _%>
+
+  <%_ if (deploy.artifact) { _%>
+  - label: ":git: Deploy"
+    <<: *step-defaults
+    concurrency: 1
+    concurrency_group: '$BUILDKITE_PIPELINE_SLUG/$BUILDKITE_BRANCH/deploy'
+    branches:
+      <%_ for (const { source } of Object.values(deploy.artifact.branches)) { _%>
+      - <%= source %>
+      <%_ } _%>
+    plugins:
+      # Log into ECR for this build step to access and push images.
+      - *ecr
+
+      # Download the prebuilt image and extract project files to the
+      # local filesystem for further operations.
+      - forumone/extract:
+          image-service: release
+          from: /var/www/html
+          to: <%= serviceDirectory %>
+
+      # Execute an artifact deployment using the defined branch to
+      # environment mapping.
+      - forumone/artifact-push:
+          source-directory: <%= serviceDirectory %>
+          branches:
+            <%_ for (const [deploymentId, branchConfig] of Object.entries(deploy.artifact.branches)) { _%>
+            - match: <%= branchConfig.source %>
+              target: <%= branchConfig.target %>
+              remote: <%= branchConfig.remote %>
+            <%_ } _%>
+    <%_ } _%>
