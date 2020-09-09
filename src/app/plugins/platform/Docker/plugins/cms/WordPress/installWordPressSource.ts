@@ -26,9 +26,7 @@ async function installWordPressSource(destination: string) {
   if (!response.ok) {
     const { status, statusText, url } = response;
     throw new Error(
-      `Failed to retrieve ${
-        release.name
-      }: fetch(${url}) returned ${status} ${statusText}`,
+      `Failed to retrieve ${release.name}: fetch(${url}) returned ${status} ${statusText}`,
     );
   }
 
