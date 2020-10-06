@@ -125,7 +125,10 @@ class DockerfileHelper extends Dockerfile {
           dest: './',
         })
         .run({
-          commands: [['set', '-ex'], ['gulp', 'build']],
+          commands: [
+            ['set', '-ex'],
+            ['gulp', 'build'],
+          ],
         })
 
         // Create the production clean-up stage to remove all dependencies.
@@ -141,7 +144,10 @@ class DockerfileHelper extends Dockerfile {
           stage: gessoCleanStageName,
         })
         .run({
-          commands: [['set', '-ex'], ['rm', '-rf', 'node_modules']],
+          commands: [
+            ['set', '-ex'],
+            ['rm', '-rf', 'node_modules'],
+          ],
         })
 
         // Create the dev stage to add all dev dependencies.
@@ -152,7 +158,10 @@ class DockerfileHelper extends Dockerfile {
           stage: gessoDevStageName,
         })
         .run({
-          commands: [['set', '-ex'], ['npm', 'install']],
+          commands: [
+            ['set', '-ex'],
+            ['npm', 'install'],
+          ],
         })
     );
   }
