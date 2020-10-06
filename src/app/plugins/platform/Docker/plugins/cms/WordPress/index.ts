@@ -46,6 +46,7 @@ class WordPress extends Generator {
 
     this.latestWpCliTag = latestWpCliTag;
     this.latestWpTag = latestWpTag;
+    this.options.force = true;
   }
 
   async prompting() {
@@ -385,6 +386,20 @@ class WordPress extends Generator {
 
     // Create the .dockerignore file here, after everything has been installed
     const wpIgnorePath = this.destinationPath('services/wordpress/.gitignore');
+
+    const gitignoreEditor = new IgnoreEditor();
+    if (this.fs.exists(wpIgnorePath)) {
+      gitignoreEditor.addEntry(this.fs.read(wpIgnorePath));
+      gitignoreEditor.addSeparator();
+      gitignoreEditor.addComment('Ignore Composer credentials configuration.');
+      gitignoreEditor.addEntry('auth.json');
+    }
+
+    // Append the additional gitignore entries to the WordPress service gitignore file.
+    this.fs.write(
+      this.destinationPath(wpIgnorePath),
+      gitignoreEditor.serialize(),
+    );
 
     const ignoreEditor = new IgnoreEditor();
     if (this.fs.exists(wpIgnorePath)) {

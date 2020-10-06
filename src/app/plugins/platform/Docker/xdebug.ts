@@ -12,7 +12,9 @@ export const enableXdebug = dedent(`
 export const enableXdebugProfiler = dedent(`
   if test ! -z "\${F1_XDEBUG_PROFILER:-}"; then
     docker-php-ext-enable xdebug
-    mkdir /var/www/html/_profiles
+    if test ! -d "/var/www/html/_profiles"; then
+      mkdir /var/www/html/_profiles
+    fi
     chmod -R 0777 /var/www/html/_profiles
     echo 'xdebug.profiler_enable_trigger=1' > /usr/local/etc/php/conf.d/xdebug.ini
     echo "xdebug.profiler_output_dir='/var/www/html/_profiles'" >> /usr/local/etc/php/conf.d/xdebug.ini
