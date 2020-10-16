@@ -43,8 +43,12 @@ class BuildkitePipeline extends Generator {
     const manifestPath = this.destinationPath('.f1-manifest.yml');
 
     // Confirm the manifest file exists or abort.
+    // @todo Run the manifest generator if a manifest file isn't available.
     if (!this.fs.exists(manifestPath)) {
-      throw new Error("Manifest file '.f1-manifest.yml' does not exist.");
+      this.debug("Unable to find an existing '.f1-manifest.yml' file.");
+      throw new Error(
+        "Manifest file '.f1-manifest.yml' does not exist. Please run the web-starter:manifest generator to create one.",
+      );
     }
 
     // Read in the manifest file and save the deployment configuration.
