@@ -226,7 +226,7 @@ class BuildkitePipeline extends Generator {
       };
     }
 
-    return Object.keys(branches) ? { branches } : undefined;
+    return Object.keys(branches).length ? { branches } : undefined;
   }
 
   /**
@@ -260,7 +260,7 @@ class BuildkitePipeline extends Generator {
       };
     }
 
-    return Object.keys(branches) ? { branches } : undefined;
+    return Object.keys(branches).length ? { branches } : undefined;
   }
 }
 
