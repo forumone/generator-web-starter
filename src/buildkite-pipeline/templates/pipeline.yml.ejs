@@ -50,23 +50,6 @@ steps:
 
   - wait: ~
 
-  - label: ":codeclimate: Code Climate Scans"
-    key: "codeclimate"
-    <<: *step-defaults
-    <<: *docker-agents
-    artifact_paths:
-      - ".buildkite/artifacts/codeclimate/*"
-    plugins:
-      - docker-compose#v3.4.0:
-          run: codeclimate
-          config:
-            - docker-compose.yml
-            - docker-compose.cli.yml
-
-      # Display an annotation linking the Code Climate report for improved visibility.
-      - improbable-eng/metahook#v0.4.0:
-          post-artifact: ".buildkite/scripts/codeclimate/annotate-results.sh"
-
   <%_ if (deploy.capistrano) { _%>
   - label: ":capistrano: Deploy"
     <<: *step-defaults
