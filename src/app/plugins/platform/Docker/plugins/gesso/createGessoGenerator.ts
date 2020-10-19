@@ -48,7 +48,7 @@ function createGessoGenerator({
   installPhase,
   serviceName,
   themeDirectory,
-}: CreateGeneratorOptions): typeof Generator {
+}: CreateGeneratorOptions) {
   class Gesso extends Generator {
     // Assigned to in initializing phase
     private documentRoot!: string;
