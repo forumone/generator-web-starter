@@ -6,9 +6,11 @@ import {
   CapistranoDeploymentDefinition,
   DeploymentCollection,
 } from '../manifest/deployment/types';
-import { ManifestDefinition } from '../manifest/types';
-import YAML from 'yaml';
 import { RepositoryDefinition } from '../manifest/resource/Repository/types';
+import {
+  ManifestAwareGenerator,
+  ManifestAwareOptions,
+} from '../manifest/manifestAwareGenerator';
 
 interface BranchMapping {
   readonly source: string;
@@ -33,26 +35,13 @@ interface PipelineTemplateData {
   };
 }
 
-class BuildkitePipeline extends Generator {
-  private deployments!: DeploymentCollection;
-  private manifest!: ManifestDefinition;
-  private answers!: Generator.Answers;
+class BuildkitePipeline extends ManifestAwareGenerator {
+  private deployments: DeploymentCollection;
+  private answers: Generator.Answers;
 
-  constructor(args: string | string[], options: Generator.GeneratorOptions) {
+  constructor(args: string | string[], options: ManifestAwareOptions) {
     super(args, options);
-    const manifestPath = this.destinationPath('.f1-manifest.yml');
 
-    // Confirm the manifest file exists or abort.
-    // @todo Run the manifest generator if a manifest file isn't available.
-    if (!this.fs.exists(manifestPath)) {
-      this.debug("Unable to find an existing '.f1-manifest.yml' file.");
-      throw new Error(
-        "Manifest file '.f1-manifest.yml' does not exist. Please run the web-starter:manifest generator to create one.",
-      );
-    }
-
-    // Read in the manifest file and save the deployment configuration.
-    this.manifest = YAML.parse(this.fs.read(manifestPath));
     this.deployments = this.manifest.deployments || {};
     this.answers = {};
   }
@@ -88,6 +77,8 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Prepare configuration for this generator.
+   *
+   * @todo Prepare all template data in the configuring stage.
    */
   async configuring() {
     // throw new Error('Method not yet implemented.');
@@ -115,6 +106,8 @@ class BuildkitePipeline extends Generator {
 
   /**
    * Generate the templated pipeline.yml file based on configuration options.
+   *
+   * @todo Move data preparation into the configuring phase.
    */
   _generatePipelineFile(): void {
     const templateData = this._getTemplateDeploymentData();
