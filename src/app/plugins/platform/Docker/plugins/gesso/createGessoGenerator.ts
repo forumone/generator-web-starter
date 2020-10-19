@@ -106,7 +106,7 @@ function createGessoGenerator({
 
       const editor = this.options.composeEditor as ComposeEditor;
 
-      const publicVolumeName = editor.ensureVolume('gesso-patternlab');
+      const publicVolumeName = editor.ensureVolume('gesso-pattern-lab');
       const cssVolumeName = editor.ensureVolume('gesso-css');
 
       const gessoVolumes: VolumeMount[] = [
