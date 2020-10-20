@@ -3,7 +3,7 @@ import { gessoDrupalPath } from './constants';
 
 const GessoDrupal8 = createGessoGenerator({
   git: {
-    branch: '8.x-3.x',
+    branch: '4.x',
     repository: 'gesso',
   },
   // See comments in the Drupal8 generator for why this uses the 'default' phase instead
