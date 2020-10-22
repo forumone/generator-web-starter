@@ -4,43 +4,79 @@ import { ComposeHelper } from '../util/docker/composeHelper';
 /**
  * A Yeoman generator to configure code quality support for a project.
  *
- * @todo Ensure Code Climate configuration is added to `docker-compose.cli.yml`.
  * @todo Ensure Composer dependencies and coding standards are included.
  * @todo Ensure CMS-level `.dockerignore` file contains all necessary configuration.
  * @todo Add Buildkite artifacts directory files.
+ * @todo Add Buildkite steps as needed.
  */
 class CodeQuality extends ManifestAwareGenerator {
   // private answers!: Generator.Answers;
 
-  private cms!: string;
+  private cmsData!: { [name: string]: string | undefined };
+  private appDirectory?: string;
 
   /**
    * Execute initializaition for this generator.
    */
   async initializing() {
-    // this.answers = this.config.get('promptAnswers') || {};
-  }
-
-  /**
-   * Execute the configuration phase of this generator.
-   */
-  async prompting() {
-    // @todo Add prompting logic.
-  }
-
-  /**
-   * Prepare configuration for this generator.
-   *
-   * @todo Check for
-   */
-  async configuring() {
-    // @todo Add configuration logic.
+    this.cmsData = this._getCmsData();
+    this.appDirectory = this.cmsData.appDirectory;
   }
 
   /**
    * Execute the writing phase of this generator.
    */
   writing() {
+    this._addCodeQualityDockerService()._createRoboYmlFile();
+  }
+
+  /**
+   * Get the CMS data configured in this project.
+   */
+  _getCmsData() {
+    const platform = this.manifestHelper.get('platform');
+    let cms: string | undefined = undefined;
+    let appDirectory: string | undefined = undefined;
+    const documentRoot: string | undefined = this.manifestHelper.get(
+      'documentRoot',
+    );
+    if (platform === 'Docker') {
+      cms = this.manifestHelper.get('dockerCms');
+
+      // Translate the generator's CMS value to a default service directory.
+      // @todo Add configuration support for a non-standard app directory.
+      appDirectory = 'services/';
+      switch (cms) {
+        case 'Drupal7':
+        case 'Drupal8':
+          appDirectory += 'drupal';
+          break;
+
+        case 'WordPress':
+          appDirectory += 'wordpress';
+          break;
+
+        default:
+          throw new Error(
+            `Unsupported CMS configuration defined in \`dockerCms\`: ${cms}`,
+          );
+      }
+    } else {
+      throw new Error(`Unsupported platform type: ${platform}`);
+    }
+
+    return {
+      platform,
+      cms,
+      appDirectory,
+      documentRoot,
+    };
+  }
+
+  /**
+   * Add configuration for the `code-quality` Docker service to `docker-compose.cli.yml`.
+   */
+  _addCodeQualityDockerService() {
     const serviceTemplateHelper = new ComposeHelper(
       this.templatePath('docker/docker-compose.services.yml'),
     );
@@ -56,54 +92,28 @@ class CodeQuality extends ManifestAwareGenerator {
     cliComposeHelper.addService('code-quality', codeQualityService);
 
     this.fs.write('docker-compose.cli.yml', cliComposeHelper.toString());
+
+    return this;
   }
 
   /**
-   * Get the CMS in use on this project.
-   *
-   * @todo Implement this method.
+   * Create an application-specific `robo.yml` within the application directory.
    */
-  _getCms(): string | undefined {
-    // @todo Load the CMS data from the manifest file.
-    this.debug('CMS identification logic incomplete.');
+  _createRoboYmlFile() {
+    const templateData = {
+      cmsPreset: this.cmsData.cms,
+      ...this.cmsData,
+    };
 
-    if (this.manifest.cms === undefined) {
-      throw new Error('Unknown CMS.');
-    }
-
-    this.cms = this.manifest.cms;
-    return this.cms;
-  }
-
-  /**
-   * Ensure required Buildkite directories exist within the repository.
-   */
-  _createBuildkiteArtifactsDirectory(): void {
-    // Create the Buildkite artifacts directory.
-    const artifactsDirectory = this.destinationPath(
-      '.buildkite/artifacts/.gitignore',
+    this.debug(`Configuring 'robo.yml' file within ${this.appDirectory}.`);
+    this.debug(templateData);
+    this.fs.copyTpl(
+      this.templatePath('robo.yml.ejs'),
+      this.destinationPath(`${this.appDirectory}/robo.yml`),
+      templateData,
     );
-    this.fs.write(artifactsDirectory, '*');
-  }
 
-  /**
-   * Get the path to the application's service directory.
-   */
-  _getServiceDirectory(): string | undefined {
-    let servicesPath;
-
-    // Check for Dockerfiles since the exists method will not check for a directory.
-    if (this.fs.exists(this.destinationPath('services/drupal/Dockerfile'))) {
-      servicesPath = 'services/drupal';
-    } else if (
-      this.fs.exists(this.destinationPath('services/wordpress/Dockerfile'))
-    ) {
-      servicesPath = 'services/wordpress';
-    } else {
-      this.log('Unable to determine the application service path.');
-    }
-
-    return servicesPath;
+    return this;
   }
 }
 

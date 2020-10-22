@@ -92,3 +92,17 @@ export class ComposeHelper {
     return this.document().toString();
   }
 }
+
+// const cliPath =
+//   '/Users/srlucero/projects/f1/devops-playground-d8/docker-compose.cli.yml';
+// const composePath =
+//   '/Users/srlucero/projects/f1/devops-playground-d8/docker-compose.yml';
+// const cliHelper = new ComposeHelper(cliPath);
+// const composeHelper = new ComposeHelper(composePath);
+// const codeQualityService = cliHelper.service('code-quality');
+// const doc = composeHelper
+//   .addService('code-quality', codeQualityService)
+//   .document();
+
+// // eslint-disable-next-line no-console
+// console.log(doc);
