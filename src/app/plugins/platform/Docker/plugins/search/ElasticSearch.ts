@@ -67,12 +67,6 @@ class ElasticSearch extends Generator {
 
     editor.addService('elasticsearch', {
       image: `forumone/elasticsearch-oss:${this.esTag}`,
-      environment: {
-        'discovery.type': 'single-node',
-
-        // Required for inter-container communication
-        'network.host': '0.0.0.0',
-      },
       ulimits: {
         memlock: {
           soft: -1,
@@ -113,6 +107,8 @@ class ElasticSearch extends Generator {
       dedent`
         cluster.name: "docker-cluster"
         network.host: 0.0.0.0
+        discovery.seed_hosts : []
+        cluster.initial_master_nodes : []
       `,
     );
   }
