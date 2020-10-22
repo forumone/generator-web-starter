@@ -1,5 +1,6 @@
 import { ManifestAwareGenerator } from '../manifest/manifestAwareGenerator';
 import { ComposeHelper } from '../util/docker/composeHelper';
+import YAML from 'yaml';
 
 /**
  * A Yeoman generator to configure code quality support for a project.
@@ -27,7 +28,9 @@ class CodeQuality extends ManifestAwareGenerator {
    * Execute the writing phase of this generator.
    */
   writing() {
-    this._addCodeQualityDockerService()._createRoboYmlFile();
+    this._addCodeQualityDockerService()
+      ._createRoboYmlFile()
+      ._createDockerComposeEnvFile();
   }
 
   /**
@@ -87,7 +90,8 @@ class CodeQuality extends ManifestAwareGenerator {
     const codeQualityService = serviceTemplateHelper.service('code-quality');
 
     this.debug(
-      'Adding templated `code-quality` service to `docker-compose.cli.yml`.',
+      'Adding templated `code-quality` service to `docker-compose.cli.yml`:%s',
+      `\n${YAML.stringify(codeQualityService)}`,
     );
     cliComposeHelper.addService('code-quality', codeQualityService);
 
@@ -105,11 +109,48 @@ class CodeQuality extends ManifestAwareGenerator {
       ...this.cmsData,
     };
 
-    this.debug(`Configuring 'robo.yml' file within ${this.appDirectory}.`);
-    this.debug(templateData);
+    this.debug(
+      "Configuring `robo.yml` file at '%s' using template data:\n%O.",
+      `${this.appDirectory}robo.yml`,
+      templateData,
+    );
+    // this.debug('Creating with template data: %O', templateData);
     this.fs.copyTpl(
       this.templatePath('robo.yml.ejs'),
       this.destinationPath(`${this.appDirectory}/robo.yml`),
+      templateData,
+    );
+
+    return this;
+  }
+
+  /**
+   * Create a top-level `.env` file to inform configuration of Docker Compose services.
+   */
+  _createDockerComposeEnvFile() {
+    const templateData = {
+      appDirectory: this.appDirectory,
+    };
+
+    // Create an uncommitted .env file for active use.
+    this.debug(
+      'Creating Docker Compose `.env` file using template data:\n%O',
+      templateData,
+    );
+    this.renderTemplate(
+      this.templatePath('docker/_env.example.ejs'),
+      this.destinationPath('.env'),
+      templateData,
+    );
+
+    // Create an example .env file to be committed to the repository as a seed.
+    this.debug(
+      'Creating Docker Compose `.env.example` file using template data:\n%O',
+      templateData,
+    );
+    this.renderTemplate(
+      this.templatePath('docker/_env.example.ejs'),
+      this.destinationPath('.env.example'),
       templateData,
     );
 
