@@ -75,6 +75,11 @@ function createDrupalDockerfile({
     sourceFiles,
   });
 
+  dockerfile.addTestCopyStage({
+    buildDirectories: ['scripts', 'vendor', documentRoot],
+    gessoPath,
+  });
+
   return dockerfile;
 }
 
