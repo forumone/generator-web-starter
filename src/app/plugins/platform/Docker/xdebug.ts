@@ -10,7 +10,7 @@ export const enableXdebug = dedent(`
 
 // http://xdebug.org/docs/all_settings#profiler_enable_trigger
 export const enableXdebugProfiler = dedent(`
-  if test ! -z "\${F1_XDEBUG_PROFILER:-}"; then
+  if test ! -z "\${F1_XDEBUG_PROFILE:-}"; then
     docker-php-ext-enable xdebug
     if test ! -d "/var/www/html/_profiles"; then
       mkdir /var/www/html/_profiles

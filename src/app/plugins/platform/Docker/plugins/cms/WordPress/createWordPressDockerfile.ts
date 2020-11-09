@@ -70,13 +70,22 @@ function createWordPressDockerfile({
 
   const buildDirectories = composer ? [documentRoot] : undefined;
 
-  return dockerfile
+  // Create the release stage.
+  dockerfile
     .addFinalCopyStage({
       buildDirectories,
       gessoPath,
       sourceDirectories: [documentRoot],
     })
     .run(moveDockerfile);
+
+  // Create the test stage.
+  dockerfile.addTestCopyStage({
+    buildDirectories,
+    gessoPath,
+  });
+
+  return dockerfile;
 }
 
 export default createWordPressDockerfile;
