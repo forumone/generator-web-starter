@@ -1,0 +1,30 @@
+# Docker Compose configuration to support CI operations.
+version: "3.7"
+services:
+  # Target the final release build stage of the image.
+  release:
+    build:
+      context: ./<%= serviceDirectory %>
+      target: release
+
+  # Target the final production build stage of the image.
+  test:
+    build:
+      context: ./<%= serviceDirectory %>
+      target: test
+    volumes:
+      - ./.buildkite/artifacts:/var/www/html/artifacts
+
+  # Target the Gesso dependencies stage of the production build.
+  gesso:
+    build:
+      context: ./<%= serviceDirectory %>
+      target: gesso
+    volumes:
+      - ./.buildkite/artifacts:/app/artifacts
+
+volumes:
+  fs-data: null
+  mysql-data: null
+  gesso-patternlab: null
+  gesso-css: null

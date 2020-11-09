@@ -42,6 +42,8 @@ interface CreateGeneratorOptions {
  * Creates a Yeoman `Generator` subclass that installs Gesso for a specific CMS. The
  * parameters represent the various idiosyncracies - how to get to the theme, which Git
  * branch to download, etc. - that vary between systems.
+ *
+ * @todo Fix this terrible return type hack before it causes nightmares.
  */
 function createGessoGenerator({
   git,
