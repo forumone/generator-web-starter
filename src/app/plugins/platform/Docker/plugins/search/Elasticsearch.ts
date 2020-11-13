@@ -54,7 +54,7 @@ class ElasticSearch extends Generator {
         name: 'esTag',
         type: 'list',
         choices: this.esTagOptions,
-        message: 'Choose an ElasticSearch version:',
+        message: 'Choose an Elasticsearch version:',
         store: true,
       },
     ]);
@@ -108,7 +108,8 @@ class ElasticSearch extends Generator {
         cluster.name: "docker-cluster"
         network.host: 0.0.0.0
         discovery.seed_hosts : []
-        cluster.initial_master_nodes : []
+        cluster.initial_master_nodes: elasticsearch
+        node.name: elasticsearch
       `,
     );
   }
