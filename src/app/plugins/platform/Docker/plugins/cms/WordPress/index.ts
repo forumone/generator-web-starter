@@ -390,7 +390,7 @@ class WordPress extends Generator {
     const gitignoreEditor = new IgnoreEditor();
     if (this.fs.exists(wpIgnorePath)) {
       gitignoreEditor.addEntry(this.fs.read(wpIgnorePath));
-      gitignoreEditor.addSeparator();
+      Editor.addSeparator();
       gitignoreEditor.addComment('Ignore Composer credentials configuration.');
       gitignoreEditor.addEntry('auth.json');
     }
@@ -418,6 +418,19 @@ class WordPress extends Generator {
       this.destinationPath('services/wordpress/.dockerignore'),
       ignoreEditor.serialize(),
     );
+  }
+
+  private async _installGessoDependencies() {
+    if (!this.shouldInstall) {
+      return;
+    }
+
+    // Install required dependencies to avoid Gesso crashing when enabled
+    for (const dependency of gessoDrupalDependencies) {
+      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
+        cwd: this.destinationPath('services/drupal'),
+      });
+    }
   }
 }
 

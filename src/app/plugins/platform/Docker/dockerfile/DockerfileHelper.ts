@@ -325,6 +325,14 @@ class DockerfileHelper extends Dockerfile {
       });
     }
 
+    if (gessoPath !== undefined) {
+      stage.copy({
+        from: gessoDevStageName,
+        src: '/app',
+        dest: gessoPath,
+      });
+    }
+
     for (const dir of sourceDirectories) {
       stage.copy({ src: dir, dest: dir });
     }
