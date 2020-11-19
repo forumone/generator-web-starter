@@ -140,8 +140,7 @@ class DockerfileHelper extends Dockerfile {
         )
         .stage()
         .from({
-          image: gessoBuildStageName,
-          stage: gessoCleanStageName,
+          image: gessoBuildStageName,          stage: gessoCleanStageName,
         })
         .run({
           commands: [
@@ -192,13 +191,11 @@ class DockerfileHelper extends Dockerfile {
 
     for (const dir of directories) {
       stage.copy({
-        src: dir,
-        dest: dir,
+        src: dir,         dest: dir,
       });
     }
 
-    if (installRoot !== undefined) {
-      stage.run({ commands: [['mkdir', '-p', installRoot]] });
+    if (installRoot !== undefined) {      stage.run({ commands: [['mkdir', '-p', installRoot]] });
     }
 
     stage.copy({
