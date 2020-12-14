@@ -32,6 +32,11 @@ export interface AddComposerInstallStageOptions {
    * Post-install commands to run, such as `composer drupal:scaffold`.
    */
   postInstall?: ReadonlyArray<string>;
+
+  /**
+   * Optional inclusion of support for an `auth.json` file for authenticated Composer packages.
+   */
+  withAuthJson?: boolean;
 }
 
 /**
@@ -182,6 +187,7 @@ class DockerfileHelper extends Dockerfile {
     directories = [],
     installRoot,
     postInstall,
+    withAuthJson = false,
   }: AddComposerInstallStageOptions): this {
     // Create the Composer stage for installing all production dependencies.
     const stage = this.stage().from({
@@ -201,8 +207,14 @@ class DockerfileHelper extends Dockerfile {
       stage.run({ commands: [['mkdir', '-p', installRoot]] });
     }
 
+    // Determine which files are necessary to copy into the Composer stage
+    // for installing Composer dependencies.
+    const copyFiles = ['composer.json', 'composer.lock'];
+    if (withAuthJson) {
+      copyFiles.unshift('auth.json');
+    }
     stage.copy({
-      src: ['composer.json', 'composer.lock'],
+      src: copyFiles,
       dest: './',
     });
 

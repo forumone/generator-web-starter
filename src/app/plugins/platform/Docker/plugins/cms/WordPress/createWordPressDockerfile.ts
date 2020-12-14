@@ -58,6 +58,7 @@ function createWordPressDockerfile({
   if (composer) {
     dockerfile.addComposerInstallStage({
       installRoot: documentRoot,
+      withAuthJson: true,
     });
   }
   const gessoPath = gesso
