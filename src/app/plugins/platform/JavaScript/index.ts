@@ -1,5 +1,9 @@
+import { execSync } from 'child_process';
 import assert from 'assert-plus';
 import dedent from 'dedent';
+
+import os from 'os';
+
 import fs from 'fs';
 import { promisify } from 'util';
 import Generator from 'yeoman-generator';
@@ -46,13 +50,28 @@ class JavaScript extends Generator {
   }
 
   writing() {
+    const repoName = `javascript-1`;
+    const repo = `git@github.com:forumone/${repoName}.git`;
+    const path = `${os.tmpdir()}/F1-js-temp`;
+    const artifacts = `${path}/linters/base`;
+    const branch = 'f1-start-updates';
+
+    fs.rmdirSync(path, { recursive: true });
+    fs.mkdirSync(path, { recursive: true });
+
+    process.stdout.write(`Fetching linting files ...\n`);
+    execSync(`git clone --branch ${branch} ${repo} --quiet ${path}`, {
+      cwd: path,
+    });
+
+    this._copyFile(`${artifacts}/.prettierrc`, '.prettierrc');
+    this._copyFile(`${artifacts}/.eslintrc`, '.eslintrc');
+    this._copyFile(`${artifacts}/tsconfig.json`, 'tsconfig.json');
+
     this._copyFile('_editorconfig', '.editorconfig');
-    this._copyFile('_prettierrc', '.prettierrc');
-    this._copyFile('babel.config.js');
-    this._copyFile('_eslintrc.js', '.eslintrc.js');
-    this._copyFile('tsconfig.json');
-    this._copyFile('webpack.config.js');
     this._copyFile('src');
+    this._copyFile('webpack.config.js');
+    this._copyFile('babel.config.js');
     this._copyFile('gulpfile.js');
     this._copyFile('tasks');
 

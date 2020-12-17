@@ -65,7 +65,7 @@
     "@types/got": "^9.6.11",
     "@types/jest": "^24.9.1",
     "@types/make-dir": "^1.0.3",
-    "@types/node": "^10.17.30",
+    "@types/node": "^12.12.6",
     "@types/node-fetch": "^2.5.7",
     "@types/nodegit": "^0.24.13",
     "@types/require-dir": "^1.0.1",
@@ -91,7 +91,7 @@
     "typescript": "^3.3.4000"
   },
   "engines": {
-    "node": ">=8"
+    "node": ">=12"
   },
   "license": "GPL-3.0-or-later",
   "optionalDependencies": {}
