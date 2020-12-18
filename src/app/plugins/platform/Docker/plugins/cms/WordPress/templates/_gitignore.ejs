@@ -1,0 +1,41 @@
+### WP Starter
+.env
+.user.ini
+uploads.ini
+public/wp-config.php
+
+# Ignore Composer credentials configuration.
+auth.json
+
+# Composer generated files
+public/wp
+public/wp-content/vendor
+
+# Ignore WP plugins and themes by default. For custom code in one of these directories,
+# add an exception after the relevant ignore line, like so:
+# public/wp-content/plugins/*
+# !public/wp-content/plugins/<directory>
+public/wp-content/config/*
+public/wp-content/mu-plugins/*
+public/wp-content/plugins/*
+public/wp-content/themes/*
+
+# Do not ignore the theme
+!public/wp-content/themes/gesso
+
+# Ignore Wordfence logs
+public/wp-content/wflogs/
+
+# Ignore file uploads
+public/wp-content/uploads/*
+
+# Do not ignore WP-CFM files
+!public/wp-content/config/.gitkeep
+!public/wp-content/config/dev/
+!public/wp-content/config/stage/
+!public/wp-content/config/prod/
+
+##### Customize project-specific rules below this line. #####
+
+# Don't ignore plugins that can't be bundled with composer
+#!public/wp-content/plugins/<plugin-name>/

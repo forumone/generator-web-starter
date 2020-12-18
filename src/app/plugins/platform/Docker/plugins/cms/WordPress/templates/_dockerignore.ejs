@@ -1,0 +1,27 @@
+.git
+.env
+public/wp-config.php
+
+# Composer generated files
+public/wp/
+public/wp-content/vendor
+
+# Do not ignore the theme
+!public/wp-content/themes/gesso
+
+# Ignore Wordfence logs
+public/wp-content/wflogs/
+
+# Ignore file uploads
+public/wp-content/uploads/*
+
+# Do not ignore WP-CFM files
+!public/wp-content/config/.gitkeep
+!public/wp-content/config/dev/
+!public/wp-content/config/stage/
+!public/wp-content/config/prod/
+
+##### Customize project-specific rules below this line. #####
+
+# Don't ignore plugins that can't be bundled with composer
+#!public/wp-content/plugins/<plugin-name>/
