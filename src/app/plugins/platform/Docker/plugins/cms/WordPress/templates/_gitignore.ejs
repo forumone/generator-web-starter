@@ -2,40 +2,49 @@
 .env
 .user.ini
 uploads.ini
-public/wp-config.php
+<%= documentRoot %>/wp-config.php
 
 # Ignore Composer credentials configuration.
 auth.json
 
 # Composer generated files
-public/wp
-public/wp-content/vendor
+<%= documentRoot %>/wp
+<%= documentRoot %>/wp-content/vendor
 
 # Ignore WP plugins and themes by default. For custom code in one of these directories,
 # add an exception after the relevant ignore line, like so:
-# public/wp-content/plugins/*
-# !public/wp-content/plugins/<directory>
-public/wp-content/config/*
-public/wp-content/mu-plugins/*
-public/wp-content/plugins/*
-public/wp-content/themes/*
+# <%= documentRoot %>/wp-content/plugins/*
+# !<%= documentRoot %>/wp-content/plugins/<directory>
+<%= documentRoot %>/wp-content/config/*
+<%= documentRoot %>/wp-content/mu-plugins/*
+<%= documentRoot %>/wp-content/plugins/*
+<%= documentRoot %>/wp-content/themes/*
 
+<%_ if (usesGesso) { _%>
 # Do not ignore the theme
-!public/wp-content/themes/gesso
+!<%= gessoPath %>
+<%_ } _%>
 
 # Ignore Wordfence logs
-public/wp-content/wflogs/
+<%= documentRoot %>/wp-content/wflogs/
 
 # Ignore file uploads
-public/wp-content/uploads/*
+<%= documentRoot %>/wp-content/uploads/*
 
+<%_ if (usesWpCfm) { _%>
 # Do not ignore WP-CFM files
-!public/wp-content/config/.gitkeep
-!public/wp-content/config/dev/
-!public/wp-content/config/stage/
-!public/wp-content/config/prod/
+!<%= documentRoot %>/wp-content/config/.gitkeep
+!<%= documentRoot %>/wp-content/config/dev/
+!<%= documentRoot %>/wp-content/config/stage/
+!<%= documentRoot %>/wp-content/config/prod/
+<%_ } _%>
 
 ##### Customize project-specific rules below this line. #####
 
 # Don't ignore plugins that can't be bundled with composer
-#!public/wp-content/plugins/<plugin-name>/
+#!<%= documentRoot %>/wp-content/plugins/<plugin-name>/
+<% if (customRules.length) { %>
+<%_ customRules.forEach(function(rule){ _%>
+<%= rule %>
+<%_ }) _%>
+<% } %>
