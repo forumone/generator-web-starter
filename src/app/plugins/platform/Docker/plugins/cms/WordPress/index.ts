@@ -391,6 +391,7 @@ class WordPress extends Generator {
    * Render the templated gitignore file for the project.
    *
    * @todo Implement support for existing .gitignore files in projects.
+   * @todo Reconcile duplication with dockerignore file handling.
    */
   private _createGitIgnore() {
     // Customize the .gitignore file here, after everything has been installed
@@ -436,6 +437,7 @@ class WordPress extends Generator {
    * Render the templated gitignore file for the project.
    *
    * @todo Implement template rendering for existing .dockerignore files.
+   * @todo Reconcile duplication with gitignore file handling.
    */
   private _createDockerIgnore() {
     // Create the .dockerignore file here, after everything has been installed
@@ -443,17 +445,38 @@ class WordPress extends Generator {
       'services/wordpress/.dockerignore',
     );
 
-    const ignoreTemplate = this.templatePath('_dockerignore.ejs');
+    const templateVars: {
+      documentRoot: string;
+      usesGesso?: boolean;
+      gessoPath?: string;
+      usesWpCfm?: boolean;
+      customRules: Array<string>;
+    } = {
+      documentRoot: this.documentRoot,
+      usesGesso: this.usesGesso,
+      usesWpCfm: this.usesWpCfm,
+      customRules: [],
+    };
+
+    if (this.usesGesso) {
+      const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
+      templateVars.gessoPath = `${path}`;
+    }
 
     // Handle existing ignore files.
+    // @todo Implement support for maintaining existing custom rules.
     if (this.fs.exists(wpDockerIgnorePath)) {
       this.log(
-        'Editing existing .dockerignore files is not supported. See %s.',
+        'Editing existing .dockerignore files is not fully supported. Please manually review %s.',
         [wpDockerIgnorePath],
       );
-    } else {
-      this.copyTemplate(ignoreTemplate, wpDockerIgnorePath);
     }
+
+    this.renderTemplate(
+      this.templatePath('_dockerignore.ejs'),
+      wpDockerIgnorePath,
+      templateVars,
+    );
   }
 }
 
