@@ -21,6 +21,7 @@ import installDrupal, {
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import dedent from 'dedent';
+import { gessoDrupalPath } from '../../gesso/constants';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -316,16 +317,7 @@ class Drupal8 extends Generator {
       drushDockerfile.render(),
     );
 
-    const drupalDockerIgnore = new IgnoreEditor();
-    drupalDockerIgnore.addContentsOfFile({
-      heading: 'Drupal 8',
-      content: this.fs.read(this.destinationPath('services/drupal/.gitignore')),
-    });
-
-    this.fs.write(
-      this.destinationPath('services/drupal/.dockerignore'),
-      drupalDockerIgnore.serialize(),
-    );
+    this._writeDockerIgnore();
 
     this.fs.copy(
       this.templatePath('_env'),
@@ -335,6 +327,60 @@ class Drupal8 extends Generator {
     this.fs.write(
       this.destinationPath('services/drupal/config/.gitkeep'),
       configGitKeepContents,
+    );
+  }
+
+  /**
+   * Assemble multiple sources for dockerignore rules.
+   *
+   * Assemble multiple sources for dockerignore rules since nested
+   * dockerignore files are not respected.
+   *
+   * @todo Add support to help maintain existing custom rules.
+   */
+  _writeDockerIgnore() {
+    const drupalDockerIgnore = new IgnoreEditor();
+
+    // Bubble up Gesso dockerignore rules.
+    if (this.useGesso) {
+      if (
+        this.existsDestination(`services/drupal/${gessoDrupalPath}/.gitignore`)
+      ) {
+        drupalDockerIgnore.addContentsOfFile({
+          heading: 'Gesso Assets',
+          content: this.readDestination(
+            `services/drupal/${gessoDrupalPath}/.gitignore`,
+          ),
+          path: gessoDrupalPath,
+        });
+      } else {
+        this.log(
+          'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
+          `services/drupal/${gessoDrupalPath}/.gitignore`,
+        );
+      }
+    }
+
+    // Incorporate gitignore rules.
+    if (this.existsDestination('services/drupal/.gitignore')) {
+      drupalDockerIgnore.addContentsOfFile({
+        heading: 'Drupal',
+        content: this.readDestination('services/drupal/.gitignore'),
+        path: '/',
+      });
+    }
+
+    // Add Web Starter custom rules.
+    // Serialize the drupalDockerIgnore content for inclusion into the
+    // template being rendered since template content cannot be rendered
+    // to a string and appended using the IgnoreEditor solution.
+    this.renderTemplate(
+      this.templatePath('_dockerignore.ejs'),
+      this.destinationPath('services/drupal/.dockerignore'),
+      {
+        documentRoot: this.documentRoot,
+        inheritedRules: drupalDockerIgnore.serialize(),
+      },
     );
   }
 }
