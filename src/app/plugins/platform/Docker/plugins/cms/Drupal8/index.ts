@@ -25,7 +25,7 @@ import dedent from 'dedent';
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
   'drupal/twig_field_value',
-  'drupal/twig_tweak',
+  'drupal/twig_tweak:^2.9',
 ];
 
 const configGitKeepContents = dedent`
