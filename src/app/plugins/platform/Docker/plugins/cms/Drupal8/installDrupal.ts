@@ -155,12 +155,6 @@ async function installDrupal({
     case drupalProject:
       await spawnComposer(['composer', 'drupal:scaffold'], { cwd: drupalRoot });
       break;
-
-    case pantheonProject:
-      await spawnComposer(['composer', 'prepare-for-pantheon'], {
-        cwd: drupalRoot,
-      });
-      break;
   }
 }
 
