@@ -313,6 +313,13 @@ class Drupal8 extends Generator {
       this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
+
+    // Run final installation of all Composer dependencies now that all
+    // requirements have been assembled.
+    this.debug('Running final Composer installation.');
+    await spawnComposer(['install', '--ignore-platform-reqs'], {
+      cwd: this.destinationPath('services/drupal'),
+    });
   }
 
   writing() {
