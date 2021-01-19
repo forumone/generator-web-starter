@@ -301,6 +301,7 @@ class Drupal8 extends Generator {
     await this._installDrupal();
 
     if (this.useGesso) {
+      this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
   }
@@ -327,32 +328,50 @@ class Drupal8 extends Generator {
       tag: this.latestDrushTag,
     });
 
+    this.debug(
+      'Writing Drupal Dockerfile to %s.',
+      'services/drupal/Dockerfile',
+    );
     this.fs.write(
       this.destinationPath('services/drupal/Dockerfile'),
       drupalDockerfile.render(),
     );
 
+    this.debug('Writing Drush Dockerfile to %s.', 'services/drush/Dockerfile');
     this.fs.write(
       this.destinationPath('services/drush/Dockerfile'),
       drushDockerfile.render(),
     );
 
+    this.debug(
+      'Adding contents of %s to the .dockerignore file.',
+      'services/drupal/.gitignore',
+    );
     const drupalDockerIgnore = new IgnoreEditor();
     drupalDockerIgnore.addContentsOfFile({
       heading: 'Drupal 8',
       content: this.fs.read(this.destinationPath('services/drupal/.gitignore')),
     });
 
+    this.debug(
+      'Writing .dockerignore file to %s.',
+      'services/drupal/.gitignore',
+    );
     this.fs.write(
       this.destinationPath('services/drupal/.dockerignore'),
       drupalDockerIgnore.serialize(),
     );
 
+    this.debug('Copying .env template file to %s.', 'services/drupal/.env');
     this.fs.copy(
       this.templatePath('_env'),
       this.destinationPath('services/drupal/.env'),
     );
 
+    this.debug(
+      'Writing .gitkeep file to %s.',
+      'services/drupal/config/.gitkeep',
+    );
     this.fs.write(
       this.destinationPath('services/drupal/config/.gitkeep'),
       configGitKeepContents,
