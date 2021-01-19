@@ -156,27 +156,6 @@ async function installDrupal({
 
   // Inject platform configuration to the generated composer.json file.
   await injectPlatformConfig(path.join(drupalRoot, 'composer.json'));
-
-  // Make sure the lock file is up to date.
-  // await spawnComposer(['update', '--lock', '--no-install'], {
-  //   cwd: drupalRoot,
-  // });
-
-  // Perform project-specific operations.
-  // NB. We have to specify the 'composer' command explicitly, as these aren't known
-  // to the Docker entrypoint.
-  // switch (projectType) {
-  //   case drupalProject:
-  //     debug('Executing drupal:scaffold Composer command.');
-  //     await spawnComposer(['drupal:scaffold'], { cwd: drupalRoot });
-  //     break;
-
-  //   case pantheonProject:
-  //     await spawnComposer(['prepare-for-pantheon'], {
-  //       cwd: drupalRoot,
-  //     });
-  //     break;
-  // }
 }
 
 export default installDrupal;
