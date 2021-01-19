@@ -114,3 +114,13 @@ declare module 'dockerfilejs' {
     render(): string;
   }
 }
+
+declare module 'json-format' {
+  interface IndentConfig {
+    type?: 'tab' | 'space';
+    size?: number;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export default function jsonFormat(obj: any, config?: IndentConfig): string;
+}

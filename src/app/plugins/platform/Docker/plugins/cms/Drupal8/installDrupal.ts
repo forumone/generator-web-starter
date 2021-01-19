@@ -3,6 +3,7 @@ import makeDir from 'make-dir';
 import path from 'path';
 import rimraf from 'rimraf';
 import { promisify } from 'util';
+import jsonFormat from 'json-format';
 
 import spawnComposer from '../../../spawnComposer';
 
@@ -67,7 +68,11 @@ async function injectPlatformConfig(composerPath: string) {
     platform[`ext-${extension}`] = '1.0.0';
   }
 
-  await writeFile(composerPath, JSON.stringify(composer), 'utf-8');
+  await writeFile(
+    composerPath,
+    jsonFormat(composer, { type: 'space', size: 4 }),
+    'utf-8',
+  );
 }
 
 export interface InstallDrupalOptions {
