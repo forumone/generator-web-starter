@@ -287,9 +287,12 @@ class Drupal8 extends Generator {
     // @todo [WSGEN-38] Consolidate dependency installation into one call.
     for (const dependency of gessoDrupalDependencies) {
       this.debug('Adding Gesso Composer dependency: %s', dependency);
-      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
-        cwd: this.destinationPath('services/drupal'),
-      });
+      await spawnComposer(
+        ['require', dependency, '--ignore-platform-reqs', '--no-install'],
+        {
+          cwd: this.destinationPath('services/drupal'),
+        },
+      );
     }
   }
 
