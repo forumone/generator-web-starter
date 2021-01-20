@@ -67,7 +67,7 @@ async function injectPlatformConfig(composerPath: string) {
     platform[`ext-${extension}`] = '1.0.0';
   }
 
-  await writeFile(composerPath, JSON.stringify(composer), 'utf-8');
+  await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
 
 export interface InstallDrupalOptions {
