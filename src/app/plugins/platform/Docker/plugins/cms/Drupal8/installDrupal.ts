@@ -73,9 +73,8 @@ async function injectPlatformConfig(composerPath: string) {
     platform[`ext-${extension}`] = '1.0.0';
   }
 
-  // @todo [WSGEN-1] Fix JSON formatting for the written composer.json file.
   debug('Rewriting composer file %s with added platform configuration.');
-  await writeFile(composerPath, JSON.stringify(composer), 'utf-8');
+  await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
 
 export interface InstallDrupalOptions {
