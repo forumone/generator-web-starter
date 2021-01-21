@@ -35,3 +35,21 @@ npx --ignore-existing -p yo -p generator-web-starter yo web-starter
 - `npm pack` - Create a tarball for testing purposes
 - `npx -p <path to generator.tgz> -p yo -- yo web-starter`  - Execute web starter with the modifications you just made
 - Review input / output after making selections that you're testing for and ensure changes are captured
+
+## Debugging
+
+To support easier debugging, verbose logging may be enabled during execution using the [logging mechanism built into
+Yeoman](https://yeoman.io/authoring/debugging.html) by default. Logging for any specified generator may be done by
+setting various values into the `DEBUG` environment variable before execution.
+
+For all logging:
+```bash
+export DEBUG=\*
+```
+
+For more targeted debugging within a given generator or sub-generator other values may be set including:
+
+* Everything: `DEBUG=\*`
+* Yeoman generator flow: `DEBUG='yeoman:generator'`
+* Main app generator: `DEBUG='web-starter:app'`
+* All Web Starter sub-generators: `DEBUG='web-starter:*'`

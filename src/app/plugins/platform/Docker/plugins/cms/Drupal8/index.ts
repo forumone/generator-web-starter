@@ -49,6 +49,11 @@ class Drupal8 extends Generator {
       getLatestDrupal8Tag(),
       getLatestDrupal8CliTag(),
     ]);
+    this.debug(
+      'Loaded latest Drupal (%s) and Drush (%s) tags.',
+      latestDrupalTag,
+      latestDrushTag,
+    );
 
     this.latestDrupalTag = latestDrupalTag;
     this.latestDrushTag = latestDrushTag;
@@ -127,7 +132,7 @@ class Drupal8 extends Generator {
     this.useGesso = useGesso;
 
     if (useCapistrano) {
-      this.composeWith(this.options.capistrano, {
+      const capistranoOptions = {
         platform: 'drupal8',
         name: this.options.name,
         webroot: documentRoot,
@@ -139,15 +144,28 @@ class Drupal8 extends Generator {
           posix.join('services/drupal', documentRoot, 'sites/default/files'),
         ],
         linkedFiles: ['services/drupal/.env'],
-      });
+      };
+      this.debug(
+        'Composing with Capistrano generator using options: %O',
+        capistranoOptions,
+      );
+      this.composeWith(this.options.capistrano, capistranoOptions);
     }
 
     if (useGesso) {
-      this.composeWith(require.resolve('../../gesso/GessoDrupal8'), {
+      const gessoOptions = {
         documentRoot: this.documentRoot,
         composeEditor: this.options.composeEditor,
         composeCliEditor: this.options.composeCliEditor,
-      });
+      };
+      this.debug(
+        'Composing with Gesso generator using options: %O',
+        gessoOptions,
+      );
+      this.composeWith(
+        require.resolve('../../gesso/GessoDrupal8'),
+        gessoOptions,
+      );
     }
   }
 
@@ -252,6 +270,7 @@ class Drupal8 extends Generator {
       return;
     }
 
+    this.debug('Triggering Drupal installation process.');
     await installDrupal({
       documentRoot: this.documentRoot,
       projectType: this.projectType,
@@ -265,7 +284,9 @@ class Drupal8 extends Generator {
     }
 
     // Install required dependencies to avoid Gesso crashing when enabled
+    // @todo [WSGEN-38] Consolidate dependency installation into one call.
     for (const dependency of gessoDrupalDependencies) {
+      this.debug('Adding Gesso Composer dependency: %s', dependency);
       await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
         cwd: this.destinationPath('services/drupal'),
       });
@@ -280,6 +301,7 @@ class Drupal8 extends Generator {
     await this._installDrupal();
 
     if (this.useGesso) {
+      this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
   }
@@ -306,32 +328,50 @@ class Drupal8 extends Generator {
       tag: this.latestDrushTag,
     });
 
+    this.debug(
+      'Writing Drupal Dockerfile to %s.',
+      'services/drupal/Dockerfile',
+    );
     this.fs.write(
       this.destinationPath('services/drupal/Dockerfile'),
       drupalDockerfile.render(),
     );
 
+    this.debug('Writing Drush Dockerfile to %s.', 'services/drush/Dockerfile');
     this.fs.write(
       this.destinationPath('services/drush/Dockerfile'),
       drushDockerfile.render(),
     );
 
+    this.debug(
+      'Adding contents of %s to the .dockerignore file.',
+      'services/drupal/.gitignore',
+    );
     const drupalDockerIgnore = new IgnoreEditor();
     drupalDockerIgnore.addContentsOfFile({
       heading: 'Drupal 8',
       content: this.fs.read(this.destinationPath('services/drupal/.gitignore')),
     });
 
+    this.debug(
+      'Writing .dockerignore file to %s.',
+      'services/drupal/.gitignore',
+    );
     this.fs.write(
       this.destinationPath('services/drupal/.dockerignore'),
       drupalDockerIgnore.serialize(),
     );
 
+    this.debug('Copying .env template file to %s.', 'services/drupal/.env');
     this.fs.copy(
       this.templatePath('_env'),
       this.destinationPath('services/drupal/.env'),
     );
 
+    this.debug(
+      'Writing .gitkeep file to %s.',
+      'services/drupal/config/.gitkeep',
+    );
     this.fs.write(
       this.destinationPath('services/drupal/config/.gitkeep'),
       configGitKeepContents,

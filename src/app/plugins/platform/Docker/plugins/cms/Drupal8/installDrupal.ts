@@ -3,6 +3,7 @@ import makeDir from 'make-dir';
 import path from 'path';
 import rimraf from 'rimraf';
 import { promisify } from 'util';
+import createDebugger from 'debug';
 
 import spawnComposer from '../../../spawnComposer';
 
@@ -13,6 +14,11 @@ export const pantheonProject = 'pantheon-systems/example-drops-8-composer';
 export type PantheonProject = typeof pantheonProject;
 
 export type Project = PantheonProject | DrupalProject;
+
+// Define the debugging namespace to align with other debugger output.
+const debugNamespace =
+  'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installDrupal';
+const debug = createDebugger(debugNamespace);
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -67,6 +73,7 @@ async function injectPlatformConfig(composerPath: string) {
     platform[`ext-${extension}`] = '1.0.0';
   }
 
+  debug('Rewriting composer file %s with added platform configuration.');
   await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
 
@@ -96,8 +103,10 @@ async function installDrupal({
     );
   }
 
+  debug('Making service directory %s.', serviceDirectory);
   await makeDir(serviceDirectory);
 
+  debug('Executing composer create-project.');
   await spawnComposer(
     [
       'create-project',
@@ -115,6 +124,7 @@ async function installDrupal({
 
   // Rename 'web' in generated files, if we need to
   if (needsRename) {
+    debug('Replacing docroot references from %s to %s.', 'web', documentRoot);
     await Promise.all([
       replaceIn(
         path.join(drupalRoot, 'composer.json'),
@@ -153,6 +163,7 @@ async function installDrupal({
   // to the Docker entrypoint.
   switch (projectType) {
     case drupalProject:
+      debug('Executing drupal:scaffold Composer command.');
       await spawnComposer(['composer', 'drupal:scaffold'], { cwd: drupalRoot });
       break;
   }
