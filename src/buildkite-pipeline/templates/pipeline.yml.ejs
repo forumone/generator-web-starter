@@ -35,11 +35,19 @@ steps:
       # Log into ECR for this build step to access and push images.
       - *ecr
 
-      # Prebuild and upload the listed services defined in the buildkite
-      # Docker Compose configuration. In this case, the various stages
-      # of the multi-stage build for the `drupal` service are uploaded in
-      # addition to the final image.
+      # Prebuild and upload the listed services defined in the Buildkite
+      # Docker Compose configuration. In this case, both a production-ready
+      # and test image are pushed for use in later steps.
       - docker-compose#v3.4.0:
+          # Pull pre-existing images if available to leverage caches and
+          # speed up applicable portions of the image build.
+          # These images are attempted to pull in sequence up to the first
+          # success, and any failures don't prevent further build steps.
+          cache-from:
+            # Pull the test images since this should also contain the prior steps
+            # used to build the release image.
+            - test:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
+            - test:$IMAGE_REPOSITORY:latest
           build:
             - test
             - release
@@ -47,7 +55,14 @@ steps:
             - docker-compose.buildkite.yml
           upload-container-logs: "on-error"
           build-parallel: true
+          # Upload commit-specific image tags for clarity and caching support.
+          push:
+            - test:$IMAGE_REPOSITORY:latest
+            - test:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
+            - release:$IMAGE_REPOSITORY:latest
+            - release:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
 
+  # Wait for completion of the previous build steps.
   - wait: ~
 
   <%_ if (deploy.capistrano) { _%>
