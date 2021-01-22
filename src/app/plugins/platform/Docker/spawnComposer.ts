@@ -3,8 +3,13 @@ import execa, { ExecaReturns, Options } from 'execa';
 import mkdir from 'make-dir';
 import os from 'os';
 import path from 'path';
+import createDebugger from 'debug';
 
 import { composer } from './dockerfile/constants';
+
+// Define the debugging namespace to align with other debugger output.
+const debugNamespace = 'web-starter:app:plugins:platform:Docker:spawnComposer';
+const debug = createDebugger(debugNamespace);
 
 function getUserGroupOptions(): string[] {
   if (os.platform() === 'win32') {
@@ -12,6 +17,8 @@ function getUserGroupOptions(): string[] {
   }
 
   const { uid, gid } = os.userInfo();
+  const userGroupOptions = ['--user', `${uid}:${gid}`];
+  debug('Identified user group options %s.', userGroupOptions.join('='));
   return ['--user', `${uid}:${gid}`];
 }
 
@@ -50,17 +57,33 @@ async function spawnComposer(
     } catch {
       // Ignore errors; failing to create a subdirectory in the cache isn't fatal, it's
       // just slower.
+      debug('Unable to create a cache subdirectory at %s.', composerCachePath);
     }
   }
 
-  return execa(
-    'docker',
-    ['run', '--rm', '-it', ...userOptions, ...mountOptions, composer, ...args],
-    {
-      stdio: 'inherit',
-      ...execaOptions,
-    },
-  );
+  const dockerRunOptions = [
+    'run',
+    '--rm',
+    '-it',
+    ...userOptions,
+    ...mountOptions,
+    composer,
+    ...args,
+  ];
+  // Output the full docker command for debugging. This is very verbose.
+  // @todo Add execution flag support to trigger more verbose logging.
+  // debug(
+  //   'Executing Composer Docker command:\n%s',
+  //   ['docker', ...dockerRunOptions].join(' '),
+  // );
+
+  // Output the composer command being executed without all Docker options.
+  // This is much less verbose and easier to follow in logs.
+  debug('Executing Composer command:\n%s', ['composer', ...args].join(' '));
+  return execa('docker', dockerRunOptions, {
+    stdio: 'inherit',
+    ...execaOptions,
+  });
 }
 
 export default spawnComposer;

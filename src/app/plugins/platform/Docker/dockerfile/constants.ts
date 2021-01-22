@@ -1,12 +1,12 @@
 /**
  * Currently-supported Composer version.
  */
-export const composerTag = '1.9';
+export const composerTag = '2';
 
 /**
  * The name of the Composer image to use for projects.
  */
-export const composerImage = 'forumone/composer';
+export const composerImage = 'composer';
 
 /**
  * The full `<image>:<tag>` string for this image; useful for `docker run` or the `image:`

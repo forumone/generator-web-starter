@@ -69,7 +69,7 @@ function createComposerFile(name: string, documentRoot: string): ComposerFile {
   }
 
   return {
-    name,
+    name: `forumone/${name}`,
     type: 'project',
     repositories: [{ type: 'composer', url: 'https://wpackagist.org' }],
     require: {

@@ -114,6 +114,10 @@ class WordPress extends Generator {
     this.usesGesso = useGesso;
 
     if (useCapistrano) {
+      this.debug(
+        'Composing with Capistrano generator using options: %O',
+        this.options.capistrano,
+      );
       this.composeWith(this.options.capistrano, {
         platform: 'wordpress',
         name: this.options.name,
@@ -132,15 +136,27 @@ class WordPress extends Generator {
     }
 
     if (useGesso) {
-      this.composeWith(require.resolve('../../gesso/GessoWordPress'), {
+      const gessoOptions = {
         documentRoot: this.documentRoot,
         composeEditor: this.options.composeEditor,
         composeCliEditor: this.options.composeCliEditor,
-      });
+      };
+      this.debug(
+        'Composing with Gesso generator with options: %O',
+        gessoOptions,
+      );
+      this.composeWith(
+        require.resolve('../../gesso/GessoWordPress'),
+        gessoOptions,
+      );
     }
   }
 
   configuring() {
+    this.debug(
+      'Copying nginx config template to %s.',
+      'services/nginx/default.conf',
+    );
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -161,6 +177,7 @@ class WordPress extends Generator {
     //   Needed so that we can persist saved files across containers.
     const filesystemVolume = editor.ensureVolume('fs-data');
 
+    this.debug('Adding Nginx service.');
     editor.addNginxService({
       depends_on: ['wordpress'],
       volumes: [
@@ -179,7 +196,7 @@ class WordPress extends Generator {
       ],
     });
 
-    // Set up the environment variables to be read in config
+    // Set up the environment variables to be read in config.
     const initialEnvironment = {
       DB_HOST: 'mysql:3306',
       DB_NAME: 'web',
@@ -197,6 +214,7 @@ class WordPress extends Generator {
       'exec php-fpm',
     ].join('\n');
 
+    this.debug('Adding wordpress service.');
     editor.addService('wordpress', {
       build: { context: './services/wordpress', target: 'dev' },
       depends_on: ['mysql'],
@@ -216,11 +234,15 @@ class WordPress extends Generator {
       ],
     });
 
+    this.debug('Adding MySQL service.');
     editor.addMysqlService();
+
+    this.debug('Adding Mailhog service.');
     editor.addMailhogService();
 
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
 
+    this.debug('Adding wp-cli service.');
     cliEditor.addService('wp', {
       build: './services/wp-cli',
       volumes: [
@@ -234,6 +256,7 @@ class WordPress extends Generator {
     });
 
     if (this.usesWpStarter) {
+      this.debug('Adding composer cli service.');
       cliEditor.addComposer('services/wordpress');
     }
   }
@@ -242,6 +265,7 @@ class WordPress extends Generator {
     // For project not using wp-starter, don't bother writing out composer.json
     // or a .env file.
     if (this.usesWpStarter) {
+      this.debug('Rewriting services/wordpress/composer.json.');
       this.fs.extendJSON(
         this.destinationPath('services/wordpress/composer.json'),
         createComposerFile(this.options.name, this.documentRoot),
@@ -249,11 +273,13 @@ class WordPress extends Generator {
 
       const dotenvPath = this.destinationPath('services/wordpress/.env');
       if (!this.fs.exists(dotenvPath)) {
+        this.debug('Copying .env template to %s.', dotenvPath);
         this.fs.copy(this.templatePath('_env'), dotenvPath);
       }
 
       const prodEnvPath = `${dotenvPath}.production`;
       if (!this.fs.exists(prodEnvPath)) {
+        this.debug('Copying .env.production template to %s.', prodEnvPath);
         this.fs.copy(this.templatePath('_env.production'), prodEnvPath);
       }
     } else {
@@ -264,6 +290,7 @@ class WordPress extends Generator {
       );
 
       if (!this.fs.exists(wpConfigPath)) {
+        this.debug('Copying wp-config.php template to %s.', wpConfigPath);
         this.fs.copyTpl(this.templatePath('wp-config.php.ejs'), wpConfigPath, {
           hashes: await getHashes(),
         });
@@ -280,6 +307,9 @@ class WordPress extends Generator {
       composer: Boolean(this.usesWpStarter),
     });
 
+    this.debug(
+      'Writing WordPress Dockerfile to services/wordpress/Dockerfile.',
+    );
     this.fs.write(
       this.destinationPath('services/wordpress/Dockerfile'),
       wpDockerfile.render(),
@@ -290,13 +320,15 @@ class WordPress extends Generator {
       memcached: needsMemcached,
     });
 
+    this.debug('Writing wp-cli Dockerfile to services/wp-cli/Dockerfile.');
     this.fs.write(
       this.destinationPath('services/wp-cli/Dockerfile'),
       cliDockerfile.render(),
     );
 
-    // For projects NOT using the web-starter, add a wp-cli.yml file.
+    // For projects NOT using the WPStarter, add a wp-cli.yml file.
     if (!this.usesWpStarter) {
+      this.debug('Creating wp-cli.yml file since WpStarter is not being used.');
       this.fs.copyTpl(
         this.templatePath('wp-cli-nostarter.yml.ejs'),
         this.destinationPath('services/wordpress/wp-cli.yml'),
@@ -312,6 +344,7 @@ class WordPress extends Generator {
 
     if (this.usesWpStarter) {
       const wpRoot = this.destinationPath('services/wordpress');
+      this.debug('Spawning Composer install command in %s.', wpRoot);
       await spawnComposer(['install'], { cwd: wpRoot });
     } else {
       const wpRoot = this.destinationPath(
@@ -319,6 +352,7 @@ class WordPress extends Generator {
         this.documentRoot,
       );
 
+      this.debug('Installing WordPress source in %s.', wpRoot);
       await installWordPressSource(wpRoot);
     }
   }
@@ -327,18 +361,21 @@ class WordPress extends Generator {
    * Install plugin from WordPress Packagist with Composer.
    */
   private async _installWithComposer(pluginName: string) {
-    await spawnComposer(
-      ['require', `wpackagist-plugin/${pluginName}`, '--ignore-platform-reqs'],
-      {
-        cwd: this.destinationPath('services/wordpress'),
-      },
+    const packageName = `wpackagist-plugin/${pluginName}`;
+    this.debug(
+      'Spawning Composer command to install WordPress plugin %s.',
+      packageName,
     );
+    await spawnComposer(['require', packageName, '--ignore-platform-reqs'], {
+      cwd: this.destinationPath('services/wordpress'),
+    });
   }
 
   /**
    * Install plugin from WordPress plugin repo as a zip.
    */
   private async _installFromWPRepo(pluginName: string) {
+    this.debug('Installing plugin %s from repo.', pluginName);
     const endpoint = new URL('https://downloads.wordpress.org');
     endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
     const response = await fetch(String(endpoint));
@@ -358,6 +395,11 @@ class WordPress extends Generator {
       pluginName,
     );
 
+    this.debug(
+      'Decompressing downloaded plugin from %s to %s.',
+      endpoint.pathname,
+      destinationPath,
+    );
     await decompress(buffer, destinationPath, { strip: 1 });
   }
 
@@ -370,20 +412,24 @@ class WordPress extends Generator {
       ? pluginName => this._installWithComposer(pluginName)
       : pluginName => this._installFromWPRepo(pluginName);
 
-    // Install required dependencies to avoid Gesso crashing when enabled
+    // Install required dependencies to avoid Gesso crashing when enabled.
     for (const plugin of gessoWPDependencies) {
+      this.debug('Installing Gesso dependency %s.', plugin);
       await install(plugin);
     }
   }
 
   async install() {
+    this.debug('Installing WordPress.');
     await this._installWordPress();
 
     if (this.usesGesso) {
+      this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
 
     // Generate the related .gitignore and .dockerignore files.
+    this.debug('Generating ignore files.');
     this._createIgnoreFiles();
   }
 
@@ -439,6 +485,8 @@ class WordPress extends Generator {
     }
 
     // Render the ignorefile templates.
+    this.debug('Rendering .gitignore template to %s.', wpGitIgnorePath);
+    this.debug('Rendering .dockerignore template to %s.', wpDockerIgnorePath);
     this.renderTemplates(
       [
         {

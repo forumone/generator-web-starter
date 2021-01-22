@@ -1,10 +1,8 @@
-import { descending } from 'd3-array';
 import dedent from 'dedent';
 import Generator from 'yeoman-generator';
 
 import ComposeEditor, { createBindMount } from '../../ComposeEditor';
 import { AnyService } from '../../ComposeEditor/ComposeFile';
-import getImageTags from '../../registry/getImageTags';
 
 const gitKeepMessage = dedent`
   This file is used to preserve the services/elasticsearch/config directory.
@@ -31,21 +29,7 @@ class ElasticSearch extends Generator {
   private esTag!: string;
 
   async initializing() {
-    // NB. matches, e.g., "7-alpine" - we assume that for our purposes a major version tag is
-    // enough.
-    const awsTag = /^aws-(\d+)\.(\d+)$/;
-
-    const tags = await getImageTags('forumone/elasticsearch-oss');
-
-    // Filter for the versions that are supported by AWS
-    this.esTagOptions = tags
-      .map(tag => {
-        const match = awsTag.test(tag);
-
-        return match && tag;
-      })
-      .filter((tag): tag is string => tag !== false)
-      .sort(descending);
+    this.esTagOptions = ['7.9.3', '7.8.1', '7.7.1', '7.4.2', '7.1.1'];
   }
 
   async prompting() {
@@ -66,7 +50,7 @@ class ElasticSearch extends Generator {
     const editor = this.options.composeEditor as ComposeEditor;
 
     editor.addService('elasticsearch', {
-      image: `forumone/elasticsearch-oss:${this.esTag}`,
+      image: `elasticsearch:${this.esTag}`,
       ulimits: {
         memlock: {
           soft: -1,

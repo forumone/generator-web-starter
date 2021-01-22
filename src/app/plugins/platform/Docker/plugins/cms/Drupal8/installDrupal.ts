@@ -3,6 +3,7 @@ import makeDir from 'make-dir';
 import path from 'path';
 import rimraf from 'rimraf';
 import { promisify } from 'util';
+import createDebugger from 'debug';
 
 import spawnComposer from '../../../spawnComposer';
 
@@ -13,6 +14,11 @@ export const pantheonProject = 'pantheon-systems/example-drops-8-composer';
 export type PantheonProject = typeof pantheonProject;
 
 export type Project = PantheonProject | DrupalProject;
+
+// Define the debugging namespace to align with other debugger output.
+const debugNamespace =
+  'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installDrupal';
+const debug = createDebugger(debugNamespace);
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -67,7 +73,8 @@ async function injectPlatformConfig(composerPath: string) {
     platform[`ext-${extension}`] = '1.0.0';
   }
 
-  await writeFile(composerPath, JSON.stringify(composer), 'utf-8');
+  debug('Rewriting composer file %s with added platform configuration.');
+  await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
 
 export interface InstallDrupalOptions {
@@ -96,8 +103,10 @@ async function installDrupal({
     );
   }
 
+  debug('Making service directory %s.', serviceDirectory);
   await makeDir(serviceDirectory);
 
+  debug('Executing composer create-project.');
   await spawnComposer(
     [
       'create-project',
@@ -107,6 +116,7 @@ async function installDrupal({
       'dev',
       '--no-interaction',
       '--ignore-platform-reqs',
+      '--no-install',
     ],
     { cwd: serviceDirectory },
   );
@@ -115,6 +125,7 @@ async function installDrupal({
 
   // Rename 'web' in generated files, if we need to
   if (needsRename) {
+    debug('Replacing docroot references from %s to %s.', 'web', documentRoot);
     await Promise.all([
       replaceIn(
         path.join(drupalRoot, 'composer.json'),
@@ -144,24 +155,6 @@ async function installDrupal({
 
   // Inject platform configuration to the generated composer.json file.
   await injectPlatformConfig(path.join(drupalRoot, 'composer.json'));
-
-  // Make sure the lock file is up to date.
-  await spawnComposer(['update', '--lock'], { cwd: drupalRoot });
-
-  // Perform project-specific operations.
-  // NB. We have to specify the 'composer' command explicitly, as these aren't known
-  // to the Docker entrypoint.
-  switch (projectType) {
-    case drupalProject:
-      await spawnComposer(['composer', 'drupal:scaffold'], { cwd: drupalRoot });
-      break;
-
-    case pantheonProject:
-      await spawnComposer(['composer', 'prepare-for-pantheon'], {
-        cwd: drupalRoot,
-      });
-      break;
-  }
 }
 
 export default installDrupal;
