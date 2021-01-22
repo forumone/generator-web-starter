@@ -284,13 +284,22 @@ class Drupal8 extends Generator {
     }
 
     // Install required dependencies to avoid Gesso crashing when enabled
-    // @todo [WSGEN-38] Consolidate dependency installation into one call.
-    for (const dependency of gessoDrupalDependencies) {
-      this.debug('Adding Gesso Composer dependency: %s', dependency);
-      await spawnComposer(['require', dependency, '--ignore-platform-reqs'], {
+    this.debug(
+      'Adding Gesso Composer dependencies: %s',
+      gessoDrupalDependencies.join(', '),
+    );
+    await spawnComposer(
+      [
+        'require',
+        ...gessoDrupalDependencies,
+        '--ignore-platform-reqs',
+        '--no-scripts',
+        '--no-install',
+      ],
+      {
         cwd: this.destinationPath('services/drupal'),
-      });
-    }
+      },
+    );
   }
 
   // We have to run the drupal installation here because drupal-scaffold will fail if the target
@@ -304,6 +313,13 @@ class Drupal8 extends Generator {
       this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
+
+    // Run final installation of all Composer dependencies now that all
+    // requirements have been assembled.
+    this.debug('Running final Composer installation.');
+    await spawnComposer(['install', '--ignore-platform-reqs'], {
+      cwd: this.destinationPath('services/drupal'),
+    });
   }
 
   writing() {
