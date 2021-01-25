@@ -386,7 +386,7 @@ class Drupal8 extends Generator {
    *
    * @todo Add support to help maintain existing custom rules.
    */
-  _writeDockerIgnore() {
+  private _writeDockerIgnore(): void {
     const drupalDockerIgnore = new IgnoreEditor();
 
     // Bubble up Gesso dockerignore rules.
@@ -399,10 +399,10 @@ class Drupal8 extends Generator {
           `services/drupal/${gessoDrupalPath}/.gitignore`,
         );
         drupalDockerIgnore.addContentsOfFile({
-          heading: 'Gesso Assets',
           content: this.readDestination(
             `services/drupal/${gessoDrupalPath}/.gitignore`,
           ),
+          heading: 'Gesso Assets',
           path: gessoDrupalPath,
         });
       } else {
@@ -420,8 +420,8 @@ class Drupal8 extends Generator {
         'services/drupal/.gitignore',
       );
       drupalDockerIgnore.addContentsOfFile({
-        heading: 'Drupal',
         content: this.readDestination('services/drupal/.gitignore'),
+        heading: 'Drupal',
         path: '/',
       });
     }

@@ -438,7 +438,7 @@ class WordPress extends Generator {
    *
    * @todo Implement support for existing ignore files in projects.
    */
-  private _createIgnoreFiles() {
+  private _createIgnoreFiles(): void {
     // Customize the ignore files file here, after everything has been installed.
     const wpGitIgnorePath = this.destinationPath(
       'services/wordpress/.gitignore',
@@ -455,10 +455,10 @@ class WordPress extends Generator {
       usesWpCfm?: boolean;
       customRules: Array<string>;
     } = {
+      customRules: [],
       documentRoot: this.documentRoot,
       usesGesso: this.usesGesso,
       usesWpCfm: this.usesWpCfm,
-      customRules: [],
     };
 
     if (this.usesGesso) {
@@ -490,12 +490,12 @@ class WordPress extends Generator {
     this.renderTemplates(
       [
         {
-          source: this.templatePath('_gitignore.ejs'),
           destination: wpGitIgnorePath,
+          source: this.templatePath('_gitignore.ejs'),
         },
         {
-          source: this.templatePath('_dockerignore.ejs'),
           destination: wpDockerIgnorePath,
+          source: this.templatePath('_dockerignore.ejs'),
         },
       ],
       templateVars,
