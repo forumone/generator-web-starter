@@ -5,7 +5,6 @@ import decompress from 'decompress';
 import fetch from 'node-fetch';
 import { URL } from 'url';
 
-import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestWordPressCliTag from '../../../registry/getLatestWordPressCliTag';
 import getLatestWordPressTag from '../../../registry/getLatestWordPressTag';
@@ -429,48 +428,77 @@ class WordPress extends Generator {
       await this._installGessoDependencies();
     }
 
-    // Create the .dockerignore file here, after everything has been installed.
-    const wpIgnorePath = this.destinationPath('services/wordpress/.gitignore');
+    // Generate the related .gitignore and .dockerignore files.
+    this.debug('Generating ignore files.');
+    this._createIgnoreFiles();
+  }
 
-    const gitignoreEditor = new IgnoreEditor();
-    if (this.fs.exists(wpIgnorePath)) {
-      gitignoreEditor.addEntry(this.fs.read(wpIgnorePath));
-      gitignoreEditor.addSeparator();
-      gitignoreEditor.addComment('Ignore Composer credentials configuration.');
-      gitignoreEditor.addEntry('auth.json');
-    }
-
-    // Append the additional gitignore entries to the WordPress service gitignore file.
-    this.debug('Writing gitignore file to %s.', wpIgnorePath);
-    this.fs.write(
-      this.destinationPath(wpIgnorePath),
-      gitignoreEditor.serialize(),
+  /**
+   * Render the templated .gitignore and .dockerignore files for the project.
+   *
+   * @todo Implement support for existing ignore files in projects.
+   */
+  private _createIgnoreFiles(): void {
+    // Customize the ignore files file here, after everything has been installed.
+    const wpGitIgnorePath = this.destinationPath(
+      'services/wordpress/.gitignore',
     );
-
-    const ignoreEditor = new IgnoreEditor();
-    if (this.fs.exists(wpIgnorePath)) {
-      ignoreEditor.addContentsOfFile({
-        heading: 'WP Starter',
-        content: this.fs.read(wpIgnorePath),
-      });
-
-      if (this.usesGesso) {
-        const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
-        this.debug(
-          'Adding Gesso path %s as exception to .dockerignore file.',
-          path,
-        );
-        ignoreEditor.addEntry(`!${path}`);
-      }
-    }
-
-    this.debug(
-      'Writing .dockerignore file to %s.',
+    const wpDockerIgnorePath = this.destinationPath(
       'services/wordpress/.dockerignore',
     );
-    this.fs.write(
-      this.destinationPath('services/wordpress/.dockerignore'),
-      ignoreEditor.serialize(),
+
+    // Prepare template variables for the template rendering.
+    const templateVars: {
+      documentRoot: string;
+      usesGesso?: boolean;
+      gessoPath?: string;
+      usesWpCfm?: boolean;
+      customRules: Array<string>;
+    } = {
+      customRules: [],
+      documentRoot: this.documentRoot,
+      usesGesso: this.usesGesso,
+      usesWpCfm: this.usesWpCfm,
+    };
+
+    if (this.usesGesso) {
+      const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
+      templateVars.gessoPath = `${path}`;
+    }
+
+    // Warn about existing .gitignore files.
+    // @todo Implement support to maintain existing custom rules.
+    if (this.fs.exists(wpGitIgnorePath)) {
+      this.log(
+        'Editing existing .gitignore files is not fully supported. Please manually review any chages to %s.',
+        [wpGitIgnorePath],
+      );
+    }
+
+    // Warn about existing .dockerignore files.
+    // @todo Implement support to maintain existing custom rules.
+    if (this.fs.exists(wpDockerIgnorePath)) {
+      this.log(
+        'Editing existing .dockerignore files is not fully supported. Please manually review any chages to %s.',
+        [wpDockerIgnorePath],
+      );
+    }
+
+    // Render the ignorefile templates.
+    this.debug('Rendering .gitignore template to %s.', wpGitIgnorePath);
+    this.debug('Rendering .dockerignore template to %s.', wpDockerIgnorePath);
+    this.renderTemplates(
+      [
+        {
+          destination: wpGitIgnorePath,
+          source: this.templatePath('_gitignore.ejs'),
+        },
+        {
+          destination: wpDockerIgnorePath,
+          source: this.templatePath('_dockerignore.ejs'),
+        },
+      ],
+      templateVars,
     );
   }
 }

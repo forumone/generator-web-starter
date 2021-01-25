@@ -1,0 +1,50 @@
+### WP Starter
+.env
+.user.ini
+uploads.ini
+<%= documentRoot %>/wp-config.php
+
+# Ignore Composer credentials configuration.
+auth.json
+
+# Composer generated files
+<%= documentRoot %>/wp
+<%= documentRoot %>/wp-content/vendor
+
+# Ignore WP plugins and themes by default. For custom code in one of these directories,
+# add an exception after the relevant ignore line, like so:
+# <%= documentRoot %>/wp-content/plugins/*
+# !<%= documentRoot %>/wp-content/plugins/<directory>
+<%= documentRoot %>/wp-content/config/*
+<%= documentRoot %>/wp-content/mu-plugins/*
+<%= documentRoot %>/wp-content/plugins/*
+<%= documentRoot %>/wp-content/themes/*
+
+<%_ if (usesGesso) { _%>
+# Do not ignore the theme
+!<%= gessoPath %>
+<%_ } _%>
+
+# Ignore Wordfence logs
+<%= documentRoot %>/wp-content/wflogs/
+
+# Ignore file uploads
+<%= documentRoot %>/wp-content/uploads/*
+
+<%_ if (usesWpCfm) { _%>
+# Do not ignore WP-CFM files
+!<%= documentRoot %>/wp-content/config/.gitkeep
+!<%= documentRoot %>/wp-content/config/dev/
+!<%= documentRoot %>/wp-content/config/stage/
+!<%= documentRoot %>/wp-content/config/prod/
+<%_ } _%>
+
+##### Customize project-specific rules below this line. #####
+
+# Don't ignore plugins that can't be bundled with composer
+#!<%= documentRoot %>/wp-content/plugins/<plugin-name>/
+<% if (customRules.length) { %>
+<%_ customRules.forEach(function(rule){ _%>
+<%= rule %>
+<%_ }) _%>
+<% } %>

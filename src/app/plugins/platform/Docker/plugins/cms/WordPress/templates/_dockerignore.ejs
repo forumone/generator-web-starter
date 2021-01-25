@@ -1,0 +1,34 @@
+.git
+
+# Composer generated files
+<%= documentRoot %>/wp/
+<%= documentRoot %>/wp-content/vendor
+
+<%_ if (usesGesso) { _%>
+# Do not ignore the theme
+!<%= gessoPath %>
+<%_ } _%>
+
+# Ignore Wordfence logs
+<%= documentRoot %>/wp-content/wflogs/
+
+# Ignore file uploads
+<%= documentRoot %>/wp-content/uploads/*
+
+<%_ if (usesWpCfm) { _%>
+# Do not ignore WP-CFM files
+!<%= documentRoot %>/wp-content/config/.gitkeep
+!<%= documentRoot %>/wp-content/config/dev/
+!<%= documentRoot %>/wp-content/config/stage/
+!<%= documentRoot %>/wp-content/config/prod/
+<%_ } _%>
+
+##### Customize project-specific rules below this line. #####
+
+# Don't ignore plugins that can't be bundled with composer
+#!<%= documentRoot %>/wp-content/plugins/<plugin-name>/
+<% if (customRules.length) { %>
+<%_ customRules.forEach(function(rule){ _%>
+<%= rule %>
+<%_ }) _%>
+<% } %>
