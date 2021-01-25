@@ -1,6 +1,6 @@
 {
   "name": "generator-web-starter",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "A generator for Yeoman",
   "keywords": [
     "yeoman-generator"
