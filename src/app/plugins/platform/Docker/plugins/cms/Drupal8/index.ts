@@ -21,6 +21,7 @@ import { gessoDrupalPath } from '../../gesso/constants';
 import { injectPlatformConfig, renameWebRoot } from './installUtils';
 import { promptOrUninteractive } from '../../../../../../../util';
 import { outputFormat as format } from '../../../../../../../util';
+import PostInstallPantheon from './postInstallPantheon';
 
 const mkdir = promisify(fs.mkdir);
 
@@ -427,6 +428,14 @@ class Drupal8 extends Generator {
     if (this.useGesso) {
       this.debug(format.info('Installing Gesso dependencies.'));
       await this._installGessoDependencies();
+    }
+
+    if (this.projectType === 'pantheon-systems/example-drops-8-composer') {
+      this.debug(
+        'Executing post-installation customization for Pantheon projects.',
+      );
+      const postInstall = new PostInstallPantheon(this);
+      await postInstall.customizePantheonInstall();
     }
   }
 
