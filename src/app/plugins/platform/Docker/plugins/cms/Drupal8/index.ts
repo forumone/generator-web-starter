@@ -22,6 +22,7 @@ import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import dedent from 'dedent';
 import { gessoDrupalPath } from '../../gesso/constants';
+import PostInstallPantheon from './postInstallPantheon';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -313,6 +314,14 @@ class Drupal8 extends Generator {
     if (this.useGesso) {
       this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
+    }
+
+    if (this.projectType === 'pantheon-systems/example-drops-8-composer') {
+      this.debug(
+        'Executing post-installation customization for Pantheon projects.',
+      );
+      const postInstall = new PostInstallPantheon(this);
+      await postInstall.customizePantheonInstall();
     }
 
     // Run final installation of all Composer dependencies now that all
