@@ -103,7 +103,6 @@ class Drupal8 extends Generator {
 
           return !this.fs.exists(targetPath);
         },
-        when: !this.options.skipInstall,
       },
       {
         type: 'list',
