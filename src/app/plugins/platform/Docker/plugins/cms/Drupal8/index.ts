@@ -109,6 +109,7 @@ class Drupal8 extends Generator {
         type: 'list',
         name: 'drupalProjectType',
         message: 'Select project type to install:',
+        store: true,
         // NB. `as' casts below needed to dodge a deficiency in the Inquirer types
         // (they don't know about the 'choice' property)
         choices: [
