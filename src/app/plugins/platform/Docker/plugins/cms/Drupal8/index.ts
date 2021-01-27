@@ -315,12 +315,18 @@ class Drupal8 extends Generator {
       await this._installGessoDependencies();
     }
 
-    // Run final installation of all Composer dependencies now that all
-    // requirements have been assembled.
-    this.debug('Running final Composer installation.');
-    await spawnComposer(['install', '--ignore-platform-reqs'], {
-      cwd: this.destinationPath('services/drupal'),
-    });
+    if (!this.options.skipInstall) {
+      // Run final installation of all Composer dependencies now that all
+      // requirements have been assembled.
+      this.debug('Running final Composer installation.');
+      await spawnComposer(['install', '--ignore-platform-reqs'], {
+        cwd: this.destinationPath('services/drupal'),
+      });
+    } else {
+      this.debug(
+        'Skipping final Composer installation due to `--skip-install` option.',
+      );
+    }
   }
 
   writing() {
