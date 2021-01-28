@@ -44,10 +44,10 @@ steps:
           # These images are attempted to pull in sequence up to the first
           # success, and any failures don't prevent further build steps.
           cache-from:
-            # Pull the test images since this should also contain the prior steps
-            # used to build the release image.
+            - release:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
+            - release:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-latest
             - test:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
-            - test:$IMAGE_REPOSITORY:latest
+            - test:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-latest
           build:
             - test
             - release
@@ -57,9 +57,9 @@ steps:
           build-parallel: true
           # Upload commit-specific image tags for clarity and caching support.
           push:
-            - test:$IMAGE_REPOSITORY:latest
+            - test:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-latest
             - test:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
-            - release:$IMAGE_REPOSITORY:latest
+            - release:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-latest
             - release:$IMAGE_REPOSITORY:$BUILDKITE_PIPELINE_SLUG-$BUILDKITE_COMMIT
 
   # Wait for completion of the previous build steps.
