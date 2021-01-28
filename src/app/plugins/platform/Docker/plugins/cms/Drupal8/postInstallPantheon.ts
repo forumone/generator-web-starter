@@ -1,6 +1,7 @@
 import Drupal8 from '.';
 import createDebugger from 'debug';
 import spawnComposer from '../../../spawnComposer';
+import rimraf from 'rimraf';
 
 class PostInstallPantheon {
   private namespace =
@@ -19,16 +20,16 @@ class PostInstallPantheon {
    */
   public async customizePantheonInstall(): Promise<void> {
     this.debug(
-      'Remove extraneous files from the project template in %s.',
-      this.serviceDirectory,
-    );
-    this.removeExtraneousFiles();
-
-    this.debug(
       'Adding additional Composer dependencies in %s.',
       this.serviceDirectory,
     );
     await this.addComposerDependencies();
+
+    this.debug(
+      'Removing extraneous files from the project template in %s.',
+      this.serviceDirectory,
+    );
+    await this.removeExtraneousFiles();
   }
 
   /**
@@ -38,9 +39,7 @@ class PostInstallPantheon {
    * automation that Forum One doesn't use. To keep the repository content more
    * targeted, these files may be removed.
    */
-  private removeExtraneousFiles(): void {
-    const generator = this.generator;
-
+  private async removeExtraneousFiles(): Promise<void> {
     // Files relative to the Drupal directory to be removed.
     const filesToRemove = [
       'scripts/github',
@@ -53,12 +52,22 @@ class PostInstallPantheon {
     ];
 
     // Remove each file from the destination if it exists.
-    for (const file of filesToRemove) {
-      const filePath = `${this.serviceDirectory}/${file}`;
-      if (generator.existsDestination(filePath)) {
-        this.debug('Removing extra Pantheon file %s.', filePath);
-        generator.deleteDestination(filePath);
-      }
+    // nb. The files have to be removed directly from the filesystem instead of
+    //   using the mem-fs management commands provided by the generator since
+    //   the Composer command is creating them as raw files and any changes to them
+    //   in mem-fs results in conflicts to be resolved when the generator attempts
+    //   to apply the changes.
+    //   Since the `composer create-project` command runs outside of the scope of
+    //   the mem-fs store after it's created, the store is unaware they exist and
+    //   only marks them as deleted files which results in conflics on file commit.
+    for (const filePath of filesToRemove) {
+      const relativePath = `${this.serviceDirectory}/${filePath}`;
+
+      await rimraf(this.generator.destinationPath(relativePath), err => {
+        if (err !== null) {
+          throw err;
+        }
+      });
     }
   }
 
