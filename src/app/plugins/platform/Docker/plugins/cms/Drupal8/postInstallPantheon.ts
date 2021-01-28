@@ -2,6 +2,10 @@ import Drupal8 from '.';
 import createDebugger from 'debug';
 import spawnComposer from '../../../spawnComposer';
 import rimraf from 'rimraf';
+import deepmerge from 'deepmerge';
+import { JSONSchema7Array } from 'json-schema';
+import fs from 'fs';
+import { promisify } from 'util';
 
 class PostInstallPantheon {
   private namespace =
@@ -115,7 +119,39 @@ class PostInstallPantheon {
       generator.destinationPath(loadFilePath),
     );
 
-    // TODO: Add `composer.json` autoload configuration.
+    // Add `composer.json` autoload configuration.
+    const composerJsonPath = `${this.serviceDirectory}/composer.json`;
+    const composerJson = generator.readDestinationJSON(
+      composerJsonPath,
+    ) as JSONSchema7Array;
+
+    // Abort if we couldn't parse composer.json as expected.
+    if (typeof composerJson !== 'object') {
+      throw `Unable to parse ${composerJsonPath}.`;
+    }
+
+    // Merge in our new config for the complete composer.json contents.
+    const newConfig = { autoload: { files: ['load.environment.php'] } };
+    const mergedConfig = deepmerge(composerJson, newConfig);
+
+    // Rewrite the Composer file with added configuration.
+    // nb. We need to write the file directly since at this point
+    //   mem-fs doesn't have the composer.json file loaded into memory,
+    //   so if we attempt to edit it using those utilities the current
+    //   state is read as the original content and the changes we add
+    //   now later have to be resolved incorrectly and unintuitively
+    //   as conflicts.
+    this.debug(
+      'Adding Composer .env autoload configuration to %s: %o.',
+      composerJsonPath,
+      newConfig,
+    );
+    await promisify(fs.writeFile)(
+      generator.destinationPath(composerJsonPath),
+      JSON.stringify(mergedConfig, null, 4),
+      'utf-8',
+    );
+  }
 }
 
 export default PostInstallPantheon;
