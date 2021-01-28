@@ -33,6 +33,7 @@
     "debug": "^4.3.1",
     "decompress": "~4.2.1",
     "dedent": "~0.7.0",
+    "deepmerge": "^4.2.2",
     "dockerfilejs": "^1.2.1",
     "env-paths": "~2.0.0",
     "globby": "~8.0.2",
