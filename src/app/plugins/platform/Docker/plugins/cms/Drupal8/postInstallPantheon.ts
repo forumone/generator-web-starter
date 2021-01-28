@@ -25,6 +25,9 @@ class PostInstallPantheon {
     );
     await this.addComposerDependencies();
 
+    this.debug('Configuring .env file support.');
+    await this.addEnvSupport();
+
     this.debug(
       'Removing extraneous files from the project template in %s.',
       this.serviceDirectory,
@@ -97,6 +100,22 @@ class PostInstallPantheon {
       },
     );
   }
+
+  /**
+   * Add necessary configuration to support .env file usage.
+   */
+  private async addEnvSupport(): Promise<void> {
+    const generator = this.generator;
+
+    // Add the `load.environment.php` file.
+    const loadFilePath = `${this.serviceDirectory}/load.environment.php`;
+    this.debug('Copying load.environment.php template to %s.', loadFilePath);
+    this.generator.copyTemplate(
+      generator.templatePath('load.environment.php'),
+      generator.destinationPath(loadFilePath),
+    );
+
+    // TODO: Add `composer.json` autoload configuration.
 }
 
 export default PostInstallPantheon;
