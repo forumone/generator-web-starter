@@ -71,6 +71,10 @@ class WebStarter extends Generator {
       '.vscode',
     ]);
 
+    // Ignore secret files at the top-level to prevent them from
+    // being committed for all projects.
+    editor.addSection('Secret files', ['.env', 'auth.json']);
+
     editor.addSection('OS files', ['.DS_Store', 'Thumbs.db']);
 
     editor.addSection('Node/NPM', ['node_modules']);
