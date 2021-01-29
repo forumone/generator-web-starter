@@ -20,53 +20,57 @@ class CapStage extends Generator {
 
     assert.object(stages, 'config.stages');
 
-    while (true) {
-      const { stage } = await this.prompt([
-        {
-          type: 'input',
-          name: 'stage',
-          message: 'Name of stage (blank to finish):',
-          validate: value => value === '' || validFilename(value),
-        },
-      ]);
+    if (!this.options.uninteractive) {
+      this.debug('Interactively prompting for stage configuration.');
+      while (true) {
+        const { stage } = await this.prompt([
+          {
+            type: 'input',
+            name: 'stage',
+            message: 'Name of stage (blank to finish):',
+            validate: value => value === '' || validFilename(value),
+          },
+        ]);
 
-      if (!stage) {
-        break;
+        if (!stage) {
+          break;
+        }
+
+        const values = await this.prompt([
+          {
+            type: 'input',
+            name: 'url',
+            message: 'Site URL:',
+            validate: value => value !== '',
+          },
+          {
+            type: 'input',
+            name: 'deployPath',
+            message: 'Path to deploy to on the server:',
+            default: posix.join('/var/www/vhosts', `${projectName}.${stage}`),
+            validate: value => value !== '',
+          },
+          {
+            type: 'input',
+            name: 'branch',
+            message: 'Git branch to deploy:',
+            default: 'master',
+            validate: value => value !== '',
+          },
+          {
+            type: 'input',
+            name: 'role',
+            message: 'Role name (user@host):',
+            validate: value => value !== '',
+          },
+        ]);
+
+        stages[stage] = values as StageDefinition;
       }
-
-      const values = await this.prompt([
-        {
-          type: 'input',
-          name: 'url',
-          message: 'Site URL:',
-          validate: value => value !== '',
-        },
-        {
-          type: 'input',
-          name: 'deployPath',
-          message: 'Path to deploy to on the server:',
-          default: posix.join('/var/www/vhosts', `${projectName}.${stage}`),
-          validate: value => value !== '',
-        },
-        {
-          type: 'input',
-          name: 'branch',
-          message: 'Git branch to deploy:',
-          default: 'master',
-          validate: value => value !== '',
-        },
-        {
-          type: 'input',
-          name: 'role',
-          message: 'Role name (user@host):',
-          validate: value => value !== '',
-        },
-      ]);
-
-      stages[stage] = values as StageDefinition;
+      this.config.set('stages', stages);
+    } else {
+      this.debug('Assuming uninteractive stage configuration:\n%O');
     }
-
-    this.config.set('stages', stages);
   }
 
   writing() {

@@ -20,6 +20,7 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
+import { promptOrUninteractive } from '../../../../../../../util';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
@@ -56,7 +57,7 @@ class WordPress extends Generator {
       shouldInstallWordPress,
       useGesso,
       useCapistrano,
-    } = await this.prompt([
+    } = await this._promptOrUninteractive([
       {
         type: 'input',
         name: 'documentRoot',
@@ -114,15 +115,12 @@ class WordPress extends Generator {
     this.usesGesso = useGesso;
 
     if (useCapistrano) {
-      this.debug(
-        'Composing with Capistrano generator using options: %O',
-        this.options.capistrano,
-      );
-      this.composeWith(this.options.capistrano, {
+      const capistranoOptions = {
         platform: 'wordpress',
         name: this.options.name,
         appWebroot: posix.join('services/wordpress', documentRoot),
         webroot: documentRoot,
+        uninteractive: this.options.uninteractive,
         config: {
           wordpress_wpcfm: Boolean(this.usesWpCfm),
         },
@@ -132,7 +130,12 @@ class WordPress extends Generator {
           `services/wordpress/${documentRoot}/wp-content/wflogs`,
         ],
         linkedFiles: wpStarter ? ['services/wordpress/.env'] : [],
-      });
+      };
+      this.debug(
+        'Composing with Capistrano generator using options: %O',
+        capistranoOptions,
+      );
+      this.composeWith(this.options.capistrano, capistranoOptions);
     }
 
     if (useGesso) {
@@ -140,6 +143,7 @@ class WordPress extends Generator {
         documentRoot: this.documentRoot,
         composeEditor: this.options.composeEditor,
         composeCliEditor: this.options.composeCliEditor,
+        uninteractive: this.options.uninteractive,
       };
       this.debug(
         'Composing with Gesso generator with options: %O',
@@ -499,6 +503,19 @@ class WordPress extends Generator {
         },
       ],
       templateVars,
+    );
+  }
+
+  /**
+   * Shortcut the promptOrUninteractive call with prefilled arguments.
+   *
+   * @param prompts
+   */
+  private async _promptOrUninteractive(prompts: Generator.Questions) {
+    return await promptOrUninteractive(
+      prompts,
+      this.options.uninteractive,
+      this,
     );
   }
 }

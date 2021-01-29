@@ -22,6 +22,7 @@ import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import dedent from 'dedent';
 import { gessoDrupalPath } from '../../gesso/constants';
+import { promptOrUninteractive } from '../../../../../../../util';
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -67,7 +68,7 @@ class Drupal8 extends Generator {
       useGesso,
       shouldInstallDrupal,
       drupalProjectType,
-    } = await this.prompt([
+    } = await this._promptOrUninteractive([
       {
         type: 'input',
         name: 'documentRoot',
@@ -145,6 +146,7 @@ class Drupal8 extends Generator {
           posix.join('services/drupal', documentRoot, 'sites/default/files'),
         ],
         linkedFiles: ['services/drupal/.env'],
+        uninteractive: this.options.uninteractive,
       };
       this.debug(
         'Composing with Capistrano generator using options: %O',
@@ -158,6 +160,7 @@ class Drupal8 extends Generator {
         documentRoot: this.documentRoot,
         composeEditor: this.options.composeEditor,
         composeCliEditor: this.options.composeCliEditor,
+        uninteractive: this.options.uninteractive,
       };
       this.debug(
         'Composing with Gesso generator using options: %O',
@@ -447,6 +450,19 @@ class Drupal8 extends Generator {
         documentRoot: this.documentRoot,
         inheritedRules: drupalDockerIgnore.serialize(),
       },
+    );
+  }
+
+  /**
+   * Shortcut the promptOrUninteractive call with prefilled arguments.
+   *
+   * @param prompts
+   */
+  private async _promptOrUninteractive(prompts: Generator.Questions) {
+    return await promptOrUninteractive(
+      prompts,
+      this.options.uninteractive,
+      this,
     );
   }
 }
