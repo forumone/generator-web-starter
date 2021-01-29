@@ -481,13 +481,30 @@ class Drupal8 extends Generator {
 
     this._writeDockerIgnore();
 
+    // Create the default .env file if one doesn't already exist. Skip overwriting
+    // it if one already exists to avoid deleting any data in an unversioned file.
+    if (!this.existsDestination('services/drupal/.env')) {
+      this.debug('Copying .env template file to %s.', 'services/drupal/.env');
+      this.fs.copy(
+        this.templatePath('_env'),
+        this.destinationPath('services/drupal/.env'),
+      );
+    } else {
+      this.debug(
+        'Skipping creating %s file to prevent overwriting the existing file.',
+        'services/drupal/.env',
+      );
+    }
+
+    // Create or update the existing .env.example file to demonstrate all
+    // relevant configuration in a versioned file.
     this.debug(
-      format.debug('Copying .env template file to %s.'),
-      'services/drupal/.env',
+      'Copying .env template file to %s.',
+      'services/drupal/.env.example',
     );
     this.fs.copy(
       this.templatePath('_env'),
-      this.destinationPath('services/drupal/.env'),
+      this.destinationPath('services/drupal/.env.example'),
     );
 
     this.debug(
