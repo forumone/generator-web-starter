@@ -1,6 +1,7 @@
 import assert from 'assert-plus';
 import { posix } from 'path';
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../../../../util';
 
 import ComposeEditor, {
   createBindMount,
@@ -71,12 +72,13 @@ function createGessoGenerator({
       assert.string(options.documentRoot, 'options.documentRoot');
       assert.object(options.composeEditor, 'options.composeEditor');
       assert.object(options.composeCliEditor, 'options.composeCliEditor');
+      assert.bool(options.uninteractive, 'options.uninteractive');
 
       this.documentRoot = options.documentRoot;
     }
 
     async prompting() {
-      const { gessoShouldInstall } = await this.prompt([
+      const { gessoShouldInstall } = await this._promptOrUninteractive([
         {
           type: 'confirm',
           name: 'gessoShouldInstall',
@@ -188,6 +190,19 @@ function createGessoGenerator({
       if (installPhase === 'install') {
         return this._installGesso();
       }
+    }
+
+    /**
+     * Shortcut the promptOrUninteractive call with prefilled arguments.
+     *
+     * @param prompts
+     */
+    private async _promptOrUninteractive(prompts: Generator.Questions) {
+      return await promptOrUninteractive(
+        prompts,
+        this.options.uninteractive,
+        this,
+      );
     }
   }
 
