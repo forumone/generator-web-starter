@@ -68,7 +68,7 @@ class Drupal8 extends Generator {
       useGesso,
       shouldInstallDrupal,
       drupalProjectType,
-    } = await this._promptOrUninteractive([
+    } = await promptOrUninteractive.call(this, [
       {
         type: 'input',
         name: 'documentRoot',
@@ -450,19 +450,6 @@ class Drupal8 extends Generator {
         documentRoot: this.documentRoot,
         inheritedRules: drupalDockerIgnore.serialize(),
       },
-    );
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
     );
   }
 }

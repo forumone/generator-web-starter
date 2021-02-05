@@ -61,7 +61,7 @@ class Docker extends Generator {
       [cmsAnswerKey]: cmsType,
       [searchAnswerKey]: searchType,
       [cacheAnswerKey]: cacheType,
-    } = await this._promptOrUninteractive([
+    } = await promptOrUninteractive.call(this, [
       {
         type: 'list',
         name: cmsAnswerKey,
@@ -151,19 +151,6 @@ class Docker extends Generator {
         new ComposeEditor({ intro: overrideIntro }).serialize(),
       );
     }
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
-    );
   }
 }
 

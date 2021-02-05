@@ -27,7 +27,7 @@ class Redis extends Generator {
   }
 
   async prompting() {
-    const { redisTag } = await this._promptOrUninteractive([
+    const { redisTag } = await promptOrUninteractive.call(this, [
       {
         name: 'redisTag',
         type: 'list',
@@ -52,19 +52,6 @@ class Redis extends Generator {
       image,
       entrypoint: ['redis-cli', '-h', 'redis'],
     });
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
-    );
   }
 }
 

@@ -57,7 +57,7 @@ class WordPress extends Generator {
       shouldInstallWordPress,
       useGesso,
       useCapistrano,
-    } = await this._promptOrUninteractive([
+    } = await promptOrUninteractive.call(this, [
       {
         type: 'input',
         name: 'documentRoot',
@@ -503,19 +503,6 @@ class WordPress extends Generator {
         },
       ],
       templateVars,
-    );
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
     );
   }
 }

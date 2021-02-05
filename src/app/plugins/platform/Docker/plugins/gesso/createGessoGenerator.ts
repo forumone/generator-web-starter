@@ -78,7 +78,7 @@ function createGessoGenerator({
     }
 
     async prompting() {
-      const { gessoShouldInstall } = await this._promptOrUninteractive([
+      const { gessoShouldInstall } = await promptOrUninteractive.call(this, [
         {
           type: 'confirm',
           name: 'gessoShouldInstall',
@@ -190,19 +190,6 @@ function createGessoGenerator({
       if (installPhase === 'install') {
         return this._installGesso();
       }
-    }
-
-    /**
-     * Shortcut the promptOrUninteractive call with prefilled arguments.
-     *
-     * @param prompts
-     */
-    private async _promptOrUninteractive(prompts: Generator.Questions) {
-      return await promptOrUninteractive(
-        prompts,
-        this.options.uninteractive,
-        this,
-      );
     }
   }
 

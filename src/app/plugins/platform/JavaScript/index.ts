@@ -18,7 +18,7 @@ class JavaScript extends Generator {
   }
 
   async prompting() {
-    const { useCapistrano } = await this._promptOrUninteractive([
+    const { useCapistrano } = await promptOrUninteractive.call(this, [
       {
         type: 'confirm',
         name: 'useCapistrano',
@@ -173,19 +173,6 @@ class JavaScript extends Generator {
 
     this._installToolchain();
     this._installDependencies();
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
-    );
   }
 }
 

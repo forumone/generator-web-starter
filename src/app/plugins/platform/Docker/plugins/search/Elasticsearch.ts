@@ -34,7 +34,7 @@ class ElasticSearch extends Generator {
   }
 
   async prompting() {
-    const { esTag } = await this._promptOrUninteractive([
+    const { esTag } = await promptOrUninteractive.call(this, [
       {
         name: 'esTag',
         type: 'list',
@@ -96,19 +96,6 @@ class ElasticSearch extends Generator {
         cluster.initial_master_nodes: elasticsearch
         node.name: elasticsearch
       `,
-    );
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
     );
   }
 }
