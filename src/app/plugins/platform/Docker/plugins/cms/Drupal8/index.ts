@@ -274,7 +274,7 @@ class Drupal8 extends Generator {
   /**
    * Complete scaffolding and customization steps for the Drupal service directory.
    */
-  private async _scaffoldDrupal() {
+  private async _scaffoldDrupal(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -348,7 +348,7 @@ class Drupal8 extends Generator {
   /**
    * Install additional dependencies to support Gesso.
    */
-  private async _installGessoDependencies() {
+  private async _installGessoDependencies(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -440,7 +440,7 @@ class Drupal8 extends Generator {
     );
   }
 
-  public async install() {
+  async install(): Promise<void> {
     if (!this.options.skipInstall) {
       // Run final installation of all Composer dependencies now that all
       // requirements have been assembled.

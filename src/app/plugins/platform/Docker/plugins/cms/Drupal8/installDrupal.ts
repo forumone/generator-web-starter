@@ -59,7 +59,9 @@ export async function renameWebRoot(
  *
  * @param composerPath Path to `composer.json`
  */
-export async function injectPlatformConfig(composerPath: string) {
+export async function injectPlatformConfig(
+  composerPath: string,
+): Promise<void> {
   const composer = JSON.parse(await readFile(composerPath, 'utf-8'));
 
   // Ensure that composer.config.platform is defined before we write to it
