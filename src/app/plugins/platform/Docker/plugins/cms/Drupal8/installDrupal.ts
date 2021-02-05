@@ -34,6 +34,34 @@ async function replaceIn(
 }
 
 /**
+ * Apply replacements to rename the web root in generated files.
+ */
+export async function renameWebRoot(
+  documentRoot: string,
+  drupalRoot: string,
+): Promise<void> {
+  debug('Replacing docroot references from %s to %s.', 'web', documentRoot);
+  await Promise.all([
+    replaceIn(
+      path.join(drupalRoot, 'composer.json'),
+      /web\//g,
+      `${documentRoot}/`,
+    ),
+    replaceIn(
+      path.join(drupalRoot, '.gitignore'),
+      /web\//g,
+      `${documentRoot}/`,
+    ),
+    replaceIn(
+      path.join(drupalRoot, 'scripts/composer/ScriptHandler.php'),
+      /\/web/g,
+      `/${documentRoot}`,
+    ),
+    replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
+  ]);
+}
+
+/**
  * Updates a Composer file to include Drupal's extension requirements. Since we always
  * run Composer in a container separate from our Drupal site, doing this allows us to
  * document which extensions are installed without having to install Composer into the
@@ -44,7 +72,7 @@ async function replaceIn(
  *
  * @param composerPath Path to `composer.json`
  */
-async function injectPlatformConfig(composerPath: string) {
+export async function injectPlatformConfig(composerPath: string) {
   const composer = JSON.parse(await readFile(composerPath, 'utf-8'));
 
   // Ensure that composer.config.platform is defined before we write to it
@@ -125,25 +153,7 @@ async function installDrupal({
 
   // Rename 'web' in generated files, if we need to
   if (needsRename) {
-    debug('Replacing docroot references from %s to %s.', 'web', documentRoot);
-    await Promise.all([
-      replaceIn(
-        path.join(drupalRoot, 'composer.json'),
-        /web\//g,
-        `${documentRoot}/`,
-      ),
-      replaceIn(
-        path.join(drupalRoot, '.gitignore'),
-        /web\//g,
-        `${documentRoot}/`,
-      ),
-      replaceIn(
-        path.join(drupalRoot, 'scripts/composer/ScriptHandler.php'),
-        /\/web/g,
-        `/${documentRoot}`,
-      ),
-      replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
-    ]);
+    await renameWebRoot(documentRoot, drupalRoot);
   }
 
   // Composer create-project now "helpfully" installs the web/ directory for us, which
