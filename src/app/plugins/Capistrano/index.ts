@@ -1,4 +1,5 @@
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../util';
 
 class Capistrano extends Generator {
   private deployMethod!: string;
@@ -10,7 +11,7 @@ class Capistrano extends Generator {
   }
 
   async configuring() {
-    const answers = await this.prompt([
+    const answers = await promptOrUninteractive.call(this, [
       {
         type: 'list',
         name: 'capistranoDeployMethod',
