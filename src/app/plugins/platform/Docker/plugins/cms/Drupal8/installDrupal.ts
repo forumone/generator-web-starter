@@ -1,5 +1,4 @@
 import fs from 'fs';
-import makeDir from 'make-dir';
 import path from 'path';
 import rimraf from 'rimraf';
 import { promisify } from 'util';
@@ -130,9 +129,6 @@ async function installDrupal({
       `Pantheon projects do not support '${documentRoot}' as the document root.`,
     );
   }
-
-  debug('Making service directory %s.', serviceDirectory);
-  await makeDir(serviceDirectory);
 
   debug('Executing composer create-project.');
   await spawnComposer(
