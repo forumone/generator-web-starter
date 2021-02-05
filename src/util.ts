@@ -20,7 +20,7 @@ export async function promptOrUninteractive(
 
   if (!this.options.uninteractive) {
     this.debug('Interactively prompting for options.');
-    answers = await this.prompt(prompts);
+    answers = this.prompt(prompts);
   } else {
     const config = this.config.get('promptValues');
 
