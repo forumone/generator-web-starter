@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import rimraf from 'rimraf';
 import { promisify } from 'util';
 import createDebugger from 'debug';
 
@@ -21,7 +20,6 @@ const debug = createDebugger(debugNamespace);
 
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
-const rimrafAsync = promisify(rimraf);
 
 async function replaceIn(
   path: string,
@@ -150,13 +148,6 @@ async function installDrupal({
   // Rename 'web' in generated files, if we need to
   if (needsRename) {
     await renameWebRoot(documentRoot, drupalRoot);
-  }
-
-  // Composer create-project now "helpfully" installs the web/ directory for us, which
-  // we don't want when it isn't the document root.
-  if (needsRename) {
-    const webRoot = path.join(drupalRoot, 'web');
-    await rimrafAsync(webRoot);
   }
 
   // Inject platform configuration to the generated composer.json file.
