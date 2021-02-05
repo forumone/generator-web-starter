@@ -1,5 +1,6 @@
 import dedent from 'dedent';
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../../../../util';
 
 import ComposeEditor, { createBindMount } from '../../ComposeEditor';
 import { AnyService } from '../../ComposeEditor/ComposeFile';
@@ -33,7 +34,7 @@ class ElasticSearch extends Generator {
   }
 
   async prompting() {
-    const { esTag } = await this.prompt([
+    const { esTag } = await this._promptOrUninteractive([
       {
         name: 'esTag',
         type: 'list',
@@ -95,6 +96,19 @@ class ElasticSearch extends Generator {
         cluster.initial_master_nodes: elasticsearch
         node.name: elasticsearch
       `,
+    );
+  }
+
+  /**
+   * Shortcut the promptOrUninteractive call with prefilled arguments.
+   *
+   * @param prompts
+   */
+  private async _promptOrUninteractive(prompts: Generator.Questions) {
+    return await promptOrUninteractive(
+      prompts,
+      this.options.uninteractive,
+      this,
     );
   }
 }
