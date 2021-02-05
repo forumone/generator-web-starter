@@ -53,8 +53,8 @@ class BuildkitePipeline extends ManifestAwareGenerator {
 
     this.option('uninteractive', {
       type: Boolean,
-      description: 'Prevent all prompts and use saved answers.',
       default: false,
+      description: 'Prevent all prompts and use saved answers.',
     });
   }
 
