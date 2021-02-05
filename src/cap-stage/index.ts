@@ -11,6 +11,19 @@ interface StageDefinition {
 }
 
 class CapStage extends Generator {
+  public constructor(
+    args: string | string[],
+    opts: Generator.GeneratorOptions,
+  ) {
+    super(args, opts);
+
+    this.option('uninteractive', {
+      type: Boolean,
+      description: 'Prevent all prompts and use saved answers.',
+      default: false,
+    });
+  }
+
   async configuring() {
     const projectName = this.config.get('projectName');
     assert.string(projectName, 'config.projectName');
