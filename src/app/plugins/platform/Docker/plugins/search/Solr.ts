@@ -48,7 +48,7 @@ class Solr extends Generator {
   }
 
   async prompting() {
-    const { solrTag } = await this._promptOrUninteractive([
+    const { solrTag } = await promptOrUninteractive.call(this, [
       {
         name: 'solrTag',
         type: 'list',
@@ -83,19 +83,6 @@ class Solr extends Generator {
     this.fs.write(
       this.destinationPath('services/solr/conf/.gitkeep'),
       gitKeepMessage,
-    );
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
     );
   }
 }

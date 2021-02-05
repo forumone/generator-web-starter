@@ -1,30 +1,33 @@
 import Generator from 'yeoman-generator';
 import chalk from 'chalk';
+import assert from 'assert-plus';
 
 /**
  * Interactively prompt with generator questions or return configured answers.
  *
  * @param prompts
- * @param uninteractive
- * @param generator
  */
 export async function promptOrUninteractive(
+  this: Generator,
   prompts: Generator.Questions,
-  uninteractive: boolean,
-  generator: Generator,
 ): Promise<Generator.Answers> {
+  assert.bool(
+    this.options.uninteractive,
+    'Expected Boolean uninteractive generator options.',
+  );
+
   let answers: Generator.Answers = {};
 
-  if (!uninteractive) {
-    generator.debug('Interactively prompting for options.');
-    answers = await generator.prompt(prompts);
+  if (!this.options.uninteractive) {
+    this.debug('Interactively prompting for options.');
+    answers = await this.prompt(prompts);
   } else {
-    const config = generator.config.get('promptValues');
+    const config = this.config.get('promptValues');
 
     // Log assumed prompt responses for debugging.
     for (const prompt of Object.values(prompts)) {
       const cachedValue = config[prompt.name];
-      generator.debug(
+      this.debug(
         chalk`Assuming uninteractive value for {bold '%s'}: {bold.green %s}`,
         prompt.name,
         cachedValue,

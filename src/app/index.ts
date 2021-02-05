@@ -28,7 +28,7 @@ class WebStarter extends Generator {
     const platformDirectory = path.join(__dirname, 'plugins/platform');
     const platforms = await discoverModules(platformDirectory);
 
-    const { name, platform } = await this._promptOrUninteractive([
+    const { name, platform } = await promptOrUninteractive.call(this, [
       {
         type: 'input',
         name: 'name',
@@ -86,19 +86,6 @@ class WebStarter extends Generator {
       name: this.name,
       private: true,
     });
-  }
-
-  /**
-   * Shortcut the promptOrUninteractive call with prefilled arguments.
-   *
-   * @param prompts
-   */
-  private async _promptOrUninteractive(prompts: Generator.Questions) {
-    return await promptOrUninteractive(
-      prompts,
-      this.options.uninteractive,
-      this,
-    );
   }
 }
 
