@@ -13,15 +13,19 @@ import {
   xdebugEnvironment,
 } from '../../../xdebug';
 
-import installDrupal, {
-  drupalProject,
-  pantheonProject,
-  Project,
-} from './installDrupal';
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import dedent from 'dedent';
 import { gessoDrupalPath } from '../../gesso/constants';
+import { injectPlatformConfig, renameWebRoot } from './installDrupal';
+
+const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
+type DrupalProject = typeof drupalProject;
+
+const pantheonProject = 'pantheon-systems/example-drops-8-composer';
+type PantheonProject = typeof pantheonProject;
+
+type Project = PantheonProject | DrupalProject;
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -266,19 +270,74 @@ class Drupal8 extends Generator {
     cliEditor.addComposer('services/drupal');
   }
 
-  private async _installDrupal() {
+  /**
+   * Complete scaffolding and customization steps for the Drupal service directory.
+   */
+  private async _scaffoldDrupal() {
     if (!this.shouldInstall) {
       return;
     }
+    // Check if the special web root renaming will be required.
+    // This will throw an error if this will cause incompatibilities.
+    const needsDocRootRename = this._needsDocRootRename();
 
-    this.debug('Triggering Drupal installation process.');
-    await installDrupal({
-      documentRoot: this.documentRoot,
-      projectType: this.projectType,
-      serviceDirectory: this.destinationPath('services'),
-    });
+    const drupalRoot = this.destinationPath('services/drupal');
+
+    this.debug('Triggering Drupal project scaffolding.');
+    await spawnComposer(
+      [
+        'create-project',
+        this.projectType,
+        'drupal',
+        '--stability',
+        'dev',
+        '--no-interaction',
+        '--ignore-platform-reqs',
+        '--no-install',
+      ],
+      {
+        cwd: this.destinationPath('services'),
+      },
+    );
+
+    // The project scaffolding tools assume the web root should be named `web`,
+    // so various references need to be replaced with the designated rename if
+    // this is not the name selected for the project.
+    if (needsDocRootRename) {
+      this.debug('Replacing docroot references in generated files.');
+      await renameWebRoot(this.documentRoot, drupalRoot);
+    }
+
+    // Inject platform configuration to the generated composer.json file.
+    this.debug('Injecting platform configuration into composer.json.');
+    await injectPlatformConfig(`${drupalRoot}/composer.json`);
   }
 
+  /**
+   * Test if the web root will need to be renamed to match requests.
+   *
+   * The project templates assume the web root should be named `web`, so
+   * if the request is to name it otherwise some manual adjustment will be
+   * needed.
+   */
+  private _needsDocRootRename(): boolean {
+    const needsRename = this.documentRoot !== 'web';
+
+    // Crash early if the user asked for a non-'web' root for a Pantheon project.
+    // This will help prevent a lot of headaches due to misalignment with the platform's
+    // requirements.
+    if (this.projectType === pantheonProject && needsRename) {
+      throw new Error(
+        `Pantheon projects do not support '${this.documentRoot}' as the document root.`,
+      );
+    }
+
+    return needsRename;
+  }
+
+  /**
+   * Install additional dependencies to support Gesso.
+   */
   private async _installGessoDependencies() {
     if (!this.shouldInstall) {
       return;
@@ -308,7 +367,7 @@ class Drupal8 extends Generator {
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
   async default() {
-    await this._installDrupal();
+    await this._scaffoldDrupal();
 
     if (this.useGesso) {
       this.debug('Installing Gesso dependencies.');

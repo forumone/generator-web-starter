@@ -3,16 +3,6 @@ import path from 'path';
 import { promisify } from 'util';
 import createDebugger from 'debug';
 
-import spawnComposer from '../../../spawnComposer';
-
-export const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
-export type DrupalProject = typeof drupalProject;
-
-export const pantheonProject = 'pantheon-systems/example-drops-8-composer';
-export type PantheonProject = typeof pantheonProject;
-
-export type Project = PantheonProject | DrupalProject;
-
 // Define the debugging namespace to align with other debugger output.
 const debugNamespace =
   'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installDrupal';
@@ -101,57 +91,3 @@ export async function injectPlatformConfig(composerPath: string) {
   debug('Rewriting composer file %s with added platform configuration.');
   await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
-
-export interface InstallDrupalOptions {
-  /** Path to the `services/` directory in the generated project. */
-  serviceDirectory: string;
-  /** Name of the document root (e.g., `web`, `public`) */
-  documentRoot: string;
-  /** Type of project to install */
-  projectType: Project;
-}
-
-/** Installs Drupal from a given project installation type. */
-async function installDrupal({
-  serviceDirectory,
-  documentRoot,
-  projectType,
-}: InstallDrupalOptions): Promise<void> {
-  const needsRename = documentRoot !== 'web';
-
-  // Crash early if the user asked for a non-'web' root for a Pantheon project.
-  // This will help prevent a lot of headaches due to misalignment with the platform's
-  // requirements.
-  if (projectType === pantheonProject && needsRename) {
-    throw new Error(
-      `Pantheon projects do not support '${documentRoot}' as the document root.`,
-    );
-  }
-
-  debug('Executing composer create-project.');
-  await spawnComposer(
-    [
-      'create-project',
-      projectType,
-      'drupal',
-      '--stability',
-      'dev',
-      '--no-interaction',
-      '--ignore-platform-reqs',
-      '--no-install',
-    ],
-    { cwd: serviceDirectory },
-  );
-
-  const drupalRoot = path.join(serviceDirectory, 'drupal');
-
-  // Rename 'web' in generated files, if we need to
-  if (needsRename) {
-    await renameWebRoot(documentRoot, drupalRoot);
-  }
-
-  // Inject platform configuration to the generated composer.json file.
-  await injectPlatformConfig(path.join(drupalRoot, 'composer.json'));
-}
-
-export default installDrupal;
