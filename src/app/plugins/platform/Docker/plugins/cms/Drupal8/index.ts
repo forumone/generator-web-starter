@@ -18,6 +18,7 @@ import createDrushDockerfile from './createDrushDockerfile';
 import dedent from 'dedent';
 import { gessoDrupalPath } from '../../gesso/constants';
 import { injectPlatformConfig, renameWebRoot } from './installDrupal';
+import { mkdirSync } from 'fs';
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
 type DrupalProject = typeof drupalProject;
@@ -277,6 +278,15 @@ class Drupal8 extends Generator {
     if (!this.shouldInstall) {
       return;
     }
+
+    // Create the service directory if it doesn't exist.
+    // If the services directory doesn't exist, Docker fails since it can't mount
+    // it as a volume mount.
+    if (!this.existsDestination('services/drupal')) {
+      this.debug('Creating Drupal service directory.');
+      mkdirSync(this.destinationPath('services/drupal'), { recursive: true });
+    }
+
     // Check if the special web root renaming will be required.
     // This will throw an error if this will cause incompatibilities.
     const needsDocRootRename = this._needsDocRootRename();
