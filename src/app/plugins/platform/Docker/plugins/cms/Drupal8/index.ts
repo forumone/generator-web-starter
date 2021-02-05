@@ -373,19 +373,6 @@ class Drupal8 extends Generator {
       this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
-
-    if (!this.options.skipInstall) {
-      // Run final installation of all Composer dependencies now that all
-      // requirements have been assembled.
-      this.debug('Running final Composer installation.');
-      await spawnComposer(['install', '--ignore-platform-reqs'], {
-        cwd: this.destinationPath('services/drupal'),
-      });
-    } else {
-      this.debug(
-        'Skipping final Composer installation due to `--skip-install` option.',
-      );
-    }
   }
 
   writing() {
@@ -441,6 +428,21 @@ class Drupal8 extends Generator {
       this.destinationPath('services/drupal/config/.gitkeep'),
       configGitKeepContents,
     );
+  }
+
+  public async install() {
+    if (!this.options.skipInstall) {
+      // Run final installation of all Composer dependencies now that all
+      // requirements have been assembled.
+      this.debug('Running final Composer installation.');
+      await spawnComposer(['install-project', '--ignore-platform-reqs'], {
+        cwd: this.destinationPath('services/drupal'),
+      });
+    } else {
+      this.debug(
+        'Skipping final Composer installation due to `--skip-install` option.',
+      );
+    }
   }
 
   /**
