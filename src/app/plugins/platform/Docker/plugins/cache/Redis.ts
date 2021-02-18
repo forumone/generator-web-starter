@@ -1,5 +1,6 @@
 import { descending } from 'd3-array';
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../../../../util';
 
 import ComposeEditor from '../../ComposeEditor';
 import getImageTags from '../../registry/getImageTags';
@@ -26,7 +27,7 @@ class Redis extends Generator {
   }
 
   async prompting() {
-    const { redisTag } = await this.prompt([
+    const { redisTag } = await promptOrUninteractive.call(this, [
       {
         name: 'redisTag',
         type: 'list',

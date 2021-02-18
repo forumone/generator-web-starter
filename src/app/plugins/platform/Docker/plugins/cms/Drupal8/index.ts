@@ -1,6 +1,8 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
+import dedent from 'dedent';
+import { mkdirSync } from 'fs';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
@@ -12,13 +14,11 @@ import {
   enableXdebugProfiler,
   xdebugEnvironment,
 } from '../../../xdebug';
-
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
-import dedent from 'dedent';
 import { gessoDrupalPath } from '../../gesso/constants';
 import { injectPlatformConfig, renameWebRoot } from './installDrupal';
-import { mkdirSync } from 'fs';
+import { promptOrUninteractive } from '../../../../../../../util';
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
 type DrupalProject = typeof drupalProject;
@@ -72,7 +72,7 @@ class Drupal8 extends Generator {
       useGesso,
       shouldInstallDrupal,
       drupalProjectType,
-    } = await this.prompt([
+    } = await promptOrUninteractive.call(this, [
       {
         type: 'input',
         name: 'documentRoot',
@@ -150,6 +150,7 @@ class Drupal8 extends Generator {
           posix.join('services/drupal', documentRoot, 'sites/default/files'),
         ],
         linkedFiles: ['services/drupal/.env'],
+        uninteractive: this.options.uninteractive,
       };
       this.debug(
         'Composing with Capistrano generator using options: %O',
@@ -163,6 +164,7 @@ class Drupal8 extends Generator {
         documentRoot: this.documentRoot,
         composeEditor: this.options.composeEditor,
         composeCliEditor: this.options.composeCliEditor,
+        uninteractive: this.options.uninteractive,
       };
       this.debug(
         'Composing with Gesso generator using options: %O',

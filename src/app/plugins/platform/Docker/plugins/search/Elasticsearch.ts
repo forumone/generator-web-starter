@@ -1,5 +1,6 @@
 import dedent from 'dedent';
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../../../../util';
 
 import ComposeEditor, { createBindMount } from '../../ComposeEditor';
 import { AnyService } from '../../ComposeEditor/ComposeFile';
@@ -33,7 +34,7 @@ class ElasticSearch extends Generator {
   }
 
   async prompting() {
-    const { esTag } = await this.prompt([
+    const { esTag } = await promptOrUninteractive.call(this, [
       {
         name: 'esTag',
         type: 'list',

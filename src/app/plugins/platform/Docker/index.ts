@@ -2,6 +2,7 @@ import assert from 'assert-plus';
 import dedent from 'dedent';
 import path from 'path';
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../../util';
 
 import discoverModules from '../../../discoverModules';
 import IgnoreEditor from '../../../IgnoreEditor';
@@ -33,7 +34,12 @@ class Docker extends Generator {
   private readonly editor = new ComposeEditor({ intro: composeIntro });
   private readonly cliEditor = new ComposeEditor({ intro: cliIntro });
 
-  initializing() {
+  public constructor(
+    args: string | string[],
+    opts: Generator.GeneratorOptions,
+  ) {
+    super(args, opts);
+
     const options = this.options;
     assert.string(options.name, 'options.name');
     assert.string(options.capistrano, 'options.capistrano');
@@ -51,7 +57,11 @@ class Docker extends Generator {
     const cachePluginDirectory = path.join(pluginDirectory, 'cache');
     const cachePlugins = await discoverModules(cachePluginDirectory);
 
-    const answers = await this.prompt([
+    const {
+      [cmsAnswerKey]: cmsType,
+      [searchAnswerKey]: searchType,
+      [cacheAnswerKey]: cacheType,
+    } = await promptOrUninteractive.call(this, [
       {
         type: 'list',
         name: cmsAnswerKey,
@@ -75,16 +85,11 @@ class Docker extends Generator {
       },
     ]);
 
-    const {
-      [cmsAnswerKey]: cmsType,
-      [searchAnswerKey]: searchType,
-      [cacheAnswerKey]: cacheType,
-    } = answers;
-
     const composedGeneratorOptions = {
       cliConfigEditor: this.options.cliConfigEditor,
       composeEditor: this.editor,
       composeCliEditor: this.cliEditor,
+      uninteractive: this.options.uninteractive,
       plugins: {
         cms: cmsType,
         search: searchType,

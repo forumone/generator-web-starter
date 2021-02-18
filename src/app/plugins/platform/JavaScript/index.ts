@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import Generator from 'yeoman-generator';
 
 import IgnoreEditor from '../../../IgnoreEditor';
+import { promptOrUninteractive } from '../../../../util';
 
 const readFile = promisify(fs.readFile);
 
@@ -13,10 +14,11 @@ class JavaScript extends Generator {
     const options = this.options;
     assert.object(options.gitignoreEditor, 'options.gitignoreEditor');
     assert.string(options.capistrano, 'options.capistrano');
+    assert.bool(options.uninteractive, 'options.uninteractive');
   }
 
   async prompting() {
-    const { useCapistrano } = await this.prompt([
+    const { useCapistrano } = await promptOrUninteractive.call(this, [
       {
         type: 'confirm',
         name: 'useCapistrano',
@@ -32,6 +34,7 @@ class JavaScript extends Generator {
         name: this.options.name,
         webroot: 'public',
         appWebroot: 'public',
+        uninteractive: this.options.uninteractive,
       });
     }
   }

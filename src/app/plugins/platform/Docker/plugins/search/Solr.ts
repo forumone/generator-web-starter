@@ -1,6 +1,7 @@
 import { descending } from 'd3-array';
 import dedent from 'dedent';
 import Generator from 'yeoman-generator';
+import { promptOrUninteractive } from '../../../../../../util';
 
 import ComposeEditor, { createBindMount } from '../../ComposeEditor';
 import getImageTags from '../../registry/getImageTags';
@@ -47,7 +48,7 @@ class Solr extends Generator {
   }
 
   async prompting() {
-    const { solrTag } = await this.prompt([
+    const { solrTag } = await promptOrUninteractive.call(this, [
       {
         name: 'solrTag',
         type: 'list',

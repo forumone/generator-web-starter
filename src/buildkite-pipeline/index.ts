@@ -11,6 +11,7 @@ import {
   ManifestAwareGenerator,
   ManifestAwareOptions,
 } from '../manifest/manifestAwareGenerator';
+import { promptOrUninteractive } from '../util';
 
 interface BranchMapping {
   readonly source: string;
@@ -35,15 +36,26 @@ interface PipelineTemplateData {
   };
 }
 
+interface BuildkitePipelineOptions extends ManifestAwareOptions {
+  /** Prevent all prompts and use saved answers. */
+  uninteractive: boolean;
+}
+
 class BuildkitePipeline extends ManifestAwareGenerator {
   private deployments: DeploymentCollection;
   private answers: Generator.Answers;
 
-  constructor(args: string | string[], options: ManifestAwareOptions) {
+  constructor(args: string | string[], options: BuildkitePipelineOptions) {
     super(args, options);
 
     this.deployments = this.manifest.deployments || {};
     this.answers = {};
+
+    this.option('uninteractive', {
+      type: Boolean,
+      default: false,
+      description: 'Prevent all prompts and use saved answers.',
+    });
   }
 
   /**
@@ -57,7 +69,7 @@ class BuildkitePipeline extends ManifestAwareGenerator {
    * Execute the configuration phase of this generator.
    */
   async prompting() {
-    const answers = await this.prompt([
+    const answers = await promptOrUninteractive.call(this, [
       {
         name: 'serviceDirectory',
         message: 'What directory is the application in?',

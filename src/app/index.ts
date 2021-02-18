@@ -5,16 +5,30 @@ import Generator from 'yeoman-generator';
 
 import discoverModules from './discoverModules';
 import IgnoreEditor from './IgnoreEditor';
+import { promptOrUninteractive } from '../util';
 
 class WebStarter extends Generator {
   private gitignoreEditor = new IgnoreEditor();
   private name!: string;
 
+  public constructor(
+    args: string | string[],
+    opts: Generator.GeneratorOptions,
+  ) {
+    super(args, opts);
+
+    this.option('uninteractive', {
+      type: Boolean,
+      default: false,
+      description: 'Prevent all prompts and use saved answers.',
+    });
+  }
+
   async prompting() {
     const platformDirectory = path.join(__dirname, 'plugins/platform');
     const platforms = await discoverModules(platformDirectory);
 
-    const answers = await this.prompt([
+    const { name, platform } = await promptOrUninteractive.call(this, [
       {
         type: 'input',
         name: 'name',
@@ -33,19 +47,17 @@ class WebStarter extends Generator {
       },
     ]);
 
-    this.name = answers.name;
+    this.name = name;
 
-    this.composeWith(
-      require.resolve(path.join(platformDirectory, answers.platform)),
-      {
-        // cliConfigEditor: this.cliConfigEditor,
-        gitignoreEditor: this.gitignoreEditor,
-        name: answers.name,
-        capistrano: require.resolve('./plugins/Capistrano'),
-      },
-    );
+    this.composeWith(require.resolve(path.join(platformDirectory, platform)), {
+      // cliConfigEditor: this.cliConfigEditor,
+      gitignoreEditor: this.gitignoreEditor,
+      name,
+      capistrano: require.resolve('./plugins/Capistrano'),
+      uninteractive: this.options.uninteractive,
+    });
 
-    this.config.set('projectName', this.name);
+    this.config.set('projectName', name);
   }
 
   configuring() {
