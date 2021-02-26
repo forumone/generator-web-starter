@@ -55,7 +55,7 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  private spawnComposer: typeof spawnComposer;
+  public spawnComposer: typeof spawnComposer;
 
   public constructor(
     args: string | string[],

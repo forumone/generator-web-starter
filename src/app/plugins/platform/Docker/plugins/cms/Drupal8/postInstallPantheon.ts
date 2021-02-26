@@ -1,6 +1,5 @@
 import Drupal8 from '.';
 import createDebugger from 'debug';
-import spawnComposer from '../../../spawnComposer';
 import rimraf from 'rimraf';
 import deepmerge from 'deepmerge';
 import { JSONSchema7Array } from 'json-schema';
@@ -91,7 +90,7 @@ class PostInstallPantheon {
       'Adding Composer dependencies: %s',
       composerDependencies.join(', '),
     );
-    await spawnComposer(
+    await this.generator.spawnComposer(
       [
         'require',
         ...composerDependencies,
