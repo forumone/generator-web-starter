@@ -456,7 +456,7 @@ class Drupal8 extends Generator {
     // Run final installation of all Composer dependencies now that all
     // requirements have been assembled.
     this.debug('Running final Composer installation.');
-    await spawnComposer(['install-project', '--ignore-platform-reqs'], {
+    await spawnComposer(['install', '--ignore-platform-reqs'], {
       cwd: this.destinationPath('services/drupal'),
     });
   }
