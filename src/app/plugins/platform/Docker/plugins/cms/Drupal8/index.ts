@@ -50,7 +50,7 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  public async initializing() {
+  public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
       getLatestDrupal8Tag(),
       getLatestDrupal8CliTag(),
@@ -65,7 +65,7 @@ class Drupal8 extends Generator {
     this.latestDrushTag = latestDrushTag;
   }
 
-  public async prompting() {
+  public async prompting(): Promise<void> {
     const {
       documentRoot,
       useCapistrano,
@@ -177,7 +177,7 @@ class Drupal8 extends Generator {
     }
   }
 
-  public configuring() {
+  public configuring(): void {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -378,7 +378,7 @@ class Drupal8 extends Generator {
   // directory (services/drupal) exists and is not empty.
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
-  async default() {
+  async default(): Promise<void> {
     await this._scaffoldDrupal();
 
     if (this.useGesso) {
@@ -387,7 +387,7 @@ class Drupal8 extends Generator {
     }
   }
 
-  public writing() {
+  public writing(): void {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
 
     // The Pantheon template doesn't create a load.environment.php file, so we have to
