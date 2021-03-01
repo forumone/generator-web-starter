@@ -2,7 +2,8 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 import dedent from 'dedent';
-import { mkdirSync } from 'fs';
+import { promisify } from 'util';
+import fs from 'fs';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
@@ -19,6 +20,8 @@ import createDrushDockerfile from './createDrushDockerfile';
 import { gessoDrupalPath } from '../../gesso/constants';
 import { injectPlatformConfig, renameWebRoot } from './installUtils';
 import { promptOrUninteractive } from '../../../../../../../util';
+
+const mkdir = promisify(fs.mkdir);
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
 type DrupalProject = typeof drupalProject;
@@ -286,7 +289,7 @@ class Drupal8 extends Generator {
     // it as a volume mount.
     if (!this.existsDestination('services/drupal')) {
       this.debug('Creating Drupal service directory.');
-      mkdirSync(this.destinationPath('services/drupal'), { recursive: true });
+      await mkdir(this.destinationPath('services/drupal'), { recursive: true });
     }
 
     // Check if the special web root renaming will be required.
