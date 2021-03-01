@@ -1,6 +1,9 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
+import dedent from 'dedent';
+import { promisify } from 'util';
+import fs from 'fs';
 
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
@@ -12,17 +15,21 @@ import {
   enableXdebugProfiler,
   xdebugEnvironment,
 } from '../../../xdebug';
-
-import installDrupal, {
-  drupalProject,
-  pantheonProject,
-  Project,
-} from './installDrupal';
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
-import dedent from 'dedent';
 import { gessoDrupalPath } from '../../gesso/constants';
+import { injectPlatformConfig, renameWebRoot } from './installUtils';
 import { promptOrUninteractive } from '../../../../../../../util';
+
+const mkdir = promisify(fs.mkdir);
+
+const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
+type DrupalProject = typeof drupalProject;
+
+const pantheonProject = 'pantheon-systems/example-drops-8-composer';
+type PantheonProject = typeof pantheonProject;
+
+type Project = PantheonProject | DrupalProject;
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -46,7 +53,7 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  async initializing() {
+  public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
       getLatestDrupal8Tag(),
       getLatestDrupal8CliTag(),
@@ -61,7 +68,7 @@ class Drupal8 extends Generator {
     this.latestDrushTag = latestDrushTag;
   }
 
-  async prompting() {
+  public async prompting(): Promise<void> {
     const {
       documentRoot,
       useCapistrano,
@@ -173,7 +180,7 @@ class Drupal8 extends Generator {
     }
   }
 
-  configuring() {
+  public configuring(): void {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -269,20 +276,84 @@ class Drupal8 extends Generator {
     cliEditor.addComposer('services/drupal');
   }
 
-  private async _installDrupal() {
+  /**
+   * Complete scaffolding and customization steps for the Drupal service directory.
+   */
+  private async _scaffoldDrupal(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
 
-    this.debug('Triggering Drupal installation process.');
-    await installDrupal({
-      documentRoot: this.documentRoot,
-      projectType: this.projectType,
-      serviceDirectory: this.destinationPath('services'),
-    });
+    // Create the service directory if it doesn't exist.
+    // If the services directory doesn't exist, Docker fails since it can't mount
+    // it as a volume mount.
+    if (!this.existsDestination('services/drupal')) {
+      this.debug('Creating Drupal service directory.');
+      await mkdir(this.destinationPath('services/drupal'), { recursive: true });
+    }
+
+    // Check if the special web root renaming will be required.
+    // This will throw an error if this will cause incompatibilities.
+    const needsDocRootRename = this._needsDocRootRename();
+
+    const drupalRoot = this.destinationPath('services/drupal');
+
+    this.debug('Triggering Drupal project scaffolding.');
+    await spawnComposer(
+      [
+        'create-project',
+        this.projectType,
+        'drupal',
+        '--stability',
+        'dev',
+        '--no-interaction',
+        '--ignore-platform-reqs',
+        '--no-install',
+      ],
+      {
+        cwd: this.destinationPath('services'),
+      },
+    );
+
+    // The project scaffolding tools assume the web root should be named `web`,
+    // so various references need to be replaced with the designated rename if
+    // this is not the name selected for the project.
+    if (needsDocRootRename) {
+      this.debug('Replacing docroot references in generated files.');
+      await renameWebRoot(this.documentRoot, drupalRoot);
+    }
+
+    // Inject platform configuration to the generated composer.json file.
+    this.debug('Injecting platform configuration into composer.json.');
+    await injectPlatformConfig(`${drupalRoot}/composer.json`);
   }
 
-  private async _installGessoDependencies() {
+  /**
+   * Test if the web root will need to be renamed to match requests.
+   *
+   * The project templates assume the web root should be named `web`, so
+   * if the request is to name it otherwise some manual adjustment will be
+   * needed.
+   */
+  private _needsDocRootRename(): boolean {
+    const needsRename = this.documentRoot !== 'web';
+
+    // Crash early if the user asked for a non-'web' root for a Pantheon project.
+    // This will help prevent a lot of headaches due to misalignment with the platform's
+    // requirements.
+    if (this.projectType === pantheonProject && needsRename) {
+      throw new Error(
+        `Pantheon projects do not support '${this.documentRoot}' as the document root.`,
+      );
+    }
+
+    return needsRename;
+  }
+
+  /**
+   * Install additional dependencies to support Gesso.
+   */
+  private async _installGessoDependencies(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -310,29 +381,16 @@ class Drupal8 extends Generator {
   // directory (services/drupal) exists and is not empty.
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
-  async default() {
-    await this._installDrupal();
+  async default(): Promise<void> {
+    await this._scaffoldDrupal();
 
     if (this.useGesso) {
       this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
-
-    if (!this.options.skipInstall) {
-      // Run final installation of all Composer dependencies now that all
-      // requirements have been assembled.
-      this.debug('Running final Composer installation.');
-      await spawnComposer(['install', '--ignore-platform-reqs'], {
-        cwd: this.destinationPath('services/drupal'),
-      });
-    } else {
-      this.debug(
-        'Skipping final Composer installation due to `--skip-install` option.',
-      );
-    }
   }
 
-  writing() {
+  public writing(): void {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
 
     // The Pantheon template doesn't create a load.environment.php file, so we have to
@@ -385,6 +443,22 @@ class Drupal8 extends Generator {
       this.destinationPath('services/drupal/config/.gitkeep'),
       configGitKeepContents,
     );
+  }
+
+  public async install(): Promise<void> {
+    if (this.options.skipInstall) {
+      this.debug(
+        'Skipping final Composer installation due to the `--skip-install` option.',
+      );
+      return;
+    }
+
+    // Run final installation of all Composer dependencies now that all
+    // requirements have been assembled.
+    this.debug('Running final Composer installation.');
+    await spawnComposer(['install', '--ignore-platform-reqs'], {
+      cwd: this.destinationPath('services/drupal'),
+    });
   }
 
   /**

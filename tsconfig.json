@@ -4,6 +4,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
 
     "strict": true,
     "noUnusedLocals": true,
