@@ -50,7 +50,7 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  async initializing() {
+  public async initializing() {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
       getLatestDrupal8Tag(),
       getLatestDrupal8CliTag(),
@@ -65,7 +65,7 @@ class Drupal8 extends Generator {
     this.latestDrushTag = latestDrushTag;
   }
 
-  async prompting() {
+  public async prompting() {
     const {
       documentRoot,
       useCapistrano,
@@ -177,7 +177,7 @@ class Drupal8 extends Generator {
     }
   }
 
-  configuring() {
+  public configuring() {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -387,7 +387,7 @@ class Drupal8 extends Generator {
     }
   }
 
-  writing() {
+  public writing() {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
 
     // The Pantheon template doesn't create a load.environment.php file, so we have to
@@ -442,19 +442,20 @@ class Drupal8 extends Generator {
     );
   }
 
-  async install(): Promise<void> {
-    if (!this.options.skipInstall) {
-      // Run final installation of all Composer dependencies now that all
-      // requirements have been assembled.
-      this.debug('Running final Composer installation.');
-      await spawnComposer(['install-project', '--ignore-platform-reqs'], {
-        cwd: this.destinationPath('services/drupal'),
-      });
-    } else {
+  public async install(): Promise<void> {
+    if (this.options.skipInstall) {
       this.debug(
-        'Skipping final Composer installation due to `--skip-install` option.',
+        'Skipping final Composer installation due to the `--skip-install` option.',
       );
+      return;
     }
+
+    // Run final installation of all Composer dependencies now that all
+    // requirements have been assembled.
+    this.debug('Running final Composer installation.');
+    await spawnComposer(['install-project', '--ignore-platform-reqs'], {
+      cwd: this.destinationPath('services/drupal'),
+    });
   }
 
   /**
