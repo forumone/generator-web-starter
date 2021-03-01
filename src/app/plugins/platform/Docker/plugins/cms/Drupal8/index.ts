@@ -17,7 +17,7 @@ import {
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import { gessoDrupalPath } from '../../gesso/constants';
-import { injectPlatformConfig, renameWebRoot } from './installDrupal';
+import { injectPlatformConfig, renameWebRoot } from './installUtils';
 import { promptOrUninteractive } from '../../../../../../../util';
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';

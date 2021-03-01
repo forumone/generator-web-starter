@@ -5,7 +5,7 @@ import createDebugger from 'debug';
 
 // Define the debugging namespace to align with other debugger output.
 const debugNamespace =
-  'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installDrupal';
+  'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installUtils';
 const debug = createDebugger(debugNamespace);
 
 const readFile = promisify(fs.readFile);
