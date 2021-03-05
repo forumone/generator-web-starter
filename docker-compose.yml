@@ -1,0 +1,58 @@
+# Define some service defaults for consistency across services.
+x-defaults:
+  commands: &commands
+    command:
+      - yo
+      - --no-insight
+      - web-starter
+      - --uninteractive
+      - --force
+      - --debug
+  volumes: &volumes
+    volumes:
+      - $PWD:$PWD
+      - /var/run/docker.sock:/var/run/docker.sock
+  debug-config: &debug
+    environment:
+      DEBUG: 'web-starter:*'
+  service-defaults: &defaults
+    <<: *debug
+    working_dir: $PWD/test/$SCENARIO
+    <<: *commands
+    <<: *volumes
+
+version: "3.7"
+services:
+  base:
+    build:
+      context: ./
+      target: base
+
+  test:
+    build:
+      context: ./
+      target: build
+    <<: *defaults
+
+
+  stable:
+    build:
+      context: ./
+      target: stable
+    <<: *defaults
+
+  next:
+    build:
+      context: ./
+      target: next
+      args:
+        VERSION: next
+    <<: *defaults
+
+  diff:
+    image: 'registry.salsa.debian.org/reproducible-builds/diffoscope'
+    environment:
+      # A CDN URL to use for inclusion in diffoscope HTML reports.
+      JQUERY_CDN: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'
+    volumes:
+      - $PWD/.buildkite/artifacts:/artifacts
