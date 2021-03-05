@@ -1,0 +1,23 @@
+{
+  "generator-web-starter": {
+    "promptValues": {
+      "name": "wp-standard",
+      "platform": "Docker",
+      "dockerCms": "WordPress",
+      "dockerSearch": "Elasticsearch",
+      "dockerCache": "Memcache",
+      "documentRoot": "public",
+      "wpStarter": true,
+      "wpCfm": true,
+      "useGesso": true,
+      "useCapistrano": true,
+      "shouldInstallWordPress": true,
+      "esTag": "7.9.3",
+      "gessoShouldInstall": true,
+      "capistranoDeployMethod": "rsync",
+      "capistranoReleases": 3,
+      "capistranoRepository": "git@github"
+    },
+    "projectName": "wp-standard"
+  }
+}

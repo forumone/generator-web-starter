@@ -1,0 +1,18 @@
+{
+  "generator-web-starter": {
+    "promptValues": {
+      "name": "d8-standard",
+      "platform": "Docker",
+      "dockerCms": "Drupal8",
+      "dockerSearch": "None",
+      "dockerCache": "None",
+      "documentRoot": "public",
+      "useGesso": true,
+      "useCapistrano": false,
+      "shouldInstallDrupal": true,
+      "gessoShouldInstall": true,
+      "drupalProjectType": "drupal-composer/drupal-project:8.x-dev"
+    },
+    "projectName": "d8-standard"
+  }
+}

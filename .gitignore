@@ -10,3 +10,6 @@ generators
 
 # Coverage information
 coverage
+
+# Ignore generated test content
+test/*/*
