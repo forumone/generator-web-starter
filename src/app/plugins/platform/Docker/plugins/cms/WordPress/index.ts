@@ -38,6 +38,17 @@ class WordPress extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
+  private spawnComposer: typeof spawnComposer;
+
+  public constructor(
+    args: string | string[],
+    opts: Generator.GeneratorOptions,
+  ) {
+    super(args, opts);
+
+    this.spawnComposer = spawnComposer.bind(this);
+  }
+
   async initializing() {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
       getLatestWordPressTag(),
@@ -349,7 +360,9 @@ class WordPress extends Generator {
     if (this.usesWpStarter) {
       const wpRoot = this.destinationPath('services/wordpress');
       this.debug('Spawning Composer install command in %s.', wpRoot);
-      await spawnComposer(['install'], { cwd: wpRoot });
+      await this.spawnComposer(['install'], {
+        cwd: wpRoot,
+      });
     } else {
       const wpRoot = this.destinationPath(
         'services/wordpress',
@@ -370,9 +383,12 @@ class WordPress extends Generator {
       'Spawning Composer command to install WordPress plugin %s.',
       packageName,
     );
-    await spawnComposer(['require', packageName, '--ignore-platform-reqs'], {
-      cwd: this.destinationPath('services/wordpress'),
-    });
+    await this.spawnComposer(
+      ['require', packageName, '--ignore-platform-reqs'],
+      {
+        cwd: this.destinationPath('services/wordpress'),
+      },
+    );
   }
 
   /**

@@ -54,6 +54,17 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
+  private spawnComposer: typeof spawnComposer;
+
+  public constructor(
+    args: string | string[],
+    opts: Generator.GeneratorOptions,
+  ) {
+    super(args, opts);
+
+    this.spawnComposer = spawnComposer.bind(this);
+  }
+
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
       getLatestDrupal8Tag(),
@@ -288,12 +299,21 @@ class Drupal8 extends Generator {
     // Create the service directory if it doesn't exist.
     // If the services directory doesn't exist, Docker fails since it can't mount
     // it as a volume mount.
-    if (!this.existsDestination('services/drupal')) {
+    if (!this.existsDestination('services')) {
       this.debug(
-        format.info('Creating Drupal service directory at %s.'),
-        this.destinationPath('services/drupal'),
+        format.info('Creating services directory at %s.'),
+        this.destinationPath('services'),
       );
-      await mkdir(this.destinationPath('services/drupal'), { recursive: true });
+      try {
+        await mkdir(this.destinationPath('services'));
+      } catch (err) {
+        this.log(
+          format.error('Failed to create services directory at %s.'),
+          this.destinationPath('services'),
+        );
+        this.spawnCommandSync('ls', ['-al']);
+        this.env.error(err);
+      }
     }
 
     // Check if the special web root renaming will be required.
@@ -303,7 +323,7 @@ class Drupal8 extends Generator {
     const drupalRoot = this.destinationPath('services/drupal');
 
     this.debug(format.info('Triggering Drupal project scaffolding.'));
-    await spawnComposer(
+    await this.spawnComposer(
       [
         'create-project',
         this.projectType,
@@ -317,6 +337,12 @@ class Drupal8 extends Generator {
       {
         cwd: this.destinationPath('services'),
       },
+    ).catch(() =>
+      this.env.error(
+        new Error(
+          format.error.bold('Composer `create-project` command failed.'),
+        ),
+      ),
     );
 
     // The project scaffolding tools assume the web root should be named `web`,
@@ -369,7 +395,7 @@ class Drupal8 extends Generator {
       format.info('Adding Gesso Composer dependencies: %s'),
       gessoDrupalDependencies.join(', '),
     );
-    await spawnComposer(
+    await this.spawnComposer(
       [
         'require',
         ...gessoDrupalDependencies,
@@ -380,7 +406,15 @@ class Drupal8 extends Generator {
       {
         cwd: this.destinationPath('services/drupal'),
       },
-    );
+    ).catch(() => {
+      this.env.error(
+        new Error(
+          format.error.bold(
+            'Composer installation of Gesso dependencies failed.',
+          ),
+        ),
+      );
+    });
   }
 
   // We have to run the drupal installation here because drupal-scaffold will fail if the target
@@ -470,8 +504,16 @@ class Drupal8 extends Generator {
     // Run final installation of all Composer dependencies now that all
     // requirements have been assembled.
     this.debug(format.info('Running final Composer installation.'));
-    await spawnComposer(['install', '--ignore-platform-reqs'], {
+    await this.spawnComposer(['install', '--ignore-platform-reqs'], {
       cwd: this.destinationPath('services/drupal'),
+    }).catch(() => {
+      this.env.error(
+        new Error(
+          format.error.bold(
+            'Final installation of Composer dependencies failed.',
+          ),
+        ),
+      );
     });
   }
 
