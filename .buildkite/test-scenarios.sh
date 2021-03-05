@@ -66,13 +66,13 @@ YAML
 # Usage: create-compare-step <scenario_name> <scenario_label> <base_image> <target_image>
 # * scenario_name is a directory name at test/<scenario_name>
 # * scenario_label is a readable label to display for this test scenario
-# * base_image (optional) is the base image to compare against. Defaults to test
-# * target_image (optional) is the base image to compare against. Defaults to stable
+# * base_image (optional) is the base image to compare against. Defaults to stable
+# * target_image (optional) is the base image to compare against. Defaults to test
 create-compare-step() {
   local scenario=$1
   local label=$2
-  local image_1=${3:-test}
-  local image_2=${4:-stable}
+  local image_1=${3:-stable}
+  local image_2=${4:-test}
 
   # Output the Buildkite step for building this scenario using the step template
   # defined in the base template file.
@@ -105,10 +105,12 @@ create-compare-step() {
             - --new-file
             - --exclude
             - "${scenario}.tgz"
+            - --jquery
+            - "\${JQUERY_CDN}"
             - --html
             - /artifacts/${scenario}.html
-            - ${image_1}/${scenario}
-            - ${image_2}/${scenario}
+            - /artifacts/${image_1}/${scenario}
+            - /artifacts/${image_2}/${scenario}
           volumes:
             - './.buildkite/artifacts:/artifacts'
       - improbable-eng/metahook:

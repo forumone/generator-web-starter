@@ -51,8 +51,17 @@ services:
 
   diff:
     image: 'registry.salsa.debian.org/reproducible-builds/diffoscope'
-    environment:
-      # A CDN URL to use for inclusion in diffoscope HTML reports.
-      JQUERY_CDN: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'
     volumes:
       - $PWD/.buildkite/artifacts:/artifacts
+    command:
+      - --exclude-directory-metadata=recursive
+      - --no-default-limits
+      - --new-file
+      - --exclude
+      - "${SCENARIO}.tgz"
+      - --jquery
+      - 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'
+      - --html
+      - /artifacts/${SCENARIO}.html
+      - /artifacts/next/${SCENARIO}
+      - /artifacts/test/${SCENARIO}
