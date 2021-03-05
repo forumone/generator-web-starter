@@ -21,7 +21,7 @@ import { gessoDrupalPath } from '../../gesso/constants';
 import { injectPlatformConfig, renameWebRoot } from './installUtils';
 import { promptOrUninteractive } from '../../../../../../../util';
 import { outputFormat as format } from '../../../../../../../util';
-import PostInstallPantheon from './postInstallPantheon';
+import postInstallPantheon from './postInstallPantheon';
 
 const mkdir = promisify(fs.mkdir);
 
@@ -56,6 +56,10 @@ class Drupal8 extends Generator {
   private shouldInstall: boolean | undefined = false;
 
   public spawnComposer: typeof spawnComposer;
+
+  // A conditional post-install callback to be set based on selected
+  // project type in the prompting phase.
+  public postInstall?: typeof postInstallPantheon;
 
   public constructor(
     args: string | string[],
@@ -152,6 +156,10 @@ class Drupal8 extends Generator {
     this.shouldInstall = shouldInstallDrupal;
     this.projectType = drupalProjectType;
     this.useGesso = useGesso;
+
+    if (this.projectType === pantheonProject) {
+      this.postInstall = postInstallPantheon.bind(this);
+    }
 
     if (useCapistrano) {
       const capistranoOptions = {
@@ -430,12 +438,11 @@ class Drupal8 extends Generator {
       await this._installGessoDependencies();
     }
 
-    if (this.projectType === 'pantheon-systems/example-drops-8-composer') {
-      this.debug(
-        'Executing post-installation customization for Pantheon projects.',
-      );
-      const postInstall = new PostInstallPantheon(this);
-      await postInstall.customizePantheonInstall();
+    // Execute post-installation tasks if available.
+    // Note: This method is conditionally assigned in the prompting phase based on the
+    // selected project type.
+    if (this.postInstall) {
+      await this.postInstall();
     }
   }
 
