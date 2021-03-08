@@ -120,10 +120,10 @@ create-compare-step() {
           pre-command: |
             set -ex
             # Extract artifact gzips for direct file comparisons.
-            $(cd ".buildkite/artifacts/${image_1}/${scenario}" && tar -xf "${scenario}.tgz")
+            $(cd ".buildkite/artifacts/${image_1}/${scenario}" && tar -xf "${scenario}.tgz" .)
             ls ".buildkite/artifacts/${image_1}/${scenario}"
 
-            $(cd ".buildkite/artifacts/${image_2}/${scenario}" && tar -xf "${scenario}.tgz")
+            $(cd ".buildkite/artifacts/${image_2}/${scenario}" && tar -xf "${scenario}.tgz" .)
             ls ".buildkite/artifacts/${image_2}/${scenario}"
 
 YAML
