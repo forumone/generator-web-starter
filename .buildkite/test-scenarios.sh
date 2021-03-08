@@ -90,7 +90,7 @@ create-compare-step() {
       # Download the tarball into the test directory for use building the Docker image.
       - artifacts#v1.3.0:
           download: ".buildkite/artifacts/**/${scenario}/${scenario}.tgz"
-          upload: ".buildkite/artifacts/${scenario}.html"
+          upload: ".buildkite/artifacts/*.html"
       - docker-compose#v3.7.0:
           run: diff
           debug: true
@@ -109,6 +109,9 @@ create-compare-step() {
             - "\${JQUERY_CDN}"
             - --html
             - /artifacts/${scenario}.html
+            - --text
+            - '-'
+            - --output-empty
             - /artifacts/${image_1}/${scenario}
             - /artifacts/${image_2}/${scenario}
           volumes:

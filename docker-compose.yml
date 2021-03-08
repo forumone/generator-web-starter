@@ -61,6 +61,8 @@ services:
       - "${SCENARIO}.tgz"
       - --jquery
       - 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'
+      - --text
+      - '-'
       - --html
       - /artifacts/${SCENARIO}.html
       - /artifacts/next/${SCENARIO}
