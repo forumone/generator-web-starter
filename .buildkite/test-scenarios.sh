@@ -117,11 +117,14 @@ create-compare-step() {
           pre-command: |
             set -ex
             # Extract artifact gzips for direct file comparisons.
-            $(cd ".buildkite/artifacts/${image_1}/${scenario}" && tar -xf "${scenario}.tgz")
-            ls ".buildkite/artifacts/${image_1}/${scenario}"
+            (cd ".buildkite/artifacts/${image_1}/${scenario}" && tar -xf "${scenario}.tgz")
+            # Fail if an expected file from the archive is not found.
+            [[ ! -e ".buildkite/artifacts/${image_1}/${scenario}/docker-compose.yml" ]]
 
-            $(cd ".buildkite/artifacts/${image_2}/${scenario}" && tar -xf "${scenario}.tgz")
+            (cd ".buildkite/artifacts/${image_2}/${scenario}" && tar -xf "${scenario}.tgz")
             ls ".buildkite/artifacts/${image_2}/${scenario}"
+            # Fail if an expected file from the archive is not found.
+            [[ ! -e ".buildkite/artifacts/${image_2}/${scenario}/docker-compose.yml" ]]
 
 YAML
 }
