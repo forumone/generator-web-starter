@@ -4,6 +4,8 @@ import assert from 'assert-plus';
 
 /**
  * Predefined output color formatters to standardize console output.
+ *
+ * @todo Move formatting definitions to an independent module.
  */
 export const outputFormat = {
   /**

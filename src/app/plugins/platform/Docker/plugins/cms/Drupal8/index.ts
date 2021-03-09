@@ -54,16 +54,7 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  private spawnComposer: typeof spawnComposer;
-
-  public constructor(
-    args: string | string[],
-    opts: Generator.GeneratorOptions,
-  ) {
-    super(args, opts);
-
-    this.spawnComposer = spawnComposer.bind(this);
-  }
+  private spawnComposer = spawnComposer.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -305,13 +296,18 @@ class Drupal8 extends Generator {
         this.destinationPath('services'),
       );
       try {
-        await mkdir(this.destinationPath('services'));
+        await mkdir(this.destinationPath('services'), { recursive: true });
       } catch (err) {
         this.log(
           format.error('Failed to create services directory at %s.'),
           this.destinationPath('services'),
         );
-        this.spawnCommandSync('ls', ['-al']);
+        if (this.options.debug) {
+          // Show the contents of the directory for debugging.
+          // @todo Output the content of this with more debugging message context
+          //   around it.
+          this.spawnCommandSync('ls', ['-al']);
+        }
         this.env.error(err);
       }
     }

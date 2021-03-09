@@ -25,11 +25,11 @@ import { promptOrUninteractive } from '../../../../../../../util';
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
 class WordPress extends Generator {
-  // Written out in initializing phase
+  // Written out in initializing phase.
   private latestWpTag!: string;
   private latestWpCliTag!: string;
 
-  // Assigned to in prompting phase
+  // Assigned to in prompting phase.
   private documentRoot!: string;
 
   private usesWpStarter: boolean | undefined = true;
@@ -38,16 +38,7 @@ class WordPress extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  private spawnComposer: typeof spawnComposer;
-
-  public constructor(
-    args: string | string[],
-    opts: Generator.GeneratorOptions,
-  ) {
-    super(args, opts);
-
-    this.spawnComposer = spawnComposer.bind(this);
-  }
+  private spawnComposer = spawnComposer.bind(this);
 
   async initializing() {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
