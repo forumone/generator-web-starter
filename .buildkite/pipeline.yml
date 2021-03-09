@@ -1,16 +1,63 @@
+# Consolidate the common configuration for reuse across multiple steps.
+definitions:
+  # Configure some default step values.
+  step-defaults: &step-defaults
+    timeout_in_minutes: 15
+
+  # Specify common agent queue parameters.
+  queues:
+    # Docker-based tasks should run in the Docker queue.
+    docker-agents: &docker-agents
+      agents:
+        queue: "docker-builders"
+
+  # Specify common plugin configurations.
+  plugins:
+    ecr: &ecr
+      ecr#v2.0.0:
+        login: true
+        no-include-email: true
+
+env:
+  # Identify the address for the shared Buildkite ECR repository.
+  IMAGE_REPOSITORY: "165761832703.dkr.ecr.us-east-1.amazonaws.com/buildkite"
+
+  # Set this as an environment variable for automatic usage by default for all
+  # docker-compose buildkite plugin executions.
+  BUILDKITE_PLUGIN_DOCKER_COMPOSE_IMAGE_REPOSITORY: "$IMAGE_REPOSITORY"
+
+  # Define a common namespace for images to be published within the shared ECR repo.
+  ECR_NAMESPACE: "$IMAGE_REPOSITORY:${BUILDKITE_PIPELINE_SLUG}"
+
+  # A CDN URL to use for inclusion in diffoscope HTML reports.
+  JQUERY_CDN: 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'
+
 steps:
-  - label: ':hammer: Build'
+  # Build the NPM package for this commit to be tested. This may also identify
+  # build failures early since linting and other testing is incorporated into
+  # the build process.
+  - label: ':npm: Build'
+    key: npm_build
+    <<: *step-defaults
     command:
+      - set -ex
       - npm ci
-      # Allow npm to pack the tarball as root in this container
+      # Allow npm to pack the tarball as root in this container.
       - npm pack --unsafe-perm
+      # Move packed package to upload as an artifact.
+      - mv generator-web-starter-*.tgz /artifacts
+    artifact_paths:
+      - ".buildkite/artifacts/*"
     plugins:
       - docker#v3.3.0:
           image: 'node:10'
           volumes:
             - './:/app'
+            - './.buildkite/artifacts:/artifacts'
 
   - label: ':jest: Test'
+    key: jest
+    <<: *step-defaults
     command:
       - npm ci
       - npm test
@@ -19,3 +66,87 @@ steps:
           image: 'node:10'
           volumes:
             - './:/app'
+
+  # Fail early if the build or tests fail.
+  - wait: ~
+    key: build_gate
+
+  # Prebuild the common base image for reuse.
+  - label: ':docker: Base image'
+    key: base_image
+    depends_on: build_gate
+    <<: *step-defaults
+    <<: *docker-agents
+    plugins:
+      - <<: *ecr
+      - docker-compose#v3.7.0:
+          build:
+            - base
+          cache-from:
+            - "base:${ECR_NAMESPACE}--base--latest"
+          push:
+            - "base:${ECR_NAMESPACE}--base--latest"
+
+  # Prebuild the current build image for test scenarios.
+  - label: ':docker: Test image'
+    key: test_image
+    depends_on: base_image
+    <<: *step-defaults
+    <<: *docker-agents
+    plugins:
+      - <<: *ecr
+      - docker-compose#v3.7.0:
+          build:
+            - test
+          cache-from:
+            - "test:${ECR_NAMESPACE}--test--${BUILDKITE_COMMIT}"
+            - "test:${ECR_NAMESPACE}--test--${BUILDKITE_BRANCH}"
+            - "test:${ECR_NAMESPACE}--base--latest"
+          push:
+            - "test:${ECR_NAMESPACE}--test--${BUILDKITE_COMMIT}"
+            - "test:${ECR_NAMESPACE}--test--${BUILDKITE_BRANCH}"
+            - "test:${ECR_NAMESPACE}--test--latest"
+
+  # Prebuild the stable image for test scenarios.
+  - label: ':docker: Stable image'
+    key: stable_image
+    depends_on: base_image
+    skip: 'Skip until stable release includes Docker support.'
+    <<: *step-defaults
+    <<: *docker-agents
+    plugins:
+      - <<: *ecr
+      - docker-compose#v3.7.0:
+          build:
+            - stable
+          cache-from:
+            - "stable:${ECR_NAMESPACE}--base--latest"
+            - "stable:${ECR_NAMESPACE}--stable--latest"
+          push:
+            - "stable:${ECR_NAMESPACE}--stable--latest"
+
+  # Prebuild the next release image for test scenarios.
+  - label: ':docker: Next image'
+    key: next_image
+    depends_on: base_image
+    <<: *step-defaults
+    <<: *docker-agents
+    plugins:
+      - <<: *ecr
+      - docker-compose#v3.7.0:
+          build:
+            - next
+          cache-from:
+            - "next:${ECR_NAMESPACE}--base--latest"
+            - "next:${ECR_NAMESPACE}--next--latest"
+          push:
+            - "next:${ECR_NAMESPACE}--next--latest"
+
+  # Create the test scenario steps.
+  - label: ':pipeline:'
+    key: 'scenario_pipeline'
+    depends_on:
+      - base_image
+    <<: *step-defaults
+    commands:
+      - .buildkite/test-scenarios.sh | buildkite-agent pipeline upload

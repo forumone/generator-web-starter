@@ -1,0 +1,18 @@
+{
+  "generator-web-starter": {
+    "promptValues": {
+      "name": "d8-pantheon",
+      "platform": "Docker",
+      "dockerCms": "Drupal8",
+      "dockerSearch": "None",
+      "dockerCache": "None",
+      "documentRoot": "web",
+      "useGesso": true,
+      "useCapistrano": false,
+      "shouldInstallDrupal": true,
+      "gessoShouldInstall": true,
+      "drupalProjectType": "pantheon-systems/example-drops-8-composer"
+    },
+    "projectName": "d8-pantheon"
+  }
+}
