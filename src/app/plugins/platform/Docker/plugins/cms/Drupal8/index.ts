@@ -19,9 +19,10 @@ import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import { gessoDrupalPath } from '../../gesso/constants';
 import { injectPlatformConfig, renameWebRoot } from './installUtils';
-import { promptOrUninteractive } from '../../../../../../../util';
-import { outputFormat as format } from '../../../../../../../util';
-
+import {
+  outputFormat as format,
+  promptOrUninteractive,
+} from '../../../../../../../util';
 const mkdir = promisify(fs.mkdir);
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
@@ -54,7 +55,7 @@ class Drupal8 extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  private spawnComposer = spawnComposer.bind(this);
+  private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([

@@ -38,7 +38,7 @@ class WordPress extends Generator {
 
   private shouldInstall: boolean | undefined = false;
 
-  private spawnComposer = spawnComposer.bind(this);
+  private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
   async initializing() {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
