@@ -90,7 +90,11 @@ create-compare-step() {
       # Download the tarball into the test directory for use building the Docker image.
       - artifacts#v1.3.0:
           download: ".buildkite/artifacts/**/${scenario}/${scenario}.tgz"
-          upload: ".buildkite/artifacts/${scenario}.html"
+          upload:
+            # Upload the HTML diff report.
+            - ".buildkite/artifacts/*.html"
+            # Upload the compared tar files for easy access if needed for local testing.
+            - ".buildkite/artifacts/*/*/*.tgz"
       - docker-compose#v3.7.0:
           run: diff
           debug: true
@@ -100,17 +104,28 @@ create-compare-step() {
           # Disable shell to pass commands directly into the image's entrypoint script.
           shell: false
           command:
+            # Don't compare file permissions, created/modified dates, etc.
             - --exclude-directory-metadata=recursive
+            # Remove limits for diff output.
             - --no-default-limits
-            - --new-file
+            # Don't compare the tar file used to extract the scenario content.
             - --exclude
             - "${scenario}.tgz"
-            - --jquery
-            - "\${JQUERY_CDN}"
+            # Output results as an HTML file for easy viewing.
             - --html
             - /artifacts/${scenario}.html
-            - /artifacts/${image_1}/${scenario}
-            - /artifacts/${image_2}/${scenario}
+            # Include JQuery in the HTML output to suppport collapsing output.
+            - --jquery
+            - "\${JQUERY_CDN}"
+            # Show diff output in the terminal.
+            - --text
+            - '-'
+            # Produce a report file even if no diffs were found.
+            - --output-empty
+            # Identify the directories to be compared. Starting with the most stable
+            # to identify new changes deviating from it.
+            - ${image_1}/${scenario}
+            - ${image_2}/${scenario}
           volumes:
             - './.buildkite/artifacts:/artifacts'
       - improbable-eng/metahook:
@@ -119,12 +134,15 @@ create-compare-step() {
             # Extract artifact gzips for direct file comparisons.
             (cd ".buildkite/artifacts/${image_1}/${scenario}" && tar -xf "${scenario}.tgz")
             # Fail if an expected file from the archive is not found.
-            [[ ! -e ".buildkite/artifacts/${image_1}/${scenario}/docker-compose.yml" ]]
+            [[ -e ".buildkite/artifacts/${image_1}/${scenario}/docker-compose.yml" ]]
 
             (cd ".buildkite/artifacts/${image_2}/${scenario}" && tar -xf "${scenario}.tgz")
-            ls ".buildkite/artifacts/${image_2}/${scenario}"
             # Fail if an expected file from the archive is not found.
-            [[ ! -e ".buildkite/artifacts/${image_2}/${scenario}/docker-compose.yml" ]]
+            [[ -e ".buildkite/artifacts/${image_2}/${scenario}/docker-compose.yml" ]]
+          post-command: |
+            set -ex
+            # Fail if the report file wasn't created as expected.
+            [[ -e ".buildkite/artifacts/${scenario}.html" ]]
 
 YAML
 }
