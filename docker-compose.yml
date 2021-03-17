@@ -1,0 +1,79 @@
+# Define some service defaults for consistency across services.
+x-defaults:
+  commands: &commands
+    command:
+      - yo
+      - --no-insight
+      - web-starter
+      - --uninteractive
+      - --force
+      - --debug
+  volumes: &volumes
+    volumes:
+      - $PWD:$PWD
+      - /var/run/docker.sock:/var/run/docker.sock
+  debug-config: &debug
+    environment:
+      DEBUG: 'web-starter:*'
+  service-defaults: &defaults
+    <<: *debug
+    working_dir: $PWD/test/$SCENARIO
+    <<: *commands
+    <<: *volumes
+
+version: "3.7"
+services:
+  base:
+    build:
+      context: ./
+      target: base
+
+  test:
+    build:
+      context: ./
+      target: build
+    <<: *defaults
+
+
+  stable:
+    build:
+      context: ./
+      target: stable
+    <<: *defaults
+
+  next:
+    build:
+      context: ./
+      target: next
+      args:
+        VERSION: next
+    <<: *defaults
+
+  diff:
+    image: 'registry.salsa.debian.org/reproducible-builds/diffoscope'
+    working_dir: /artifacts
+    volumes:
+      - $PWD/.buildkite/artifacts:/artifacts
+    command:
+      # Don't compare file permissions, created/modified dates, etc.
+      - --exclude-directory-metadata=recursive
+      # Remove limits for diff output.
+      - --no-default-limits
+      # Don't compare the tar file used to extract the scenario content.
+      - --exclude
+      - "${SCENARIO}.tgz"
+      # Output results as an HTML file for easy viewing.
+      - --html
+      - /artifacts/${SCENARIO}.html
+      # Include JQuery in the HTML output to suppport collapsing output.
+      - --jquery
+      - 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js'
+      # Show diff output in the terminal.
+      - --text
+      - '-'
+      # Produce a report file even if no diffs were found.
+      - --output-empty
+      # Identify the directories to be compared. Starting with the most stable
+      # to identify new changes deviating from it.
+      - /artifacts/next/${SCENARIO}
+      - /artifacts/test/${SCENARIO}

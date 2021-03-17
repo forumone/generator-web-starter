@@ -25,11 +25,11 @@ import { promptOrUninteractive } from '../../../../../../../util';
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
 class WordPress extends Generator {
-  // Written out in initializing phase
+  // Written out in initializing phase.
   private latestWpTag!: string;
   private latestWpCliTag!: string;
 
-  // Assigned to in prompting phase
+  // Assigned to in prompting phase.
   private documentRoot!: string;
 
   private usesWpStarter: boolean | undefined = true;
@@ -37,6 +37,8 @@ class WordPress extends Generator {
   private usesGesso: boolean | undefined = true;
 
   private shouldInstall: boolean | undefined = false;
+
+  private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
   async initializing() {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
@@ -349,7 +351,9 @@ class WordPress extends Generator {
     if (this.usesWpStarter) {
       const wpRoot = this.destinationPath('services/wordpress');
       this.debug('Spawning Composer install command in %s.', wpRoot);
-      await spawnComposer(['install'], { cwd: wpRoot });
+      await this.spawnComposer(['install'], {
+        cwd: wpRoot,
+      });
     } else {
       const wpRoot = this.destinationPath(
         'services/wordpress',
@@ -370,9 +374,12 @@ class WordPress extends Generator {
       'Spawning Composer command to install WordPress plugin %s.',
       packageName,
     );
-    await spawnComposer(['require', packageName, '--ignore-platform-reqs'], {
-      cwd: this.destinationPath('services/wordpress'),
-    });
+    await this.spawnComposer(
+      ['require', packageName, '--ignore-platform-reqs'],
+      {
+        cwd: this.destinationPath('services/wordpress'),
+      },
+    );
   }
 
   /**

@@ -1,0 +1,38 @@
+#############################################################################
+# This pipeline is used as a stub to define defaults for dynamic scenario steps.
+#
+# This file serves as a stub to define step templates for simpler definition
+# of test scenario steps generated dynamically using test-scenarios.sh.
+#
+# The following environment variables may be set to configure the behavior of
+# each templated scenario step:
+#
+# * IMAGE_REPOSITORY: The ECR repository where the test image was uploaded.
+# * IMAGE_TAG: The image tag to be used for testing.
+# * ARTIFACT_BASE_PATH: A prefix for artifact paths to be uploaded to in
+#   order to support differentiation between baseline and test build output.
+#############################################################################
+
+# Consolidate the common configuration for reuse across multiple steps.
+definitions:
+  # Configure some default step values.
+  step-defaults: &step-defaults
+    timeout_in_minutes: 15
+    concurrency: 5
+    concurrency_group: "$BUILDKITE_PIPELINE_SLUG"
+
+  # Specify common agent queue parameters.
+  queues:
+    # Docker-based tasks should run in the Docker queue.
+    docker-agents: &docker-agents
+      agents:
+        queue: "docker-builders"
+
+  # Specify common plugin configurations.
+  plugins:
+    ecr: &ecr
+      ecr#v2.0.0:
+        login: true
+        no-include-email: true
+
+steps:
