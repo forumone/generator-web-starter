@@ -428,45 +428,7 @@ class Drupal8 extends Generator {
   }
 
   public writing(): void {
-    const needsMemcached = this.options.plugins.cache === 'Memcache';
-
-    // The Pantheon template doesn't create a load.environment.php file, so we have to
-    // account for that lest the Docker build fail (or worse, we remove the ability to load
-    // env vars when using drupal-composer).
-    const sourceFiles =
-      this.projectType === drupalProject ? ['load.environment.php'] : [];
-
-    const drupalDockerfile = createDrupalDockerfile({
-      memcached: needsMemcached,
-      tag: this.latestDrupalTag,
-      documentRoot: this.documentRoot,
-      gesso: Boolean(this.useGesso),
-      sourceFiles,
-    });
-
-    const drushDockerfile = createDrushDockerfile({
-      memcached: needsMemcached,
-      tag: this.latestDrushTag,
-    });
-
-    this.debug(
-      format.debug('Writing Drupal Dockerfile to %s.'),
-      'services/drupal/Dockerfile',
-    );
-    this.fs.write(
-      this.destinationPath('services/drupal/Dockerfile'),
-      drupalDockerfile.render(),
-    );
-
-    this.debug(
-      format.debug('Writing Drush Dockerfile to %s.'),
-      'services/drush/Dockerfile',
-    );
-    this.fs.write(
-      this.destinationPath('services/drush/Dockerfile'),
-      drushDockerfile.render(),
-    );
-
+    this._writeDockerFiles();
     this._writeDockerIgnore();
 
     this.debug(
@@ -512,6 +474,50 @@ class Drupal8 extends Generator {
         ),
       );
     });
+  }
+
+  /**
+   * Create necessary Docker files.
+   */
+  private _writeDockerFiles(): void {
+    const needsMemcached = this.options.plugins.cache === 'Memcache';
+
+    // The Pantheon template doesn't create a load.environment.php file, so we have to
+    // account for that lest the Docker build fail (or worse, we remove the ability to load
+    // env vars when using drupal-composer).
+    const sourceFiles =
+      this.projectType === drupalProject ? ['load.environment.php'] : [];
+
+    const drupalDockerfile = createDrupalDockerfile({
+      memcached: needsMemcached,
+      tag: this.latestDrupalTag,
+      documentRoot: this.documentRoot,
+      gesso: Boolean(this.useGesso),
+      sourceFiles,
+    });
+
+    const drushDockerfile = createDrushDockerfile({
+      memcached: needsMemcached,
+      tag: this.latestDrushTag,
+    });
+
+    this.debug(
+      format.debug('Writing Drupal Dockerfile to %s.'),
+      'services/drupal/Dockerfile',
+    );
+    this.fs.write(
+      this.destinationPath('services/drupal/Dockerfile'),
+      drupalDockerfile.render(),
+    );
+
+    this.debug(
+      format.debug('Writing Drush Dockerfile to %s.'),
+      'services/drush/Dockerfile',
+    );
+    this.fs.write(
+      this.destinationPath('services/drush/Dockerfile'),
+      drushDockerfile.render(),
+    );
   }
 
   /**
