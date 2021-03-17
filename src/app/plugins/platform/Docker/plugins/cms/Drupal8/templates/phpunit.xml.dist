@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<ruleset name="drupal_project">
+  <description>PHP_CodeSniffer standards for Drupal-based projects.</description>
+
+  <!-- Use default Drupal coding standards. -->
+  <rule ref="Drupal" />
+  <rule ref="DrupalPractice" />
+
+  <!-- Scan within this directory. -->
+  <file>.</file>
+
+  <exclude-pattern>vendor/*</exclude-pattern>
+  <exclude-pattern>drush/*</exclude-pattern>
+  <exclude-pattern>tests/**/*.md</exclude-pattern>
+  <exclude-pattern>node_modules/*</exclude-pattern>
+  <exclude-pattern>public/core</exclude-pattern>
+  <exclude-pattern>public/modules/contrib/*</exclude-pattern>
+  <exclude-pattern>public/profiles/contrib/*</exclude-pattern>
+  <exclude-pattern>public/themes/contrib/*</exclude-pattern>
+
+</ruleset>

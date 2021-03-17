@@ -441,6 +441,24 @@ class Drupal8 extends Generator {
     );
 
     this.debug(
+      format.debug('Copying Codacy configuration file to %s.'),
+      '.codacy.yml',
+    );
+    this.fs.copy(
+      this.templatePath('_codacy.yml'),
+      this.destinationPath('.codacy.yml'),
+    );
+
+    this.debug(
+      format.debug('Copying PHPCS configuration file to %s.'),
+      'services/drupal/phpunit.xml.dist',
+    );
+    this.fs.copy(
+      this.templatePath('phpunit.xml.dist'),
+      this.destinationPath('services/drupal/phpunit.xml.dist'),
+    );
+
+    this.debug(
       format.debug('Writing .gitkeep file to %s.'),
       'services/drupal/config/.gitkeep',
     );

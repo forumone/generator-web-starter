@@ -1,0 +1,24 @@
+---
+engines:
+  phpcs:
+    enabled: true
+    php_version: 7.4
+    base_sub_dir: services/drupal
+languages:
+  php:
+    extensions:
+      - '.php'
+      - '.module'
+      - '.inc'
+      - '.install'
+      - '.profile'
+      - '.theme'
+      - '.test'
+  ruby:
+    extensions:
+      - '.rb'
+      - '.rake'
+      - 'Capfile'
+exclude_paths:
+  - '.buildkite/**'
+  - 'services/drupal/vendor/**'
