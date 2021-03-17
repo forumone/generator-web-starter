@@ -430,6 +430,7 @@ class Drupal8 extends Generator {
   public writing(): void {
     this._writeDockerFiles();
     this._writeDockerIgnore();
+    this._writeCodeQualityConfig();
 
     this.debug(
       format.debug('Copying .env template file to %s.'),
@@ -438,24 +439,6 @@ class Drupal8 extends Generator {
     this.fs.copy(
       this.templatePath('_env'),
       this.destinationPath('services/drupal/.env'),
-    );
-
-    this.debug(
-      format.debug('Copying Codacy configuration file to %s.'),
-      '.codacy.yml',
-    );
-    this.fs.copy(
-      this.templatePath('_codacy.yml'),
-      this.destinationPath('.codacy.yml'),
-    );
-
-    this.debug(
-      format.debug('Copying PHPCS configuration file to %s.'),
-      'services/drupal/phpunit.xml.dist',
-    );
-    this.fs.copy(
-      this.templatePath('phpunit.xml.dist'),
-      this.destinationPath('services/drupal/phpunit.xml.dist'),
     );
 
     this.debug(
@@ -602,6 +585,35 @@ class Drupal8 extends Generator {
       {
         documentRoot: this.documentRoot,
         inheritedRules: drupalDockerIgnore.serialize(),
+      },
+    );
+  }
+
+  /**
+   * Write code quality configuration files for the project.
+   */
+  private _writeCodeQualityConfig() {
+    this.debug(
+      format.debug('Rendering .codacy.yml template to %s.'),
+      '.codacy.yml',
+    );
+    this.renderTemplate(
+      this.templatePath('_codacy.yml.ejs'),
+      this.destinationPath('.codacy.yml'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
+
+    this.debug(
+      format.debug('Rendering phpcs.xml.dist template to %s.'),
+      'services/drupal/phpcs.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('phpcs.xml.dist.ejs'),
+      this.destinationPath('services/drupal/phpcs.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
       },
     );
   }
