@@ -14,6 +14,7 @@
   <exclude-pattern>tests/**/*.md</exclude-pattern>
   <exclude-pattern>node_modules/*</exclude-pattern>
   <exclude-pattern>public/core</exclude-pattern>
+  <exclude-pattern>public/libraries/*</exclude-pattern>
   <exclude-pattern>public/modules/contrib/*</exclude-pattern>
   <exclude-pattern>public/profiles/contrib/*</exclude-pattern>
   <exclude-pattern>public/themes/contrib/*</exclude-pattern>
