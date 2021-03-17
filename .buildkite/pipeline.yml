@@ -129,6 +129,7 @@ steps:
   - label: ':docker: Next image'
     key: next_image
     depends_on: base_image
+    skip: 'Skip in favor of testing against stable releases.'
     <<: *step-defaults
     <<: *docker-agents
     plugins:

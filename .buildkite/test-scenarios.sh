@@ -161,11 +161,12 @@ for scenario in "${!test_scenarios[@]}"; do
 
   # Create a baseline scenario step.
   # TODO: Make execution of these additional steps dynamic.
-  # create-step "${scenario}" "${scenario_label} (Baseline)" stable >> "${FILE}"
-  create-scenario-step "${scenario}" "${scenario_label} (Next)" next >> "${FILE}"
+  create-scenario-step "${scenario}" "${scenario_label} (Baseline)" stable >> "${FILE}"
+  # create-scenario-step "${scenario}" "${scenario_label} (Next)" next >> "${FILE}"
 
   # Create an output comparison step.
-  create-compare-step "${scenario}" "${scenario_label}" test next >> "${FILE}"
+  create-compare-step "${scenario}" "${scenario_label}" test stable >> "${FILE}"
+  # create-compare-step "${scenario}" "${scenario_label}" test next >> "${FILE}"
 
 done
 
