@@ -1,6 +1,7 @@
 # Editor stuff
 .vscode
 .idea
+.DS_store
 
 # NPM
 node_modules
