@@ -34,7 +34,6 @@ services:
       target: build
     <<: *defaults
 
-
   stable:
     build:
       context: ./

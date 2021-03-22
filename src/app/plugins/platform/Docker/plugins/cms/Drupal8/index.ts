@@ -278,6 +278,42 @@ class Drupal8 extends Generator {
     });
 
     cliEditor.addComposer('services/drupal');
+
+    const codacyService = {
+      image: 'codacy/codacy-analysis-cli:latest',
+      environment: {
+        CODACY_CODE: '$PWD',
+      },
+      command: 'analyze',
+      volumes: [
+        createBindMount('$PWD', '$PWD'),
+        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
+        createBindMount('/tmp', '/tmp'),
+      ],
+    };
+
+    // Create additional services to run Codacy locally.
+    cliEditor.addService('codacy', codacyService);
+    cliEditor.addService('phpcs', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
+      command: '',
+    });
+    cliEditor.addService('phpmd', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
+      command: '',
+    });
+    cliEditor.addService('eslint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
+      command: '',
+    });
+    cliEditor.addService('stylelint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
+      command: '',
+    });
   }
 
   /**
@@ -418,7 +454,7 @@ class Drupal8 extends Generator {
   // directory (services/drupal) exists and is not empty.
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
-  async default(): Promise<void> {
+  public async default(): Promise<void> {
     await this._scaffoldDrupal();
 
     if (this.useGesso) {
