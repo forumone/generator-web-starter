@@ -639,6 +639,7 @@ class Drupal8 extends Generator {
       {
         documentRoot: this.documentRoot,
         useGesso: this.useGesso,
+        isPantheon: this.projectType === pantheonProject,
       },
     );
 
