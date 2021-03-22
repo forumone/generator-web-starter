@@ -628,7 +628,7 @@ class Drupal8 extends Generator {
   /**
    * Write code quality configuration files for the project.
    */
-  private _writeCodeQualityConfig() {
+  private _writeCodeQualityConfig(): void {
     this.debug(
       format.debug('Rendering .codacy.yml template to %s.'),
       '.codacy.yml',

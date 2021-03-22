@@ -40,7 +40,7 @@ class WordPress extends Generator {
 
   private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
-  async initializing() {
+  public async initializing(): Promise<void> {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
       getLatestWordPressTag(),
       getLatestWordPressCliTag(),
@@ -51,7 +51,7 @@ class WordPress extends Generator {
     this.options.force = true;
   }
 
-  async prompting() {
+  public async prompting(): Promise<void> {
     const {
       documentRoot,
       wpStarter,
@@ -158,7 +158,7 @@ class WordPress extends Generator {
     }
   }
 
-  configuring() {
+  public configuring(): void {
     this.debug(
       'Copying nginx config template to %s.',
       'services/nginx/default.conf',
@@ -313,7 +313,7 @@ class WordPress extends Generator {
     });
   }
 
-  async writing() {
+  public async writing(): Promise<void> {
     // For project not using wp-starter, don't bother writing out composer.json
     // or a .env file.
     if (this.usesWpStarter) {
@@ -389,7 +389,7 @@ class WordPress extends Generator {
     }
   }
 
-  private async _installWordPress() {
+  private async _installWordPress(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -414,7 +414,7 @@ class WordPress extends Generator {
   /**
    * Install plugin from WordPress Packagist with Composer.
    */
-  private async _installWithComposer(pluginName: string) {
+  private async _installWithComposer(pluginName: string): Promise<void> {
     const packageName = `wpackagist-plugin/${pluginName}`;
     this.debug(
       'Spawning Composer command to install WordPress plugin %s.',
@@ -431,7 +431,7 @@ class WordPress extends Generator {
   /**
    * Install plugin from WordPress plugin repo as a zip.
    */
-  private async _installFromWPRepo(pluginName: string) {
+  private async _installFromWPRepo(pluginName: string): Promise<void> {
     this.debug('Installing plugin %s from repo.', pluginName);
     const endpoint = new URL('https://downloads.wordpress.org');
     endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
@@ -460,7 +460,7 @@ class WordPress extends Generator {
     await decompress(buffer, destinationPath, { strip: 1 });
   }
 
-  private async _installGessoDependencies() {
+  private async _installGessoDependencies(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -476,7 +476,7 @@ class WordPress extends Generator {
     }
   }
 
-  async install() {
+  public async install(): Promise<void> {
     this.debug('Installing WordPress.');
     await this._installWordPress();
 
