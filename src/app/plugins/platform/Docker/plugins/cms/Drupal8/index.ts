@@ -617,6 +617,18 @@ class Drupal8 extends Generator {
         documentRoot: this.documentRoot,
       },
     );
+
+    this.debug(
+      format.debug('Rendering .phpmd.xml.dist template to %s.'),
+      'services/drupal/.phpmd.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('_phpmd.xml.dist.ejs'),
+      this.destinationPath('services/drupal/.phpmd.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
   }
 }
 
