@@ -38,4 +38,11 @@ languages:
 exclude_paths:
   - '.buildkite/artifacts/**'
   - 'services/drupal/vendor/**'
+  - 'services/drupal/<%= documentRoot %>/core/**'
   - 'services/drupal/<%= documentRoot %>/libraries/**'
+  - 'services/drupal/<%= documentRoot %>/**/contrib/**'
+  <%_ if (isPantheon) { _%>
+  # Ignore issues pre-existing within the Pantheon project template.
+  - 'services/drupal/scripts/composer/ScriptHandler.php'
+  - 'services/drupal/web/sites/default/settings.pantheon.php'
+  <%_ } _%>
