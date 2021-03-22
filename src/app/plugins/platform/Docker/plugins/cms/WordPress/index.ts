@@ -20,7 +20,10 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
-import { promptOrUninteractive } from '../../../../../../../util';
+import {
+  outputFormat as format,
+  promptOrUninteractive,
+} from '../../../../../../../util';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
@@ -387,6 +390,50 @@ class WordPress extends Generator {
         { documentRoot: this.documentRoot },
       );
     }
+
+    this._writeCodeQualityConfig();
+  }
+
+  /**
+   * Write code quality configuration files for the project.
+   */
+  private _writeCodeQualityConfig(): void {
+    this.debug(
+      format.debug('Rendering .codacy.yml template to %s.'),
+      '.codacy.yml',
+    );
+    this.renderTemplate(
+      this.templatePath('_codacy.yml.ejs'),
+      this.destinationPath('.codacy.yml'),
+      {
+        documentRoot: this.documentRoot,
+        useGesso: this.usesGesso,
+      },
+    );
+
+    this.debug(
+      format.debug('Rendering phpcs.xml.dist template to %s.'),
+      'services/drupal/phpcs.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('phpcs.xml.dist.ejs'),
+      this.destinationPath('services/drupal/phpcs.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
+
+    this.debug(
+      format.debug('Rendering .phpmd.xml.dist template to %s.'),
+      'services/drupal/.phpmd.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('_phpmd.xml.dist.ejs'),
+      this.destinationPath('services/drupal/.phpmd.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
   }
 
   private async _installWordPress(): Promise<void> {
