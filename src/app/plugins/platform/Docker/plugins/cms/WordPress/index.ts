@@ -262,9 +262,55 @@ class WordPress extends Generator {
     });
 
     if (this.usesWpStarter) {
-      this.debug('Adding composer cli service.');
+      this.debug('Adding Composer CLI service.');
       cliEditor.addComposer('services/wordpress');
     }
+
+    // Add Codacy configuration.
+    const codacyService = {
+      image: 'codacy/codacy-analysis-cli:latest',
+      environment: {
+        CODACY_CODE: '$PWD',
+      },
+      command: 'analyze',
+      volumes: [
+        createBindMount('$PWD', '$PWD'),
+        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
+        createBindMount('/tmp', '/tmp'),
+      ],
+    };
+
+    // Create additional services to run Codacy locally.
+    this.debug('Adding Codacy CLI service.');
+    cliEditor.addService('codacy', codacyService);
+
+    this.debug('Adding Codacy phpcs service.');
+    cliEditor.addService('phpcs', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
+      command: '',
+    });
+
+    this.debug('Adding Codacy phpmd service.');
+    cliEditor.addService('phpmd', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
+      command: '',
+    });
+
+    this.debug('Adding Codacy eslint service.');
+    cliEditor.addService('eslint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
+      command: '',
+    });
+
+    this.debug('Adding Codacy stylelint service.');
+    cliEditor.addService('stylelint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
+      command: '',
+    });
   }
 
   async writing() {
