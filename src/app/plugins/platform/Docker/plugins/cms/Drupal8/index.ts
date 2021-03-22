@@ -602,6 +602,7 @@ class Drupal8 extends Generator {
       this.destinationPath('.codacy.yml'),
       {
         documentRoot: this.documentRoot,
+        useGesso: this.useGesso,
       },
     );
 

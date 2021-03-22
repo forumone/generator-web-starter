@@ -4,8 +4,19 @@ engines:
     enabled: true
     php_version: 7.4
     base_sub_dir: services/drupal
+  <%_ if (useGesso) { _%>
+  eslint:
+    enabled: true
+    # Restrict parsing into the Gesso directory where a config file exists.
+    base_sub_dir: services/drupal/<%= documentRoot %>/themes/gesso
+  stylelint:
+    enabled: true
+    # Restrict parsing into the Gesso directory where a config file exists.
+    base_sub_dir: services/drupal/<%= documentRoot %>/themes/gesso
+  <%_ } _%>
 languages:
   php:
+    # Recognize various Drupal custom file extensions.
     extensions:
       - '.php'
       - '.module'
@@ -15,11 +26,12 @@ languages:
       - '.theme'
       - '.test'
   ruby:
+    # Capfile needs to be specified explicitly due to its unique name.
     extensions:
       - '.rb'
       - '.rake'
       - 'Capfile'
 exclude_paths:
-  - '.buildkite/**'
+  - '.buildkite/artifacts/**'
   - 'services/drupal/vendor/**'
   - 'services/drupal/<%= documentRoot %>/libraries/**'
