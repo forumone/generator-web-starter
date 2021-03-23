@@ -420,6 +420,7 @@ class WordPress extends Generator {
       this.destinationPath('services/drupal/phpcs.xml.dist'),
       {
         documentRoot: this.documentRoot,
+        useGesso: this.usesGesso,
       },
     );
 
