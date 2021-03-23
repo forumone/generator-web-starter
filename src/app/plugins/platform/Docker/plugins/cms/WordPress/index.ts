@@ -413,11 +413,11 @@ class WordPress extends Generator {
 
     this.debug(
       format.debug('Rendering phpcs.xml.dist template to %s.'),
-      'services/drupal/phpcs.xml.dist',
+      'services/wordpress/phpcs.xml.dist',
     );
     this.renderTemplate(
       this.templatePath('phpcs.xml.dist.ejs'),
-      this.destinationPath('services/drupal/phpcs.xml.dist'),
+      this.destinationPath('services/wordpress/phpcs.xml.dist'),
       {
         documentRoot: this.documentRoot,
         useGesso: this.usesGesso,
@@ -426,11 +426,11 @@ class WordPress extends Generator {
 
     this.debug(
       format.debug('Rendering .phpmd.xml.dist template to %s.'),
-      'services/drupal/.phpmd.xml.dist',
+      'services/wordpress/.phpmd.xml.dist',
     );
     this.renderTemplate(
       this.templatePath('_phpmd.xml.dist.ejs'),
-      this.destinationPath('services/drupal/.phpmd.xml.dist'),
+      this.destinationPath('services/wordpress/.phpmd.xml.dist'),
       {
         documentRoot: this.documentRoot,
       },
