@@ -85,7 +85,7 @@ class Drupal8 extends Generator {
         name: 'documentRoot',
         validate: name => name !== '' && validFilename(name),
         message: 'What is the document root?',
-        default: 'public',
+        default: 'web',
         store: true,
       },
       {
