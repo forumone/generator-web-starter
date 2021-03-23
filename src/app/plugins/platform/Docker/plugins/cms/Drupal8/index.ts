@@ -28,10 +28,13 @@ const mkdir = promisify(fs.mkdir);
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
 type DrupalProject = typeof drupalProject;
 
+const drupal9Project = 'drupal/recommended-project';
+type Drupal9Project = typeof drupal9Project;
+
 const pantheonProject = 'pantheon-systems/example-drops-8-composer';
 type PantheonProject = typeof pantheonProject;
 
-type Project = PantheonProject | DrupalProject;
+type Project = PantheonProject | DrupalProject | Drupal9Project;
 
 const gessoDrupalDependencies: ReadonlyArray<string> = [
   'drupal/components',
@@ -40,7 +43,7 @@ const gessoDrupalDependencies: ReadonlyArray<string> = [
 ];
 
 const configGitKeepContents = dedent`
-  This file is used for your Drupal 8 configuration.
+  This file is used for your Drupal configuration.
 `;
 
 class Drupal8 extends Generator {
@@ -105,7 +108,7 @@ class Drupal8 extends Generator {
       {
         type: 'confirm',
         name: 'shouldInstallDrupal',
-        message: 'Install Drupal 8?',
+        message: 'Install Drupal?',
         store: true,
         default: (answers: { documentRoot: string }) => {
           const targetPath = this.destinationPath(
@@ -125,9 +128,14 @@ class Drupal8 extends Generator {
         // (they don't know about the 'choice' property)
         choices: [
           {
-            name: `Drupal Project (${drupalProject})`,
+            name: `Drupal 8 Project (${drupalProject})`,
             value: drupalProject,
-            short: 'Drupal Project',
+            short: 'Drupal 8 Project',
+          } as { name: string; value: string },
+          {
+            name: `Drupal 9 Project (${drupal9Project})`,
+            value: drupal9Project,
+            short: 'Drupal 9 Project',
           } as { name: string; value: string },
           {
             name: `Pantheon (${pantheonProject})`,
