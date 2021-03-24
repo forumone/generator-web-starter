@@ -18,6 +18,13 @@ definitions:
         login: true
         no-include-email: true
 
+  # Specify reused conditions.
+  conditions:
+    # Only run tests on Pull requests or manually triggered jobs for testing.
+    run-tests: &run-tests
+      if: "build.pull_request.id != null ||  build.source == 'ui'"
+
+
 env:
   # Identify the address for the shared Buildkite ECR repository.
   IMAGE_REPOSITORY: "165761832703.dkr.ecr.us-east-1.amazonaws.com/buildkite"
@@ -77,6 +84,7 @@ steps:
     depends_on: build_gate
     <<: *step-defaults
     <<: *docker-agents
+    <<: *run-tests
     plugins:
       - <<: *ecr
       - docker-compose#v3.7.0:
@@ -93,6 +101,7 @@ steps:
     depends_on: base_image
     <<: *step-defaults
     <<: *docker-agents
+    <<: *run-tests
     plugins:
       - <<: *ecr
       - docker-compose#v3.7.0:
@@ -114,6 +123,7 @@ steps:
     skip: 'Skip until stable release includes Docker support.'
     <<: *step-defaults
     <<: *docker-agents
+    <<: *run-tests
     plugins:
       - <<: *ecr
       - docker-compose#v3.7.0:
@@ -131,6 +141,7 @@ steps:
     depends_on: base_image
     <<: *step-defaults
     <<: *docker-agents
+    <<: *run-tests
     plugins:
       - <<: *ecr
       - docker-compose#v3.7.0:
@@ -148,5 +159,6 @@ steps:
     depends_on:
       - base_image
     <<: *step-defaults
+    <<: *run-tests
     commands:
       - .buildkite/test-scenarios.sh | buildkite-agent pipeline upload
