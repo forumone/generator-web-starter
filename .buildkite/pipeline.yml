@@ -111,7 +111,6 @@ steps:
   - label: ':docker: Stable image'
     key: stable_image
     depends_on: base_image
-    skip: 'Skip until stable release includes Docker support.'
     <<: *step-defaults
     <<: *docker-agents
     plugins:

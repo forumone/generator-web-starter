@@ -1,0 +1,37 @@
+---
+engines:
+  phpcs:
+    enabled: true
+    php_version: 7.4
+    base_sub_dir: services/wordpress
+    exclude_paths:
+      - 'source/**'
+  phpmd:
+    enabled: true
+    php_version: 7.4
+    base_sub_dir: services/wordpress
+    exclude_paths:
+      - 'source/**'
+  <%_ if (useGesso) { _%>
+  eslint:
+    enabled: true
+    # Restrict parsing into the Gesso directory where a config file exists.
+    base_sub_dir: services/wordpress/<%= documentRoot %>/wp-content/themes/gesso
+  stylelint:
+    enabled: true
+    # Restrict parsing into the Gesso directory where a config file exists.
+    base_sub_dir: services/wordpress/<%= documentRoot %>/wp-content/themes/gesso
+  <%_ } _%>
+languages:
+  ruby:
+    # Capfile needs to be specified explicitly due to its unique name.
+    extensions:
+      - '.rb'
+      - '.rake'
+      - 'Capfile'
+exclude_paths:
+  - '.buildkite/artifacts/**'
+  - 'services/wordpress/**/vendor/**
+  - 'services/wordpress/**/node_modules/**
+  - 'services/wordpress/**/dist/**
+  - 'services/wordpress/**/test/**

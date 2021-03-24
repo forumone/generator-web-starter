@@ -1,4 +1,19 @@
-node_modules/
+# Editor stuff
+.vscode
+.idea
+.DS_store
+
+# NPM
+node_modules
+
+# Build output
+generators
+
+# Coverage information
+coverage
+
+# Ignore generated test content
+test/*/*
+
 .git/
-test/
 .buildkite/

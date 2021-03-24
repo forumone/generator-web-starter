@@ -278,6 +278,42 @@ class Drupal8 extends Generator {
     });
 
     cliEditor.addComposer('services/drupal');
+
+    const codacyService = {
+      image: 'codacy/codacy-analysis-cli:latest',
+      environment: {
+        CODACY_CODE: '$PWD',
+      },
+      command: 'analyze',
+      volumes: [
+        createBindMount('$PWD', '$PWD'),
+        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
+        createBindMount('/tmp', '/tmp'),
+      ],
+    };
+
+    // Create additional services to run Codacy locally.
+    cliEditor.addService('codacy', codacyService);
+    cliEditor.addService('phpcs', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
+      command: '',
+    });
+    cliEditor.addService('phpmd', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
+      command: '',
+    });
+    cliEditor.addService('eslint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
+      command: '',
+    });
+    cliEditor.addService('stylelint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
+      command: '',
+    });
   }
 
   /**
@@ -418,7 +454,7 @@ class Drupal8 extends Generator {
   // directory (services/drupal) exists and is not empty.
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
-  async default(): Promise<void> {
+  public async default(): Promise<void> {
     await this._scaffoldDrupal();
 
     if (this.useGesso) {
@@ -428,46 +464,9 @@ class Drupal8 extends Generator {
   }
 
   public writing(): void {
-    const needsMemcached = this.options.plugins.cache === 'Memcache';
-
-    // The Pantheon template doesn't create a load.environment.php file, so we have to
-    // account for that lest the Docker build fail (or worse, we remove the ability to load
-    // env vars when using drupal-composer).
-    const sourceFiles =
-      this.projectType === drupalProject ? ['load.environment.php'] : [];
-
-    const drupalDockerfile = createDrupalDockerfile({
-      memcached: needsMemcached,
-      tag: this.latestDrupalTag,
-      documentRoot: this.documentRoot,
-      gesso: Boolean(this.useGesso),
-      sourceFiles,
-    });
-
-    const drushDockerfile = createDrushDockerfile({
-      memcached: needsMemcached,
-      tag: this.latestDrushTag,
-    });
-
-    this.debug(
-      format.debug('Writing Drupal Dockerfile to %s.'),
-      'services/drupal/Dockerfile',
-    );
-    this.fs.write(
-      this.destinationPath('services/drupal/Dockerfile'),
-      drupalDockerfile.render(),
-    );
-
-    this.debug(
-      format.debug('Writing Drush Dockerfile to %s.'),
-      'services/drush/Dockerfile',
-    );
-    this.fs.write(
-      this.destinationPath('services/drush/Dockerfile'),
-      drushDockerfile.render(),
-    );
-
+    this._writeDockerFiles();
     this._writeDockerIgnore();
+    this._writeCodeQualityConfig();
 
     this.debug(
       format.debug('Copying .env template file to %s.'),
@@ -512,6 +511,50 @@ class Drupal8 extends Generator {
         ),
       );
     });
+  }
+
+  /**
+   * Create necessary Docker files.
+   */
+  private _writeDockerFiles(): void {
+    const needsMemcached = this.options.plugins.cache === 'Memcache';
+
+    // The Pantheon template doesn't create a load.environment.php file, so we have to
+    // account for that lest the Docker build fail (or worse, we remove the ability to load
+    // env vars when using drupal-composer).
+    const sourceFiles =
+      this.projectType === drupalProject ? ['load.environment.php'] : [];
+
+    const drupalDockerfile = createDrupalDockerfile({
+      memcached: needsMemcached,
+      tag: this.latestDrupalTag,
+      documentRoot: this.documentRoot,
+      gesso: Boolean(this.useGesso),
+      sourceFiles,
+    });
+
+    const drushDockerfile = createDrushDockerfile({
+      memcached: needsMemcached,
+      tag: this.latestDrushTag,
+    });
+
+    this.debug(
+      format.debug('Writing Drupal Dockerfile to %s.'),
+      'services/drupal/Dockerfile',
+    );
+    this.fs.write(
+      this.destinationPath('services/drupal/Dockerfile'),
+      drupalDockerfile.render(),
+    );
+
+    this.debug(
+      format.debug('Writing Drush Dockerfile to %s.'),
+      'services/drush/Dockerfile',
+    );
+    this.fs.write(
+      this.destinationPath('services/drush/Dockerfile'),
+      drushDockerfile.render(),
+    );
   }
 
   /**
@@ -578,6 +621,49 @@ class Drupal8 extends Generator {
       {
         documentRoot: this.documentRoot,
         inheritedRules: drupalDockerIgnore.serialize(),
+      },
+    );
+  }
+
+  /**
+   * Write code quality configuration files for the project.
+   */
+  private _writeCodeQualityConfig(): void {
+    this.debug(
+      format.debug('Rendering .codacy.yml template to %s.'),
+      '.codacy.yml',
+    );
+    this.renderTemplate(
+      this.templatePath('_codacy.yml.ejs'),
+      this.destinationPath('.codacy.yml'),
+      {
+        documentRoot: this.documentRoot,
+        useGesso: this.useGesso,
+        isPantheon: this.projectType === pantheonProject,
+      },
+    );
+
+    this.debug(
+      format.debug('Rendering phpcs.xml.dist template to %s.'),
+      'services/drupal/phpcs.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('phpcs.xml.dist.ejs'),
+      this.destinationPath('services/drupal/phpcs.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
+
+    this.debug(
+      format.debug('Rendering .phpmd.xml.dist template to %s.'),
+      'services/drupal/.phpmd.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('_phpmd.xml.dist.ejs'),
+      this.destinationPath('services/drupal/.phpmd.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
       },
     );
   }

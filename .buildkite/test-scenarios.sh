@@ -165,8 +165,8 @@ for scenario in "${!test_scenarios[@]}"; do
   # create-scenario-step "${scenario}" "${scenario_label} (Next)" next >> "${FILE}"
 
   # Create an output comparison step.
-  create-compare-step "${scenario}" "${scenario_label}" test stable >> "${FILE}"
-  # create-compare-step "${scenario}" "${scenario_label}" test next >> "${FILE}"
+  create-compare-step "${scenario}" "${scenario_label}" stable test >> "${FILE}"
+  # create-compare-step "${scenario}" "${scenario_label}" next test >> "${FILE}"
 
 done
 
