@@ -160,19 +160,27 @@ async function getCwd(this: Drupal8, useTemp = false): Promise<string> {
   }
 
   this.debug(
-    format.info(
+    format.debug(
       'Identified existing installation at %s. Creating temporary directory.',
     ),
     'services/drupal',
   );
-  // Flag for unsafe cleanup to empty out the existing files in the directory.
-  const tmpObj = tmp.dirSync({ unsafeCleanup: true });
-  this.debug(
-    format.debug('Created temporary installation directory at %s.'),
-    tmpObj.name,
-  );
 
-  return tmpObj.name;
+  // Create the new temporary direcotry.
+  return new Promise((resolve, reject) => {
+    // Flag for unsafe cleanup to empty out the existing files in the directory.
+    tmp.dir({ unsafeCleanup: true }, (err, path) => {
+      if (err) {
+        reject(err);
+      }
+
+      this.debug(
+        format.debug('Created temporary installation directory at %s.'),
+        path,
+      );
+      resolve(path);
+    });
+  });
 }
 
 /**
@@ -192,7 +200,7 @@ export async function createDrupalProject(this: Drupal8) {
   // it as a volume mount.
   if (!this.existsDestination('services')) {
     this.debug(
-      format.info('Creating services directory at %s.'),
+      format.debug('Creating services directory at %s.'),
       this.destinationPath('services'),
     );
     try {
@@ -215,5 +223,5 @@ export async function createDrupalProject(this: Drupal8) {
   const cwd = await getCwd.call(this, useTemp);
 
   this.debug(format.info('Triggering Drupal project scaffolding in %s.'), cwd);
-  await installDrupalProject.call(this, cwd);
+  return installDrupalProject.call(this, cwd);
 }
