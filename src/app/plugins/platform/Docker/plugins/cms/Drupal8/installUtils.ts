@@ -2,7 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import createDebugger from 'debug';
+import Drupal8 from '.';
+import { outputFormat as format } from '../../../../../../../util';
+import tmp from 'tmp';
 
+const mkdir = promisify(fs.mkdir);
 // Define the debugging namespace to align with other debugger output.
 const debugNamespace =
   'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installUtils';
@@ -92,4 +96,119 @@ export async function injectPlatformConfig(
 
   debug('Rewriting composer file %s with added platform configuration.');
   await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
+}
+
+/**
+ * Execute queued cleanup operations sequentially.
+ *
+ * @param operations
+ */
+async function runCleanup(operations: Array<() => void>): Promise<void> {
+  // Execute all cleanup callbacks.
+  if (operations) {
+    operations.forEach(callback => callback());
+  }
+}
+
+export async function createDrupalProject(this: Drupal8) {
+  // Determine if the project was previously created.
+  const useTemp = this.existsDestination('services/drupal/composer.json');
+
+  // Create the service directory if it doesn't exist.
+  // If the services directory doesn't exist, Docker fails since it can't mount
+  // it as a volume mount.
+  if (!this.existsDestination('services')) {
+    this.debug(
+      format.info('Creating services directory at %s.'),
+      this.destinationPath('services'),
+    );
+    try {
+      await mkdir(this.destinationPath('services'), { recursive: true });
+    } catch (err) {
+      this.log(
+        format.error('Failed to create services directory at %s.'),
+        this.destinationPath('services'),
+      );
+      if (this.options.debug) {
+        // Show the contents of the directory for debugging.
+        // @todo Output the content of this with more debugging message context
+        //   around it.
+        this.spawnCommandSync('ls', ['-al']);
+      }
+      this.env.error(err);
+    }
+  }
+
+  let cwd = this.destinationPath('services');
+  const cleanup: Array<() => void> = [];
+  if (useTemp) {
+    this.debug(
+      format.info(
+        'Identified existing installation at %s. Creating temporary directory.',
+      ),
+      'services/drupal',
+    );
+    // Flag for unsafe cleanup to empty out the existing files in the directory.
+    const tmpObj = tmp.dirSync({ unsafeCleanup: true });
+    this.debug(
+      format.debug('Created temporary installation directory at %s.'),
+      tmpObj.name,
+    );
+    cwd = tmpObj.name;
+    cleanup.push(() => {
+      this.debug(format.debug('Cleaning up temporary directory.'));
+      tmpObj.removeCallback();
+    });
+  }
+
+  this.debug(format.info('Triggering Drupal project scaffolding in %s.'), cwd);
+  await this.spawnComposer(
+    [
+      'create-project',
+      this.projectType,
+      'drupal',
+      '--stability',
+      'dev',
+      '--no-interaction',
+      '--ignore-platform-reqs',
+      '--no-install',
+    ],
+    {
+      cwd,
+    },
+  ).catch(async () => {
+    // Execute all cleanup callbacks.
+    try {
+      await runCleanup(cleanup);
+    } catch (err) {
+      this.log(
+        format.error('Failed to execute cleanup operations: %s'),
+        err.message,
+      );
+    }
+
+    this.env.error(
+      new Error(format.error.bold('Composer `create-project` command failed.')),
+    );
+  });
+
+  if (useTemp) {
+    this.debug(
+      format.info('Copying temporary Drupal installation into place.'),
+    );
+    this.copyDestination(
+      `${cwd}/drupal`,
+      this.destinationPath('services/drupal'),
+    );
+  }
+
+  // Execute all cleanup callbacks.
+  try {
+    await runCleanup(cleanup);
+  } catch (err) {
+    this.log(
+      format.error('Failed to execute cleanup operations: %s'),
+      err.message,
+    );
+  }
 }

@@ -2,9 +2,6 @@ import { posix } from 'path';
 import validFilename from 'valid-filename';
 import Generator from 'yeoman-generator';
 import dedent from 'dedent';
-import { promisify } from 'util';
-import fs from 'fs';
-
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestDrupal8Tag from '../../../registry/getLatestDrupal8Tag';
@@ -18,12 +15,15 @@ import {
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import { gessoDrupalPath } from '../../gesso/constants';
-import { injectPlatformConfig, renameWebRoot } from './installUtils';
+import {
+  createDrupalProject,
+  injectPlatformConfig,
+  renameWebRoot,
+} from './installUtils';
 import {
   outputFormat as format,
   promptOrUninteractive,
 } from '../../../../../../../util';
-const mkdir = promisify(fs.mkdir);
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
 type DrupalProject = typeof drupalProject;
@@ -48,17 +48,17 @@ const configGitKeepContents = dedent`
 
 class Drupal8 extends Generator {
   // Assigned to in initializing phase
-  private latestDrupalTag!: string;
-  private latestDrushTag!: string;
+  protected latestDrupalTag!: string;
+  protected latestDrushTag!: string;
 
   // Assigned to in prompting phase
-  private documentRoot!: string;
-  private projectType!: Project;
-  private useGesso: boolean | undefined;
+  protected documentRoot!: string;
+  protected projectType!: Project;
+  protected useGesso: boolean | undefined;
 
-  private shouldInstall: boolean | undefined = false;
+  protected shouldInstall: boolean | undefined = false;
 
-  private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
+  protected spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -332,59 +332,14 @@ class Drupal8 extends Generator {
       return;
     }
 
-    // Create the service directory if it doesn't exist.
-    // If the services directory doesn't exist, Docker fails since it can't mount
-    // it as a volume mount.
-    if (!this.existsDestination('services')) {
-      this.debug(
-        format.info('Creating services directory at %s.'),
-        this.destinationPath('services'),
-      );
-      try {
-        await mkdir(this.destinationPath('services'), { recursive: true });
-      } catch (err) {
-        this.log(
-          format.error('Failed to create services directory at %s.'),
-          this.destinationPath('services'),
-        );
-        if (this.options.debug) {
-          // Show the contents of the directory for debugging.
-          // @todo Output the content of this with more debugging message context
-          //   around it.
-          this.spawnCommandSync('ls', ['-al']);
-        }
-        this.env.error(err);
-      }
-    }
+    this.debug(format.info('Creating Drupal project.'));
+    await createDrupalProject.call(this);
 
     // Check if the special web root renaming will be required.
     // This will throw an error if this will cause incompatibilities.
     const needsDocRootRename = this._needsDocRootRename();
 
     const drupalRoot = this.destinationPath('services/drupal');
-
-    this.debug(format.info('Triggering Drupal project scaffolding.'));
-    await this.spawnComposer(
-      [
-        'create-project',
-        this.projectType,
-        'drupal',
-        '--stability',
-        'dev',
-        '--no-interaction',
-        '--ignore-platform-reqs',
-        '--no-install',
-      ],
-      {
-        cwd: this.destinationPath('services'),
-      },
-    ).catch(() =>
-      this.env.error(
-        new Error(
-          format.error.bold('Composer `create-project` command failed.'),
-        ),
-      ),
-    );
 
     // The project scaffolding tools assume the web root should be named `web`,
     // so various references need to be replaced with the designated rename if
