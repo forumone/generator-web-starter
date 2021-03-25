@@ -99,17 +99,90 @@ export async function injectPlatformConfig(
 }
 
 /**
- * Execute queued cleanup operations sequentially.
+ * Execute the `composer create-project` command in the specified directory.
  *
- * @param operations
+ * If a temporary directory is used, as specified by `useTemp`, the installed files
+ * are installed to the existing directory.
+ * @param this
+ * @param cwd
+ * @param useTemp
+ * @returns
  */
-async function runCleanup(operations: Array<() => void>): Promise<void> {
-  // Execute all cleanup callbacks.
-  if (operations) {
-    operations.forEach(callback => callback());
+async function installDrupalProject(
+  this: Drupal8,
+  cwd: string,
+  useTemp = false,
+): Promise<void> {
+  await this.spawnComposer(
+    [
+      'create-project',
+      this.projectType,
+      'drupal',
+      '--stability',
+      'dev',
+      '--no-interaction',
+      '--ignore-platform-reqs',
+      '--no-install',
+    ],
+    {
+      cwd,
+    },
+  ).catch(() => {
+    this.env.error(
+      new Error(format.error.bold('Composer `create-project` command failed.')),
+    );
+  });
+
+  if (useTemp) {
+    this.debug(
+      format.info('Copying temporary Drupal installation into place.'),
+    );
+    this.copyDestination(
+      `${cwd}/drupal`,
+      this.destinationPath('services/drupal'),
+    );
   }
 }
 
+/**
+ * Get the working directory where the project should be scaffolded to.
+ *
+ * This accounts for creating a temporary directory and getting the path
+ * if necessary based on the `useTemp` flag.
+ *
+ * @param this
+ * @param useTemp Whether to use a temporary directory.
+ * @returns The path to the directory where the project should be installed.
+ */
+async function getCwd(this: Drupal8, useTemp = false): Promise<string> {
+  if (!useTemp) {
+    return this.destinationPath('services');
+  }
+
+  this.debug(
+    format.info(
+      'Identified existing installation at %s. Creating temporary directory.',
+    ),
+    'services/drupal',
+  );
+  // Flag for unsafe cleanup to empty out the existing files in the directory.
+  const tmpObj = tmp.dirSync({ unsafeCleanup: true });
+  this.debug(
+    format.debug('Created temporary installation directory at %s.'),
+    tmpObj.name,
+  );
+
+  return tmpObj.name;
+}
+
+/**
+ * Install the Drupal project files in place.
+ *
+ * If an existing installation of Drupal is in place, a temporary directory is
+ * used to install the fresh install and overwrite it into place for review.
+ *
+ * @param this
+ */
 export async function createDrupalProject(this: Drupal8) {
   // Determine if the project was previously created.
   const useTemp = this.existsDestination('services/drupal/composer.json');
@@ -139,76 +212,8 @@ export async function createDrupalProject(this: Drupal8) {
     }
   }
 
-  let cwd = this.destinationPath('services');
-  const cleanup: Array<() => void> = [];
-  if (useTemp) {
-    this.debug(
-      format.info(
-        'Identified existing installation at %s. Creating temporary directory.',
-      ),
-      'services/drupal',
-    );
-    // Flag for unsafe cleanup to empty out the existing files in the directory.
-    const tmpObj = tmp.dirSync({ unsafeCleanup: true });
-    this.debug(
-      format.debug('Created temporary installation directory at %s.'),
-      tmpObj.name,
-    );
-    cwd = tmpObj.name;
-    cleanup.push(() => {
-      this.debug(format.debug('Cleaning up temporary directory.'));
-      tmpObj.removeCallback();
-    });
-  }
+  const cwd = await getCwd.call(this, useTemp);
 
   this.debug(format.info('Triggering Drupal project scaffolding in %s.'), cwd);
-  await this.spawnComposer(
-    [
-      'create-project',
-      this.projectType,
-      'drupal',
-      '--stability',
-      'dev',
-      '--no-interaction',
-      '--ignore-platform-reqs',
-      '--no-install',
-    ],
-    {
-      cwd,
-    },
-  ).catch(async () => {
-    // Execute all cleanup callbacks.
-    try {
-      await runCleanup(cleanup);
-    } catch (err) {
-      this.log(
-        format.error('Failed to execute cleanup operations: %s'),
-        err.message,
-      );
-    }
-
-    this.env.error(
-      new Error(format.error.bold('Composer `create-project` command failed.')),
-    );
-  });
-
-  if (useTemp) {
-    this.debug(
-      format.info('Copying temporary Drupal installation into place.'),
-    );
-    this.copyDestination(
-      `${cwd}/drupal`,
-      this.destinationPath('services/drupal'),
-    );
-  }
-
-  // Execute all cleanup callbacks.
-  try {
-    await runCleanup(cleanup);
-  } catch (err) {
-    this.log(
-      format.error('Failed to execute cleanup operations: %s'),
-      err.message,
-    );
-  }
+  await installDrupalProject.call(this, cwd);
 }
