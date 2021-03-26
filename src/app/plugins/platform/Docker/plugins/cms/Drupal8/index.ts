@@ -36,11 +36,24 @@ type PantheonProject = typeof pantheonProject;
 
 type Project = PantheonProject | DrupalProject | Drupal9Project;
 
-const gessoDrupalDependencies: ReadonlyArray<string> = [
-  'drupal/components',
-  'drupal/twig_field_value',
-  'drupal/twig_tweak:^2.9',
-];
+// @todo Make this more clearly specified for the indexes.
+const gessoDrupalDependencies: Record<string, string[]> = {
+  drupal8Project: [
+    'drupal/components',
+    'drupal/twig_field_value',
+    'drupal/twig_tweak:^2.9',
+  ],
+  drupal9Project: [
+    'drupal/components',
+    'drupal/twig_field_value',
+    'drupal/twig_tweak',
+  ],
+  pantheonProject: [
+    'drupal/components',
+    'drupal/twig_field_value',
+    'drupal/twig_tweak:^2.9',
+  ],
+};
 
 const configGitKeepContents = dedent`
   This file is used for your Drupal configuration.
@@ -386,15 +399,17 @@ class Drupal8 extends Generator {
       return;
     }
 
+    const gessoDependencies = gessoDrupalDependencies[this.projectType];
+
     // Install required dependencies to avoid Gesso crashing when enabled
     this.debug(
       format.info('Adding Gesso Composer dependencies: %s'),
-      gessoDrupalDependencies.join(', '),
+      gessoDependencies.join(', '),
     );
     await this.spawnComposer(
       [
         'require',
-        ...gessoDrupalDependencies,
+        ...gessoDependencies,
         '--ignore-platform-reqs',
         '--no-scripts',
         '--no-install',
