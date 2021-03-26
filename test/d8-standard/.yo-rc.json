@@ -11,7 +11,7 @@
       "useCapistrano": false,
       "shouldInstallDrupal": true,
       "gessoShouldInstall": true,
-      "drupalProjectType": "drupal-composer/drupal-project:8.x-dev"
+      "drupalProjectType": "slucero/drupal-project:8"
     },
     "projectName": "d8-standard"
   }

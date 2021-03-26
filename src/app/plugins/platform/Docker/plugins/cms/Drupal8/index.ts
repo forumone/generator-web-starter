@@ -25,10 +25,10 @@ import {
   promptOrUninteractive,
 } from '../../../../../../../util';
 
-const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
+const drupalProject = 'slucero/drupal-project:8';
 type DrupalProject = typeof drupalProject;
 
-const drupal9Project = 'drupal/recommended-project';
+const drupal9Project = 'slucero/drupal-project:9';
 type Drupal9Project = typeof drupal9Project;
 
 const pantheonProject = 'pantheon-systems/example-drops-8-composer';
@@ -38,17 +38,17 @@ type Project = PantheonProject | DrupalProject | Drupal9Project;
 
 // @todo Make this more clearly specified for the indexes.
 const gessoDrupalDependencies: Record<string, string[]> = {
-  drupal8Project: [
+  'slucero/drupal-project:8': [
     'drupal/components',
     'drupal/twig_field_value',
     'drupal/twig_tweak:^2.9',
   ],
-  drupal9Project: [
+  'slucero/drupal-project:9': [
     'drupal/components',
     'drupal/twig_field_value',
     'drupal/twig_tweak',
   ],
-  pantheonProject: [
+  'pantheon-systems/example-drops-8-composer': [
     'drupal/components',
     'drupal/twig_field_value',
     'drupal/twig_tweak:^2.9',

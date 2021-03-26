@@ -116,6 +116,8 @@ async function installDrupalProject(
   await this.spawnComposer(
     [
       'create-project',
+      '--repository',
+      'https://raw.githubusercontent.com/slucero/drupal-project/main/packages.json',
       this.projectType,
       'drupal',
       '--stability',
