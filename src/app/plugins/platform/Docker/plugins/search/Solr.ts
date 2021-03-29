@@ -1,8 +1,6 @@
 import { descending } from 'd3-array';
 import dedent from 'dedent';
-import Generator from 'yeoman-generator';
-import { promptOrUninteractive } from '../../../../../../util';
-
+import { WSGenerator } from '../../../../../../wsGenerator';
 import ComposeEditor, { createBindMount } from '../../ComposeEditor';
 import getImageTags from '../../registry/getImageTags';
 
@@ -23,7 +21,7 @@ const solrEntrypoint = dedent(`
   exec solr-create -c docker "$\${args[@]}"
 `);
 
-class Solr extends Generator {
+class Solr extends WSGenerator {
   // Assigned during initialization
   private solrTagOptions!: ReadonlyArray<string>;
 
@@ -48,7 +46,7 @@ class Solr extends Generator {
   }
 
   async prompting() {
-    const { solrTag } = await promptOrUninteractive.call(this, [
+    const { solrTag } = await this.promptOrUninteractive([
       {
         name: 'solrTag',
         type: 'list',

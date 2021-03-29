@@ -2,12 +2,12 @@ import path from 'path';
 import slugify from 'slugify';
 import validate from 'validate-npm-package-name';
 import Generator from 'yeoman-generator';
+import { WSGenerator } from '../wsGenerator';
 
 import discoverModules from './discoverModules';
 import IgnoreEditor from './IgnoreEditor';
-import { promptOrUninteractive } from '../util';
 
-class WebStarter extends Generator {
+class WebStarter extends WSGenerator {
   private gitignoreEditor = new IgnoreEditor();
   private name!: string;
 
@@ -28,7 +28,7 @@ class WebStarter extends Generator {
     const platformDirectory = path.join(__dirname, 'plugins/platform');
     const platforms = await discoverModules(platformDirectory);
 
-    const { name, platform } = await promptOrUninteractive.call(this, [
+    const { name, platform } = await this.promptOrUninteractive([
       {
         type: 'input',
         name: 'name',

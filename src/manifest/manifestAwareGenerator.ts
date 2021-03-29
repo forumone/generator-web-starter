@@ -1,4 +1,5 @@
 import Generator from 'yeoman-generator';
+import { WSGenerator } from '../wsGenerator';
 import { ManifestHelper } from './ManifestHelper';
 import { ManifestDefinition } from './types';
 
@@ -9,9 +10,7 @@ export interface ManifestAwareOptions extends Generator.GeneratorOptions {
 /**
  * Base implementation of a Generator for extension by Generators using manifests.
  */
-export abstract class ManifestAwareGenerator extends Generator<
-  ManifestAwareOptions
-> {
+export abstract class ManifestAwareGenerator extends WSGenerator {
   /**
    * The Manifest Helper utility for interacting with the manifest.
    */

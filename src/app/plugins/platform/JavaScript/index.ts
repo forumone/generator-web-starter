@@ -2,14 +2,12 @@ import assert from 'assert-plus';
 import dedent from 'dedent';
 import fs from 'fs';
 import { promisify } from 'util';
-import Generator from 'yeoman-generator';
-
+import { WSGenerator } from '../../../../wsGenerator';
 import IgnoreEditor from '../../../IgnoreEditor';
-import { promptOrUninteractive } from '../../../../util';
 
 const readFile = promisify(fs.readFile);
 
-class JavaScript extends Generator {
+class JavaScript extends WSGenerator {
   initializing() {
     const options = this.options;
     assert.object(options.gitignoreEditor, 'options.gitignoreEditor');
@@ -18,7 +16,7 @@ class JavaScript extends Generator {
   }
 
   async prompting() {
-    const { useCapistrano } = await promptOrUninteractive.call(this, [
+    const { useCapistrano } = await this.promptOrUninteractive([
       {
         type: 'confirm',
         name: 'useCapistrano',

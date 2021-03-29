@@ -1,13 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
-import createDebugger from 'debug';
+import Drupal8 from '.';
+import { color } from '../../../../../../../log';
+import { ChildProcess } from 'child_process';
 
-// Define the debugging namespace to align with other debugger output.
-const debugNamespace =
-  'web-starter:app:plugins:platform:Docker:plugins:cms:Drupal8:installUtils';
-const debug = createDebugger(debugNamespace);
-
+const mkdir = promisify(fs.mkdir);
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
@@ -24,10 +22,15 @@ async function replaceIn(
  * Apply replacements to rename the web root in generated files.
  */
 export async function renameWebRoot(
+  this: Drupal8,
   documentRoot: string,
   drupalRoot: string,
 ): Promise<void> {
-  debug('Replacing docroot references from %s to %s.', 'web', documentRoot);
+  this.debug(
+    color.debug('Replacing docroot references from %s to %s.'),
+    'web',
+    documentRoot,
+  );
   await Promise.all([
     replaceIn(
       path.join(drupalRoot, 'composer.json'),
@@ -60,6 +63,7 @@ export async function renameWebRoot(
  * @param composerPath Path to `composer.json`
  */
 export async function injectPlatformConfig(
+  this: Drupal8,
   composerPath: string,
 ): Promise<void> {
   const composer = JSON.parse(await readFile(composerPath, 'utf-8'));
@@ -90,6 +94,79 @@ export async function injectPlatformConfig(
     platform[`ext-${extension}`] = '1.0.0';
   }
 
-  debug('Rewriting composer file %s with added platform configuration.');
+  this.debug(
+    color.debug(
+      'Rewriting composer file %s with added platform configuration.',
+    ),
+  );
   await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
+}
+
+/**
+ * Execute the `composer create-project` command in the specified directory.
+ * @param this
+ * @param cwd
+ * @returns
+ */
+async function installDrupalProject(
+  this: Drupal8,
+  cwd: string,
+): Promise<void | ChildProcess> {
+  return this.spawnComposer(
+    [
+      'create-project',
+      this.projectType,
+      'drupal',
+      '--stability',
+      'dev',
+      '--no-interaction',
+      '--ignore-platform-reqs',
+      '--no-install',
+    ],
+    {
+      cwd,
+    },
+  ).catch(() => {
+    this.env.error(
+      new Error(color.error('Composer `create-project` command failed.')),
+    );
+  });
+}
+
+/**
+ * Install the Drupal project files in place.
+ *
+ * @param this
+ */
+export async function createDrupalProject(
+  this: Drupal8,
+): Promise<void | ChildProcess> {
+  // Create the service directory if it doesn't exist.
+  // If the services directory doesn't exist, Docker fails since it can't mount
+  // it as a volume mount.
+  if (!this.existsDestination('services')) {
+    this.debug(
+      color.debug('Creating services directory at %s.'),
+      this.destinationPath('services'),
+    );
+    try {
+      await mkdir(this.destinationPath('services'), { recursive: true });
+    } catch (err) {
+      this.error(
+        'Failed to create services directory at %s.',
+        this.destinationPath('services'),
+      );
+      if (this.options.debug) {
+        // Show the contents of the directory for debugging.
+        // @todo Output the content of this with more debugging message context
+        //   around it.
+        this.spawnCommandSync('ls', ['-al']);
+      }
+      this.env.error(err);
+    }
+  }
+
+  const cwd = this.destinationPath('services');
+  this.info('Triggering Drupal project scaffolding in %s.', cwd);
+  return installDrupalProject.call(this, cwd);
 }
