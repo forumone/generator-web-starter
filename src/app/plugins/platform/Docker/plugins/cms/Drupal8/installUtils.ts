@@ -27,7 +27,7 @@ export async function renameWebRoot(
   drupalRoot: string,
 ): Promise<void> {
   this.debug(
-    color.debug('Replacing docroot references from %s to %s.'),
+    'Replacing docroot references from %s to %s.',
     'web',
     documentRoot,
   );
@@ -94,11 +94,7 @@ export async function injectPlatformConfig(
     platform[`ext-${extension}`] = '1.0.0';
   }
 
-  this.debug(
-    color.debug(
-      'Rewriting composer file %s with added platform configuration.',
-    ),
-  );
+  this.debug('Rewriting composer file %s with added platform configuration.');
   await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
 
@@ -146,7 +142,7 @@ export async function createDrupalProject(
   // it as a volume mount.
   if (!this.existsDestination('services')) {
     this.debug(
-      color.debug('Creating services directory at %s.'),
+      'Creating services directory at %s.',
       this.destinationPath('services'),
     );
     try {

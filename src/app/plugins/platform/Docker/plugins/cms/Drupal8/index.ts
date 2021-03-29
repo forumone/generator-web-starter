@@ -65,7 +65,7 @@ class Drupal8 extends WSGenerator {
       getLatestDrupal8CliTag(),
     ]);
     this.debug(
-      color.debug('Loaded latest Drupal (%s) and Drush (%s) tags.'),
+      'Loaded latest Drupal (%s) and Drush (%s) tags.',
       latestDrupalTag,
       latestDrushTag,
     );
@@ -176,7 +176,7 @@ class Drupal8 extends WSGenerator {
         uninteractive: this.options.uninteractive,
       };
       this.debug(
-        color.debug('Composing with Gesso generator using options: %O'),
+        'Composing with Gesso generator using options: %O',
         gessoOptions,
       );
       this.composeWith(
@@ -442,17 +442,14 @@ class Drupal8 extends WSGenerator {
     this._writeDockerIgnore();
     this._writeCodeQualityConfig();
 
-    this.debug(
-      color.debug('Copying .env template file to %s.'),
-      'services/drupal/.env',
-    );
+    this.debug('Copying .env template file to %s.', 'services/drupal/.env');
     this.fs.copy(
       this.templatePath('_env'),
       this.destinationPath('services/drupal/.env'),
     );
 
     this.debug(
-      color.debug('Writing .gitkeep file to %s.'),
+      'Writing .gitkeep file to %s.',
       'services/drupal/config/.gitkeep',
     );
     this.fs.write(
@@ -509,7 +506,7 @@ class Drupal8 extends WSGenerator {
     });
 
     this.debug(
-      color.debug('Writing Drupal Dockerfile to %s.'),
+      'Writing Drupal Dockerfile to %s.',
       'services/drupal/Dockerfile',
     );
     this.fs.write(
@@ -517,10 +514,7 @@ class Drupal8 extends WSGenerator {
       drupalDockerfile.render(),
     );
 
-    this.debug(
-      color.debug('Writing Drush Dockerfile to %s.'),
-      'services/drush/Dockerfile',
-    );
+    this.debug('Writing Drush Dockerfile to %s.', 'services/drush/Dockerfile');
     this.fs.write(
       this.destinationPath('services/drush/Dockerfile'),
       drushDockerfile.render(),
@@ -544,7 +538,7 @@ class Drupal8 extends WSGenerator {
         this.existsDestination(`services/drupal/${gessoDrupalPath}/.gitignore`)
       ) {
         this.debug(
-          color.debug('Adding contents of %s to the .dockerignore file.'),
+          'Adding contents of %s to the .dockerignore file.',
           `services/drupal/${gessoDrupalPath}/.gitignore`,
         );
         drupalDockerIgnore.addContentsOfFile({
@@ -555,10 +549,8 @@ class Drupal8 extends WSGenerator {
           path: gessoDrupalPath,
         });
       } else {
-        this.log(
-          color.warning(
-            'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
-          ),
+        this.warning(
+          'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
           `services/drupal/${gessoDrupalPath}/.gitignore`,
         );
       }
@@ -567,7 +559,7 @@ class Drupal8 extends WSGenerator {
     // Incorporate gitignore rules.
     if (this.existsDestination('services/drupal/.gitignore')) {
       this.debug(
-        color.debug('Adding contents of %s to the .dockerignore file.'),
+        'Adding contents of %s to the .dockerignore file.',
         'services/drupal/.gitignore',
       );
       drupalDockerIgnore.addContentsOfFile({
@@ -582,7 +574,7 @@ class Drupal8 extends WSGenerator {
     // template being rendered since template content cannot be rendered
     // to a string and appended using the IgnoreEditor solution.
     this.debug(
-      color.debug('Rendering .dockerignore template to %s.'),
+      'Rendering .dockerignore template to %s.',
       'services/drupal/.dockerignore',
     );
     this.renderTemplate(
@@ -599,10 +591,7 @@ class Drupal8 extends WSGenerator {
    * Write code quality configuration files for the project.
    */
   private _writeCodeQualityConfig(): void {
-    this.debug(
-      color.debug('Rendering .codacy.yml template to %s.'),
-      '.codacy.yml',
-    );
+    this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
     this.renderTemplate(
       this.templatePath('_codacy.yml.ejs'),
       this.destinationPath('.codacy.yml'),
@@ -614,7 +603,7 @@ class Drupal8 extends WSGenerator {
     );
 
     this.debug(
-      color.debug('Rendering phpcs.xml.dist template to %s.'),
+      'Rendering phpcs.xml.dist template to %s.',
       'services/drupal/phpcs.xml.dist',
     );
     this.renderTemplate(
@@ -626,7 +615,7 @@ class Drupal8 extends WSGenerator {
     );
 
     this.debug(
-      color.debug('Rendering .phpmd.xml.dist template to %s.'),
+      'Rendering .phpmd.xml.dist template to %s.',
       'services/drupal/.phpmd.xml.dist',
     );
     this.renderTemplate(

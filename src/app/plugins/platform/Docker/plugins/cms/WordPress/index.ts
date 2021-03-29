@@ -20,7 +20,6 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
-import { color } from '../../../../../../../log';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
@@ -395,10 +394,7 @@ class WordPress extends WSGenerator {
    * Write code quality configuration files for the project.
    */
   private _writeCodeQualityConfig(): void {
-    this.debug(
-      color.debug('Rendering .codacy.yml template to %s.'),
-      '.codacy.yml',
-    );
+    this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
     this.renderTemplate(
       this.templatePath('_codacy.yml.ejs'),
       this.destinationPath('.codacy.yml'),
@@ -409,7 +405,7 @@ class WordPress extends WSGenerator {
     );
 
     this.debug(
-      color.debug('Rendering phpcs.xml.dist template to %s.'),
+      'Rendering phpcs.xml.dist template to %s.',
       'services/wordpress/phpcs.xml.dist',
     );
     this.renderTemplate(
@@ -422,7 +418,7 @@ class WordPress extends WSGenerator {
     );
 
     this.debug(
-      color.debug('Rendering .phpmd.xml.dist template to %s.'),
+      'Rendering .phpmd.xml.dist template to %s.',
       'services/wordpress/.phpmd.xml.dist',
     );
     this.renderTemplate(

@@ -3,7 +3,6 @@ import envPaths from 'env-paths';
 import mkdir from 'make-dir';
 import os from 'os';
 import path from 'path';
-import { color } from '../../../../log';
 import { WSGenerator } from '../../../../wsGenerator';
 import { composer } from './dockerfile/constants';
 
@@ -67,7 +66,7 @@ async function spawnComposer(
       // Ignore errors; failing to create a subdirectory in the cache isn't fatal, it's
       // just slower.
       this.debug(
-        color.debug('Warning: Unable to create a cache subdirectory at %s.'),
+        'Warning: Unable to create a cache subdirectory at %s.',
         composerCachePath,
       );
     }
@@ -84,15 +83,15 @@ async function spawnComposer(
   ];
   // Output the full docker command for debugging. This is very verbose.
   // @todo Add execution flag support to trigger more verbose logging.
-  this.debug(
+  this.subcommand(
     'Executing Composer Docker command:\n%s',
     ['docker', ...dockerRunOptions].join(' '),
   );
-  this.debug(color.debug('Executing with options: %O'), spawnOptions);
+  this.debug('Executing with options: %O', spawnOptions);
 
   // Output the composer command being executed without all Docker options.
   // This is much less verbose and easier to follow in logs.
-  this.debug(
+  this.subcommand(
     'Executing Composer command:\n%s',
     ['composer', ...args].join(' '),
   );

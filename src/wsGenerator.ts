@@ -1,7 +1,7 @@
 import assert from 'assert-plus';
 import chalk from 'chalk';
 import Generator from 'yeoman-generator';
-import { color, error, info, subcommand, success, warning } from './log';
+import { error, info, subcommand, success, warning } from './log';
 
 /**
  * A base generator for Web Starter generators to extend.
@@ -57,9 +57,7 @@ export class WSGenerator extends Generator {
       for (const prompt of Object.values(prompts)) {
         const cachedValue = config[prompt.name];
         this.debug(
-          color.debug(
-            chalk`Assuming uninteractive value for {bold '%s'}: {bold.green %s}`,
-          ),
+          chalk`Assuming uninteractive value for {bold '%s'}: {bold.green %s}`,
           prompt.name,
           cachedValue,
         );
