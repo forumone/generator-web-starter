@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import Drupal8 from '.';
+import tmp from 'tmp';
 import { color } from '../../../../../../../log';
 import { ChildProcess } from 'child_process';
 
@@ -52,6 +53,8 @@ export async function renameWebRoot(
 }
 
 /**
+ * Inject platform configuration dependencies into a project's composer.json file.
+ *
  * Updates a Composer file to include Drupal's extension requirements. Since we always
  * run Composer in a container separate from our Drupal site, doing this allows us to
  * document which extensions are installed without having to install Composer into the
@@ -99,15 +102,41 @@ export async function injectPlatformConfig(
 }
 
 /**
+ * Copy files from the temporary directory installation to the destination directory.
+ *
+ * @param this
+ * @param tempDirectory
+ * @param destination
+ */
+async function syncTempDirectory(
+  this: Drupal8,
+  tempDirectory: string,
+  destination: string,
+) {
+  this.debug(
+    color.debug(
+      'Copying temporary Drupal installation from %s into %s.',
+      tempDirectory,
+      destination,
+    ),
+  );
+  this.copyDestination(tempDirectory, this.destinationPath(destination));
+}
+
+/**
  * Execute the `composer create-project` command in the specified directory.
+ *
+ * If a temporary directory is used, as specified by `useTemp`, the installed files
+ * are installed to the existing directory.
  * @param this
  * @param cwd
+ * @param useTemp
  * @returns
  */
 async function installDrupalProject(
   this: Drupal8,
   cwd: string,
-): Promise<void | ChildProcess> {
+): Promise<ChildProcess> {
   return this.spawnComposer(
     [
       'create-project',
@@ -122,21 +151,60 @@ async function installDrupalProject(
     {
       cwd,
     },
-  ).catch(() => {
-    this.env.error(
-      new Error(color.error('Composer `create-project` command failed.')),
-    );
+  );
+}
+
+/**
+ * Get the working directory where the project should be scaffolded to.
+ *
+ * This accounts for creating a temporary directory and getting the path
+ * if necessary based on the `useTemp` flag.
+ *
+ * @param this
+ * @param useTemp Whether to use a temporary directory.
+ * @returns The path to the directory where the project should be installed.
+ */
+async function getCwd(this: Drupal8, useTemp = false): Promise<string> {
+  if (!useTemp) {
+    return this.destinationPath('services');
+  }
+
+  this.debug(
+    color.debug(
+      'Identified existing installation at %s. Creating temporary directory.',
+    ),
+    'services/drupal',
+  );
+
+  // Create the new temporary directory.
+  return new Promise((resolve, reject) => {
+    // Flag for unsafe cleanup to empty out the existing files in the directory.
+    tmp.dir({ unsafeCleanup: true }, (err, path) => {
+      if (err) {
+        reject(err);
+      }
+
+      this.debug(
+        color.debug('Created temporary installation directory at %s.'),
+        path,
+      );
+      resolve(path);
+    });
   });
 }
 
 /**
  * Install the Drupal project files in place.
  *
+ * If an existing installation of Drupal is in place, a temporary directory is
+ * used to install the fresh install and overwrite it into place for review.
+ *
  * @param this
  */
-export async function createDrupalProject(
-  this: Drupal8,
-): Promise<void | ChildProcess> {
+export async function createDrupalProject(this: Drupal8): Promise<void> {
+  // Determine if the project was previously created.
+  const useTemp = this.existsDestination('services/drupal/composer.json');
+
   // Create the service directory if it doesn't exist.
   // If the services directory doesn't exist, Docker fails since it can't mount
   // it as a volume mount.
@@ -162,7 +230,22 @@ export async function createDrupalProject(
     }
   }
 
-  const cwd = this.destinationPath('services');
+  // Get the target installation directory.
+  const cwd = await getCwd.call(this, useTemp);
+
   this.info('Triggering Drupal project scaffolding in %s.', cwd);
-  return installDrupalProject.call(this, cwd);
+  await installDrupalProject.call(this, cwd).catch(() => {
+    this.env.error(
+      new Error(color.error('Composer `create-project` command failed.')),
+    );
+  });
+
+  // Sync the temporary installation into place if necessary.
+  if (useTemp) {
+    syncTempDirectory.call(
+      this,
+      `${cwd}/drupal`,
+      this.destinationPath('services/drupal'),
+    );
+  }
 }
