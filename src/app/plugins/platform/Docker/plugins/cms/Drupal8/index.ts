@@ -326,35 +326,14 @@ class Drupal8 extends WSGenerator {
       return;
     }
 
-    this.info('Creating Drupal project.');
-    await this._createDrupalProject();
-
     // Check if the special web root renaming will be required.
     // This will throw an error if this will cause incompatibilities.
     const needsDocRootRename = this._needsDocRootRename();
 
-    const drupalRoot = this.destinationPath('services/drupal');
+    this.info('Creating Drupal project.');
+    await this._createDrupalProject();
 
-    this.info('Triggering Drupal project scaffolding.');
-    await this.spawnComposer(
-      [
-        'create-project',
-        this.projectType,
-        'drupal',
-        '--stability',
-        'dev',
-        '--no-interaction',
-        '--ignore-platform-reqs',
-        '--no-install',
-      ],
-      {
-        cwd: this.destinationPath('services'),
-      },
-    ).catch(() =>
-      this.env.error(
-        new Error(color.error('Composer `create-project` command failed.')),
-      ),
-    );
+    const drupalRoot = this.destinationPath('services/drupal');
 
     // The project scaffolding tools assume the web root should be named `web`,
     // so various references need to be replaced with the designated rename if
