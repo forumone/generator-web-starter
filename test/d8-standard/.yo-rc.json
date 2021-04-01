@@ -6,7 +6,7 @@
       "dockerCms": "Drupal8",
       "dockerSearch": "None",
       "dockerCache": "None",
-      "documentRoot": "public",
+      "documentRoot": "web",
       "useGesso": true,
       "useCapistrano": false,
       "shouldInstallDrupal": true,
