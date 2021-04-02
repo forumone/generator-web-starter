@@ -13,7 +13,7 @@
 # all steps.
 #############################################################################
 
-set -euo pipefail
+set -exuo pipefail
 shopt -s extglob
 
 # The versions of Buildkite plugins to be used.
@@ -29,6 +29,46 @@ declare -A test_scenarios=(
   ['d8-pantheon']='D8: Pantheon'
   ['wp-standard']='WP: Standard'
 )
+
+# Determine what baseline should be compared against.
+identify-baseline-target() {
+  # Compare against the next release by default.
+  local baseline="next"; # Allow the baseline target to be specified by an environment variable.
+  # Compare against the stable release if merging into `main`.
+  if [[ "${BUILDKITE_BRANCH}" == "main" || "${BUILDKITE_PULL_REQUEST_BASE_BRANCH}" == "main" || -n "${BUILDKITE_TAG}" ]]; then
+    baseline="stable"
+  fi
+
+  echo "${baseline}"
+}
+
+# Output an image build step for the baseline image to be used.
+# * service is a docker-compose service name to use as the baseline for testing
+# * label is a readable label to display for this baseline image
+create-image-build-step() {
+  local service=$1
+  local label=$2
+
+  cat <<YAML
+  # Prebuild the ${service} release image for test scenarios.
+  - label: ':docker: ${label} image'
+    key: ${service}_image
+    depends_on: base_image
+    <<: *step-defaults
+    <<: *docker-agents
+    plugins:
+      - <<: *ecr
+      - docker-compose#v3.7.0:
+          build:
+            - ${service}
+          cache-from:
+            - "${service}:${ECR_NAMESPACE}--base--latest"
+            - "${service}:${ECR_NAMESPACE}--${service}--latest"
+          push:
+            - "${service}:${ECR_NAMESPACE}--${service}--latest"
+
+YAML
+}
 
 # Usage: create-scenario-step <scenario_name> <scenario_label> <image>
 # * scenario_name is a directory name at test/<scenario_name>
@@ -142,7 +182,7 @@ create-compare-step() {
           post-command: |
             set -ex
             # Fail if the report file wasn't created as expected.
-            if [[ -e ".buildkite/artifacts/${scenario}.html" ]]; then
+            if [[ ! -e ".buildkite/artifacts/${scenario}.html" ]]; then
               exit 5 # Arbitrary non-zero exit status unique from Diffoscope error output.
             fi
 
@@ -153,13 +193,11 @@ YAML
 FILE=$(mktemp "${BUILDKITE_PIPELINE_SLUG:-generator-web-starter}--${BUILDKITE_BUILD_NUMBER:-000}--test-scenarios.tmp-XXXXXX")
 cat ".buildkite/test-scenarios.yml" > "${FILE}"
 
-# Determine what baseline should be compared against.
-# Compare against the next release by default.
-baseline="${TEST_BASELINE:-next}"; # Allow the baseline target to be specified by an environment variable.
-# Compare against the stable release if merging into `main`.
-if [[ "${BUILDKITE_BRANCH}" == "main" || "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" == "main" || -n "${BUILDKITE_TAG}" ]]; then
-  baseline="stable"
-fi
+baseline=$(identify-baseline-target);
+
+# Build the baseline test image to be used.
+create-image-build-step "${baseline}" "${baseline^}" >> "${FILE}"
+buildkite-agent meta-data set "baseline-test-image" "${baseline}"
 
 # For each key (i.e., scenario name), we output a Buildkite pipeline step to be uploaded
 # via the agent.
@@ -171,10 +209,10 @@ for scenario in "${!test_scenarios[@]}"; do
 
   # Create a baseline scenario step.
   # TODO: Make execution of these additional steps dynamic.
-  create-scenario-step "${scenario}" "${scenario_label} (${baseline^})" ${baseline} >> "${FILE}"
+  create-scenario-step "${scenario}" "${scenario_label} (${baseline^})" "${baseline}" >> "${FILE}"
 
   # Create an output comparison step.
-  create-compare-step "${scenario}" "${scenario_label}" ${baseline} test >> "${FILE}"
+  create-compare-step "${scenario}" "${scenario_label}" "${baseline}" test >> "${FILE}"
 done
 
 cat "${FILE}"
