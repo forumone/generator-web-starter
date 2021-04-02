@@ -142,7 +142,9 @@ create-compare-step() {
           post-command: |
             set -ex
             # Fail if the report file wasn't created as expected.
-            [[ -e ".buildkite/artifacts/${scenario}.html" ]]
+            if [[ -e ".buildkite/artifacts/${scenario}.html" ]]; then
+              exit 5 # Arbitrary non-zero exit status unique from Diffoscope error output.
+            fi
 
 YAML
 }
@@ -150,6 +152,14 @@ YAML
 # Make the pipeline file to upload starting from the stub file defining templates and defaults.
 FILE=$(mktemp "${BUILDKITE_PIPELINE_SLUG:-generator-web-starter}--${BUILDKITE_BUILD_NUMBER:-000}--test-scenarios.tmp-XXXXXX")
 cat ".buildkite/test-scenarios.yml" > "${FILE}"
+
+# Determine what baseline should be compared against.
+# Compare against the next release by default.
+baseline="${TEST_BASELINE:-next}"; # Allow the baseline target to be specified by an environment variable.
+# Compare against the stable release if merging into `main`.
+if [[ "${BUILDKITE_BRANCH}" == "main" || "$BUILDKITE_PULL_REQUEST_BASE_BRANCH" == "main" || -n "${BUILDKITE_TAG}" ]]; then
+  baseline="stable"
+fi
 
 # For each key (i.e., scenario name), we output a Buildkite pipeline step to be uploaded
 # via the agent.
@@ -161,12 +171,10 @@ for scenario in "${!test_scenarios[@]}"; do
 
   # Create a baseline scenario step.
   # TODO: Make execution of these additional steps dynamic.
-  # create-step "${scenario}" "${scenario_label} (Baseline)" stable >> "${FILE}"
-  create-scenario-step "${scenario}" "${scenario_label} (Next)" next >> "${FILE}"
+  create-scenario-step "${scenario}" "${scenario_label} (${baseline^})" ${baseline} >> "${FILE}"
 
   # Create an output comparison step.
-  create-compare-step "${scenario}" "${scenario_label}" test next >> "${FILE}"
-
+  create-compare-step "${scenario}" "${scenario_label}" ${baseline} test >> "${FILE}"
 done
 
 cat "${FILE}"
