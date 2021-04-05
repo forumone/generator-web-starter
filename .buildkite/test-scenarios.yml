@@ -18,7 +18,7 @@ definitions:
   # Configure some default step values.
   step-defaults: &step-defaults
     timeout_in_minutes: 15
-    concurrency: 5
+    concurrency: 6
     concurrency_group: "$BUILDKITE_PIPELINE_SLUG"
 
   # Specify common agent queue parameters.

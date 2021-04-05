@@ -87,7 +87,7 @@ class Drupal8 extends WSGenerator {
         name: 'documentRoot',
         validate: name => name !== '' && validFilename(name),
         message: 'What is the document root?',
-        default: 'public',
+        default: 'web',
         store: true,
       },
       {

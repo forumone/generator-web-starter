@@ -116,48 +116,11 @@ steps:
             - "test:${ECR_NAMESPACE}--test--${BUILDKITE_BRANCH}"
             - "test:${ECR_NAMESPACE}--test--latest"
 
-  # Prebuild the stable image for test scenarios.
-  - label: ':docker: Stable image'
-    key: stable_image
-    depends_on: base_image
-    <<: *step-defaults
-    <<: *docker-agents
-    <<: *run-tests
-    plugins:
-      - <<: *ecr
-      - docker-compose#v3.7.0:
-          build:
-            - stable
-          cache-from:
-            - "stable:${ECR_NAMESPACE}--base--latest"
-            - "stable:${ECR_NAMESPACE}--stable--latest"
-          push:
-            - "stable:${ECR_NAMESPACE}--stable--latest"
-
-  # Prebuild the next release image for test scenarios.
-  - label: ':docker: Next image'
-    key: next_image
-    depends_on: base_image
-    skip: 'Skip in favor of testing against stable releases.'
-    <<: *step-defaults
-    <<: *docker-agents
-    <<: *run-tests
-    plugins:
-      - <<: *ecr
-      - docker-compose#v3.7.0:
-          build:
-            - next
-          cache-from:
-            - "next:${ECR_NAMESPACE}--base--latest"
-            - "next:${ECR_NAMESPACE}--next--latest"
-          push:
-            - "next:${ECR_NAMESPACE}--next--latest"
-
   # Create the test scenario steps.
   - label: ':pipeline:'
     key: 'scenario_pipeline'
     depends_on:
-      - base_image
+      - build_gate
     <<: *step-defaults
     <<: *run-tests
     commands:
