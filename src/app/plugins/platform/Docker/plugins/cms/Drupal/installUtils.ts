@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
-import Drupal8 from '.';
+import Drupal from '.';
 import { color } from '../../../../../../../log';
 import { ChildProcess } from 'child_process';
 
@@ -22,7 +22,7 @@ async function replaceIn(
  * Apply replacements to rename the web root in generated files.
  */
 export async function renameWebRoot(
-  this: Drupal8,
+  this: Drupal,
   documentRoot: string,
   drupalRoot: string,
 ): Promise<void> {
@@ -63,7 +63,7 @@ export async function renameWebRoot(
  * @param composerPath Path to `composer.json`
  */
 export async function injectPlatformConfig(
-  this: Drupal8,
+  this: Drupal,
   composerPath: string,
 ): Promise<void> {
   const composer = JSON.parse(await readFile(composerPath, 'utf-8'));
@@ -105,7 +105,7 @@ export async function injectPlatformConfig(
  * @returns
  */
 async function installDrupalProject(
-  this: Drupal8,
+  this: Drupal,
   cwd: string,
 ): Promise<void | ChildProcess> {
   return this.spawnComposer(
@@ -135,7 +135,7 @@ async function installDrupalProject(
  * @param this
  */
 export async function createDrupalProject(
-  this: Drupal8,
+  this: Drupal,
 ): Promise<void | ChildProcess> {
   // Create the service directory if it doesn't exist.
   // If the services directory doesn't exist, Docker fails since it can't mount

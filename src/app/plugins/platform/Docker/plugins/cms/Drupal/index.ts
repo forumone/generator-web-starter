@@ -40,7 +40,7 @@ const configGitKeepContents = dedent`
   This file is used for your Drupal 8 configuration.
 `;
 
-class Drupal8 extends WSGenerator {
+class Drupal extends WSGenerator {
   // Assigned to in initializing phase
   protected latestDrupalTag!: string;
   protected latestDrushTag!: string;
@@ -607,4 +607,4 @@ class Drupal8 extends WSGenerator {
   }
 }
 
-export = Drupal8;
+export = Drupal;
