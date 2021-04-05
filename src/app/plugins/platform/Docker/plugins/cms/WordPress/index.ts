@@ -1,6 +1,6 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import Generator from 'yeoman-generator';
+import { WSGenerator } from '../../../../../../../wsGenerator';
 import decompress from 'decompress';
 import fetch from 'node-fetch';
 import { URL } from 'url';
@@ -20,14 +20,10 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
-import {
-  outputFormat as format,
-  promptOrUninteractive,
-} from '../../../../../../../util';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
-class WordPress extends Generator {
+class WordPress extends WSGenerator {
   // Written out in initializing phase.
   private latestWpTag!: string;
   private latestWpCliTag!: string;
@@ -62,7 +58,7 @@ class WordPress extends Generator {
       shouldInstallWordPress,
       useGesso,
       useCapistrano,
-    } = await promptOrUninteractive.call(this, [
+    } = await this.promptOrUninteractive([
       {
         type: 'input',
         name: 'documentRoot',
@@ -398,10 +394,7 @@ class WordPress extends Generator {
    * Write code quality configuration files for the project.
    */
   private _writeCodeQualityConfig(): void {
-    this.debug(
-      format.debug('Rendering .codacy.yml template to %s.'),
-      '.codacy.yml',
-    );
+    this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
     this.renderTemplate(
       this.templatePath('_codacy.yml.ejs'),
       this.destinationPath('.codacy.yml'),
@@ -412,7 +405,7 @@ class WordPress extends Generator {
     );
 
     this.debug(
-      format.debug('Rendering phpcs.xml.dist template to %s.'),
+      'Rendering phpcs.xml.dist template to %s.',
       'services/wordpress/phpcs.xml.dist',
     );
     this.renderTemplate(
@@ -425,7 +418,7 @@ class WordPress extends Generator {
     );
 
     this.debug(
-      format.debug('Rendering .phpmd.xml.dist template to %s.'),
+      'Rendering .phpmd.xml.dist template to %s.',
       'services/wordpress/.phpmd.xml.dist',
     );
     this.renderTemplate(

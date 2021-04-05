@@ -1,7 +1,5 @@
 import dedent from 'dedent';
-import Generator from 'yeoman-generator';
-import { promptOrUninteractive } from '../../../../../../util';
-
+import { WSGenerator } from '../../../../../../wsGenerator';
 import ComposeEditor, { createBindMount } from '../../ComposeEditor';
 import { AnyService } from '../../ComposeEditor/ComposeFile';
 
@@ -22,7 +20,7 @@ interface ElasticSearchOptions {
   >;
 }
 
-class ElasticSearch extends Generator {
+class ElasticSearch extends WSGenerator {
   // Assigned during initialization
   private esTagOptions!: ReadonlyArray<string>;
 
@@ -34,7 +32,7 @@ class ElasticSearch extends Generator {
   }
 
   async prompting() {
-    const { esTag } = await promptOrUninteractive.call(this, [
+    const { esTag } = await this.promptOrUninteractive([
       {
         name: 'esTag',
         type: 'list',

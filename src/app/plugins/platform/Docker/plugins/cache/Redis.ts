@@ -1,11 +1,10 @@
 import { descending } from 'd3-array';
-import Generator from 'yeoman-generator';
-import { promptOrUninteractive } from '../../../../../../util';
+import { WSGenerator } from '../../../../../../wsGenerator';
 
 import ComposeEditor from '../../ComposeEditor';
 import getImageTags from '../../registry/getImageTags';
 
-class Redis extends Generator {
+class Redis extends WSGenerator {
   // Assigned during initializing phase
   private redisTags!: ReadonlyArray<string>;
 
@@ -27,7 +26,7 @@ class Redis extends Generator {
   }
 
   async prompting() {
-    const { redisTag } = await promptOrUninteractive.call(this, [
+    const { redisTag } = await this.promptOrUninteractive([
       {
         name: 'redisTag',
         type: 'list',

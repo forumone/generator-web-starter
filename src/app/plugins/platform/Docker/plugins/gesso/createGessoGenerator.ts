@@ -1,7 +1,6 @@
 import assert from 'assert-plus';
 import { posix } from 'path';
-import Generator from 'yeoman-generator';
-import { promptOrUninteractive } from '../../../../../../util';
+import { WSGenerator } from '../../../../../../wsGenerator';
 
 import ComposeEditor, {
   createBindMount,
@@ -52,7 +51,7 @@ function createGessoGenerator({
   serviceName,
   themeDirectory,
 }: CreateGeneratorOptions) {
-  class Gesso extends Generator {
+  class Gesso extends WSGenerator {
     // Assigned to in initializing phase
     private documentRoot!: string;
 
@@ -78,7 +77,7 @@ function createGessoGenerator({
     }
 
     async prompting() {
-      const { gessoShouldInstall } = await promptOrUninteractive.call(this, [
+      const { gessoShouldInstall } = await this.promptOrUninteractive([
         {
           type: 'confirm',
           name: 'gessoShouldInstall',
