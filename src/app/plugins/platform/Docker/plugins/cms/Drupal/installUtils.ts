@@ -111,8 +111,8 @@ async function installDrupalProject(
   return this.spawnComposer(
     [
       'create-project',
-      this.projectType,
-      'drupal',
+      this.projectUpstream,
+      this.cmsType,
       '--stability',
       'dev',
       '--no-interaction',
