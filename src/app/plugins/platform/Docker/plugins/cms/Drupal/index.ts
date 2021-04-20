@@ -424,7 +424,7 @@ export default class Drupal extends PhpCmsGenerator {
     );
   }
 
-  public async default(): Promise<void> {
+  public async scaffolding(): Promise<void> {
     await this._scaffoldProject();
   }
 

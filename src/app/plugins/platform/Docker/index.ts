@@ -85,7 +85,7 @@ class Docker extends WSGenerator {
       },
     ]);
 
-    const composedGeneratorOptions = {
+    const composedGeneratorOptions: Generator.GeneratorOptions = {
       cliConfigEditor: this.options.cliConfigEditor,
       composeEditor: this.editor,
       composeCliEditor: this.cliEditor,
@@ -95,6 +95,13 @@ class Docker extends WSGenerator {
         search: searchType,
         cache: cacheType,
       },
+      customPriorities: [
+        {
+          queueName: 'Scaffolding',
+          priorityName: 'scaffolding',
+          before: 'default',
+        },
+      ],
     };
 
     if (cmsType !== 'None') {

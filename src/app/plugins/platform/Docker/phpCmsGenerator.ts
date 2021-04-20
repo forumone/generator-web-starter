@@ -279,7 +279,7 @@ export abstract class PhpCmsGenerator extends WSGenerator {
   // directory (services/drupal) exists and is not empty.
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
-  public async default(): Promise<void> {
+  public async scaffolding(): Promise<void> {
     await this._scaffoldProject();
   }
 
