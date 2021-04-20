@@ -5,6 +5,9 @@ import Drupal from '.';
 import { color } from '../../../../../../../log';
 import { ChildProcess } from 'child_process';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ComposerJson = { [x: string]: any };
+
 const mkdir = promisify(fs.mkdir);
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
@@ -49,53 +52,6 @@ export async function renameWebRoot(
     ),
     replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
   ]);
-}
-
-/**
- * Updates a Composer file to include Drupal's extension requirements. Since we always
- * run Composer in a container separate from our Drupal site, doing this allows us to
- * document which extensions are installed without having to install Composer into the
- * site image.
- *
- * After this function is run, `composer update` is needed in order for Composer to
- * pick up the newly-injected platform configuration.
- *
- * @param composerPath Path to `composer.json`
- */
-export async function injectPlatformConfig(
-  this: Drupal,
-  composerPath: string,
-): Promise<void> {
-  const composer = JSON.parse(await readFile(composerPath, 'utf-8'));
-
-  // Ensure that composer.config.platform is defined before we write to it
-  if (!('config' in composer)) {
-    composer.config = {};
-  }
-
-  const config = composer.config;
-
-  if (!('platform' in config)) {
-    config.platform = {};
-  }
-
-  const platform = config.platform;
-
-  // Although drupal/core lists quite a few dependencies (see https://packagist.org/packages/drupal/core),
-  // it appears that most are available in stock PHP installations. The list below is
-  // based on the required extensions and what is built for the Docker Hub's Drupal 8
-  // image.
-  const platformExtensions = ['gd', 'opcache', 'pdo'];
-
-  for (const extension of platformExtensions) {
-    // The version number of 1.0.0 holds no special meaning other than that it is a valid
-    // semver version. Composer only checks its existence (not its value) when examining
-    // the platform config section.
-    platform[`ext-${extension}`] = '1.0.0';
-  }
-
-  this.debug('Rewriting composer file %s with added platform configuration.');
-  await writeFile(composerPath, JSON.stringify(composer, null, 4), 'utf-8');
 }
 
 /**
@@ -165,4 +121,61 @@ export async function createDrupalProject(
   const cwd = this.destinationPath('services');
   this.info('Triggering Drupal project scaffolding in %s.', cwd);
   return installDrupalProject.call(this, cwd);
+}
+
+/**
+ * Updates a Composer file to include Drupal's extension requirements. Since we always
+ * run Composer in a container separate from our Drupal site, doing this allows us to
+ * document which extensions are installed without having to install Composer into the
+ * site image.
+ *
+ * After this function is run, `composer update` is needed in order for Composer to
+ * pick up the newly-injected platform configuration.
+ *
+ * @param composer Loaded JSON data from the `composer.json` file to be updated in-place.
+ */
+function addPlatformRequirements(composer: ComposerJson): void {
+  // Ensure that composer.config.platform is defined before we write to it
+  if (!('config' in composer)) {
+    composer.config = {};
+  }
+
+  const config = composer.config;
+
+  if (!('platform' in config)) {
+    config.platform = {};
+  }
+
+  const platform = config.platform;
+
+  // Although drupal/core lists quite a few dependencies (see https://packagist.org/packages/drupal/core),
+  // it appears that most are available in stock PHP installations. The list below is
+  // based on the required extensions and what is built for the Docker Hub's Drupal 8
+  // image.
+  const platformExtensions = ['gd', 'opcache', 'pdo'];
+
+  for (const extension of platformExtensions) {
+    // The version number of 1.0.0 holds no special meaning other than that it is a valid
+    // semver version. Composer only checks its existence (not its value) when examining
+    // the platform config section.
+    platform[`ext-${extension}`] = '1.0.0';
+  }
+}
+
+function addProjectName(composer: ComposerJson, projectName: string): void {
+  if (composer.name === 'forumone/drupal-project') {
+    composer.name = `forumone/${projectName}`;
+  }
+}
+
+export async function standardizeComposerJson(this: Drupal): Promise<void> {
+  const composerPath = `${this.servicePath}/composer.json`;
+  const composer: ComposerJson = JSON.parse(
+    await readFile(composerPath, 'utf-8'),
+  );
+
+  // Inject platform configuration to the generated composer.json file.
+  this.info('Injecting platform configuration into composer.json.');
+  addPlatformRequirements(composer);
+  addProjectName(composer, this.appname);
 }

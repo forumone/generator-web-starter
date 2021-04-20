@@ -1,6 +1,5 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import dedent from 'dedent';
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestDrupal8Tag from '../../../registry/getLatestDrupal8Tag';
@@ -15,8 +14,8 @@ import createDrushDockerfile from './createDrushDockerfile';
 import { gessoDrupalPath } from '../../gesso/constants';
 import {
   createDrupalProject,
-  injectPlatformConfig,
   renameWebRoot,
+  standardizeComposerJson,
 } from './installUtils';
 import { color } from '../../../../../../../log';
 import {
@@ -26,10 +25,6 @@ import {
   ProjectType,
   projectUpstreams,
 } from '../../../phpCmsGenerator';
-
-const configGitKeepContents = dedent`
-  This file is used for your Drupal configuration.
-`;
 
 /**
  * Drupal CMS project generator.
@@ -49,8 +44,8 @@ export default class Drupal extends PhpCmsGenerator {
 
   // Bind helper functions.
   public _createDrupalProject = createDrupalProject.bind(this);
-  public _injectPlatformConfig = injectPlatformConfig.bind(this);
   public _renameWebRoot = renameWebRoot.bind(this);
+  public _standardizeComposerJson = standardizeComposerJson.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -375,10 +370,6 @@ export default class Drupal extends PhpCmsGenerator {
       this.debug('Replacing docroot references in generated files.');
       await this._renameWebRoot(this.documentRoot, drupalRoot);
     }
-
-    // Inject platform configuration to the generated composer.json file.
-    this.info('Injecting platform configuration into composer.json.');
-    await this._injectPlatformConfig(`${drupalRoot}/composer.json`);
   }
 
   /**
@@ -413,19 +404,14 @@ export default class Drupal extends PhpCmsGenerator {
       this.templatePath('_env'),
       this.destinationPath('services/drupal/.env'),
     );
-
-    this.debug(
-      'Writing .gitkeep file to %s.',
-      'services/drupal/config/.gitkeep',
-    );
-    this.fs.write(
-      this.destinationPath('services/drupal/config/.gitkeep'),
-      configGitKeepContents,
-    );
   }
 
   public async scaffolding(): Promise<void> {
     await this._scaffoldProject();
+  }
+
+  public async default(): Promise<void> {
+    this._standardizeComposerJson();
   }
 
   public async install(): Promise<void> {
