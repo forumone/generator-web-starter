@@ -163,7 +163,10 @@ function addPlatformRequirements(composer: ComposerJson): void {
 }
 
 function addProjectName(composer: ComposerJson, projectName: string): void {
-  if (composer.name === 'forumone/drupal-project') {
+  if (
+    composer.name === 'forumone/drupal-project' ||
+    composer.name === 'drupal-composer/drupal-project'
+  ) {
     composer.name = `forumone/${projectName}`;
   }
 }
