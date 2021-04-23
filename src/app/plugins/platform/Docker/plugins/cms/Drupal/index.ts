@@ -100,7 +100,7 @@ export default class Drupal extends PhpCmsGenerator {
         store: true,
         default: (answers: { documentRoot: string }) => {
           const targetPath = this.destinationPath(
-            'services/drupal',
+            this.servicePath,
             answers.documentRoot,
           );
 
@@ -361,7 +361,7 @@ export default class Drupal extends PhpCmsGenerator {
     this.info('Creating Drupal project.');
     await this._createDrupalProject();
 
-    const drupalRoot = this.destinationPath('services/drupal');
+    const drupalRoot = this.destinationPath(this.servicePath);
 
     // The project scaffolding tools assume the web root should be named `web`,
     // so various references need to be replaced with the designated rename if
@@ -399,10 +399,10 @@ export default class Drupal extends PhpCmsGenerator {
     this._writeDockerIgnore();
     this._writeCodeQualityConfig();
 
-    this.debug('Copying .env template file to %s.', 'services/drupal/.env');
+    this.debug('Copying .env template file to %s.', `${this.servicePath}/.env`);
     this.fs.copy(
       this.templatePath('_env'),
-      this.destinationPath('services/drupal/.env'),
+      this.destinationPath(`${this.servicePath}/.env`),
     );
   }
 
@@ -426,7 +426,7 @@ export default class Drupal extends PhpCmsGenerator {
     // requirements have been assembled.
     this.info('Running final Composer installation.');
     await this.spawnComposer(['install', '--ignore-platform-reqs'], {
-      cwd: this.destinationPath('services/drupal'),
+      cwd: this.destinationPath(this.servicePath),
     }).catch(() => {
       this.env.error(
         new Error(
@@ -463,10 +463,10 @@ export default class Drupal extends PhpCmsGenerator {
 
     this.debug(
       'Writing Drupal Dockerfile to %s.',
-      'services/drupal/Dockerfile',
+      `${this.servicePath}/Dockerfile`,
     );
     this.fs.write(
-      this.destinationPath('services/drupal/Dockerfile'),
+      this.destinationPath(`${this.servicePath}/Dockerfile`),
       drupalDockerfile.render(),
     );
 
@@ -491,15 +491,17 @@ export default class Drupal extends PhpCmsGenerator {
     // Bubble up Gesso dockerignore rules.
     if (this.useGesso) {
       if (
-        this.existsDestination(`services/drupal/${gessoDrupalPath}/.gitignore`)
+        this.existsDestination(
+          `${this.servicePath}/${gessoDrupalPath}/.gitignore`,
+        )
       ) {
         this.debug(
           'Adding contents of %s to the .dockerignore file.',
-          `services/drupal/${gessoDrupalPath}/.gitignore`,
+          `${this.servicePath}/${gessoDrupalPath}/.gitignore`,
         );
         drupalDockerIgnore.addContentsOfFile({
           content: this.readDestination(
-            `services/drupal/${gessoDrupalPath}/.gitignore`,
+            `${this.servicePath}/${gessoDrupalPath}/.gitignore`,
           ),
           heading: 'Gesso Assets',
           path: gessoDrupalPath,
@@ -507,19 +509,19 @@ export default class Drupal extends PhpCmsGenerator {
       } else {
         this.warning(
           'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
-          `services/drupal/${gessoDrupalPath}/.gitignore`,
+          `${this.servicePath}/${gessoDrupalPath}/.gitignore`,
         );
       }
     }
 
     // Incorporate gitignore rules.
-    if (this.existsDestination('services/drupal/.gitignore')) {
+    if (this.existsDestination(`${this.servicePath}/.gitignore`)) {
       this.debug(
         'Adding contents of %s to the .dockerignore file.',
-        'services/drupal/.gitignore',
+        `${this.servicePath}/.gitignore`,
       );
       drupalDockerIgnore.addContentsOfFile({
-        content: this.readDestination('services/drupal/.gitignore'),
+        content: this.readDestination(`${this.servicePath}/.gitignore`),
         heading: 'Drupal',
         path: '/',
       });
@@ -531,11 +533,11 @@ export default class Drupal extends PhpCmsGenerator {
     // to a string and appended using the IgnoreEditor solution.
     this.debug(
       'Rendering .dockerignore template to %s.',
-      'services/drupal/.dockerignore',
+      `${this.servicePath}/.dockerignore`,
     );
     this.renderTemplate(
       this.templatePath('_dockerignore.ejs'),
-      this.destinationPath('services/drupal/.dockerignore'),
+      this.destinationPath(`${this.servicePath}/.dockerignore`),
       {
         documentRoot: this.documentRoot,
         inheritedRules: drupalDockerIgnore.serialize(),

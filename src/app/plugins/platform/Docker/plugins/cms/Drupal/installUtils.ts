@@ -68,7 +68,7 @@ async function installDrupalProject(
     [
       'create-project',
       this.projectUpstream,
-      this.cmsType,
+      '.',
       '--stability',
       'dev',
       '--no-interaction',
@@ -96,17 +96,17 @@ export async function createDrupalProject(
   // Create the service directory if it doesn't exist.
   // If the services directory doesn't exist, Docker fails since it can't mount
   // it as a volume mount.
-  if (!this.existsDestination('services')) {
+  if (!this.existsDestination(this.servicePath)) {
     this.debug(
-      'Creating services directory at %s.',
-      this.destinationPath('services'),
+      'Creating service directory at %s.',
+      this.destinationPath(this.servicePath),
     );
     try {
-      await mkdir(this.destinationPath('services'), { recursive: true });
+      await mkdir(this.destinationPath(this.servicePath), { recursive: true });
     } catch (err) {
       this.error(
-        'Failed to create services directory at %s.',
-        this.destinationPath('services'),
+        'Failed to create service directory at %s.',
+        this.destinationPath(this.servicePath),
       );
       if (this.options.debug) {
         // Show the contents of the directory for debugging.
@@ -118,7 +118,7 @@ export async function createDrupalProject(
     }
   }
 
-  const cwd = this.destinationPath('services');
+  const cwd = this.destinationPath(this.servicePath);
   this.info('Triggering Drupal project scaffolding in %s.', cwd);
   return installDrupalProject.call(this, cwd);
 }
