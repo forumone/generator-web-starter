@@ -1,0 +1,21 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "10:00"
+    timezone: America/New_York
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: "@types/node"
+    versions:
+    - 10.17.52
+    - 10.17.58
+  - dependency-name: "@babel/core"
+    versions:
+    - 7.12.16
+    - 7.13.15
+  - dependency-name: "@babel/preset-env"
+    versions:
+    - 7.12.16
