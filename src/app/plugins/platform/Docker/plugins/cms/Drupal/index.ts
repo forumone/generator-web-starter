@@ -486,6 +486,14 @@ export default class Drupal extends PhpCmsGenerator {
    * @todo Add support to help maintain existing custom rules.
    */
   private _writeDockerIgnore(): void {
+    // Use the provided files from the repository if installing from the repository.
+    // This will avoid conflicts in the templates and the repository while also
+    // allowing the files to be created on existing projects not installing from the
+    // repository templates.
+    if (!this.shouldInstall) {
+      return;
+    }
+
     const drupalDockerIgnore = new IgnoreEditor();
 
     // Bubble up Gesso dockerignore rules.

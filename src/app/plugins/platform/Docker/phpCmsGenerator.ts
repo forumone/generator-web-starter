@@ -320,28 +320,34 @@ export abstract class PhpCmsGenerator extends WSGenerator {
       },
     );
 
-    this.debug(
-      'Rendering phpcs.xml.dist template to %s.',
-      `${this.servicePath}/phpcs.xml.dist`,
-    );
-    this.renderTemplate(
-      this.templatePath('phpcs.xml.dist.ejs'),
-      this.destinationPath(`${this.servicePath}/phpcs.xml.dist`),
-      {
-        documentRoot: this.documentRoot,
-      },
-    );
+    // Use the provided files from the repository if installing from the repository.
+    // This will avoid conflicts in the templates and the repository while also
+    // allowing the files to be created on existing projects not installing from the
+    // repository templates.
+    if (!this.shouldInstall) {
+      this.debug(
+        'Rendering phpcs.xml.dist template to %s.',
+        `${this.servicePath}/phpcs.xml.dist`,
+      );
+      this.renderTemplate(
+        this.templatePath('phpcs.xml.dist.ejs'),
+        this.destinationPath(`${this.servicePath}/phpcs.xml.dist`),
+        {
+          documentRoot: this.documentRoot,
+        },
+      );
 
-    this.debug(
-      'Rendering .phpmd.xml.dist template to %s.',
-      `${this.servicePath}/.phpmd.xml.dist`,
-    );
-    this.renderTemplate(
-      this.templatePath('_phpmd.xml.dist.ejs'),
-      this.destinationPath(`${this.servicePath}/.phpmd.xml.dist`),
-      {
-        documentRoot: this.documentRoot,
-      },
-    );
+      this.debug(
+        'Rendering .phpmd.xml.dist template to %s.',
+        `${this.servicePath}/.phpmd.xml.dist`,
+      );
+      this.renderTemplate(
+        this.templatePath('_phpmd.xml.dist.ejs'),
+        this.destinationPath(`${this.servicePath}/.phpmd.xml.dist`),
+        {
+          documentRoot: this.documentRoot,
+        },
+      );
+    }
   }
 }
