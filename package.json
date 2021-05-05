@@ -62,7 +62,7 @@
     "@types/env-paths": "^1.0.2",
     "@types/globby": "^8.0.0",
     "@types/got": "^9.6.11",
-    "@types/jest": "^24.9.1",
+    "@types/jest": "^26.0.23",
     "@types/make-dir": "^1.0.3",
     "@types/node": "^10.17.37",
     "@types/node-fetch": "^2.5.7",
