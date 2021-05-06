@@ -109,11 +109,9 @@ steps:
             - test
           cache-from:
             - "test:${ECR_NAMESPACE}--test--${BUILDKITE_COMMIT}"
-            - "test:${ECR_NAMESPACE}--test--${BUILDKITE_BRANCH}"
             - "test:${ECR_NAMESPACE}--base--latest"
           push:
             - "test:${ECR_NAMESPACE}--test--${BUILDKITE_COMMIT}"
-            - "test:${ECR_NAMESPACE}--test--${BUILDKITE_BRANCH}"
             - "test:${ECR_NAMESPACE}--test--latest"
 
   # Create the test scenario steps.
