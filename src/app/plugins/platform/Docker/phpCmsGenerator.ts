@@ -51,7 +51,7 @@ export abstract class PhpCmsGenerator extends WSGenerator {
 
   protected spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
-  protected _prepareDockerComposeServices() {
+  protected _prepareDockerComposeServices(): void {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -183,7 +183,7 @@ export abstract class PhpCmsGenerator extends WSGenerator {
     });
   }
 
-  protected _prepareCodacyComposeServices() {
+  protected _prepareCodacyComposeServices(): void {
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
 
     const codacyService = {

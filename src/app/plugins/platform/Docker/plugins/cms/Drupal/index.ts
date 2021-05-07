@@ -165,7 +165,7 @@ export default class Drupal extends PhpCmsGenerator {
     this.useCapistrano = useCapistrano;
   }
 
-  protected _useCapistrano() {
+  protected _useCapistrano(): void {
     const capistranoOptions = {
       platform: 'drupal8',
       name: this.options.name,
@@ -184,7 +184,7 @@ export default class Drupal extends PhpCmsGenerator {
     this.composeWith(this.options.capistrano, capistranoOptions);
   }
 
-  protected _useGesso() {
+  protected _useGesso(): void {
     const gessoOptions = {
       documentRoot: this.documentRoot,
       composeEditor: this.options.composeEditor,
@@ -222,7 +222,7 @@ export default class Drupal extends PhpCmsGenerator {
     }
   }
 
-  protected _prepareDockerComposeServices() {
+  protected _prepareDockerComposeServices(): void {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
