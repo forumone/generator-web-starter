@@ -1,9 +1,9 @@
-ARG node_version=10
+ARG node_version=12
 
 FROM node:${node_version}-alpine AS base
 
 RUN apk update && apk upgrade && \
-    apk add --no-cache bash git openssh curl docker-cli tar jq
+  apk add --no-cache bash git openssh curl docker-cli tar jq
 
 RUN echo -n "Node: " && node -v && echo -n "npm: " && npm -v
 
