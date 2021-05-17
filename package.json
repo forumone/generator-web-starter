@@ -50,7 +50,7 @@
     "valid-filename": "~3.1.0",
     "validate-npm-package-name": "~3.0.0",
     "yaml": "~1.10.0",
-    "yeoman-generator": "~4.12.0"
+    "yeoman-generator": "~5.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.11.6",
