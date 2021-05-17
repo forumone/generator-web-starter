@@ -10,14 +10,13 @@ module.exports = {
     },
     "plugins": [
         "@typescript-eslint",
-        "implicit-dependencies"
     ],
     "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/eslint-recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:prettier/recommended",
-        "prettier/@typescript-eslint",
+        "prettier",
     ],
     "rules": {
         "@typescript-eslint/camelcase": ["error", {
@@ -35,7 +34,6 @@ module.exports = {
         "dot-notation": "error",
         "eqeqeq": "error",
         "guard-for-in": "error",
-        "implicit-dependencies/no-implicit": "error",
         "no-console": "error",
         "no-constant-condition": "off",
         "no-empty-function": "error",

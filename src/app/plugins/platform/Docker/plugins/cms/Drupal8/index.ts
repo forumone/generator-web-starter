@@ -1,10 +1,6 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import Generator from 'yeoman-generator';
 import dedent from 'dedent';
-import { promisify } from 'util';
-import fs from 'fs';
-
 import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestDrupal8Tag from '../../../registry/getLatestDrupal8Tag';
@@ -18,12 +14,13 @@ import {
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
 import { gessoDrupalPath } from '../../gesso/constants';
-import { injectPlatformConfig, renameWebRoot } from './installUtils';
 import {
-  outputFormat as format,
-  promptOrUninteractive,
-} from '../../../../../../../util';
-const mkdir = promisify(fs.mkdir);
+  createDrupalProject,
+  injectPlatformConfig,
+  renameWebRoot,
+} from './installUtils';
+import { color } from '../../../../../../../log';
+import { WSGenerator } from '../../../../../../../wsGenerator';
 
 const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
 type DrupalProject = typeof drupalProject;
@@ -43,19 +40,24 @@ const configGitKeepContents = dedent`
   This file is used for your Drupal 8 configuration.
 `;
 
-class Drupal8 extends Generator {
+class Drupal8 extends WSGenerator {
   // Assigned to in initializing phase
-  private latestDrupalTag!: string;
-  private latestDrushTag!: string;
+  protected latestDrupalTag!: string;
+  protected latestDrushTag!: string;
 
   // Assigned to in prompting phase
-  private documentRoot!: string;
-  private projectType!: Project;
-  private useGesso: boolean | undefined;
+  protected documentRoot!: string;
+  protected projectType!: Project;
+  protected useGesso: boolean | undefined;
 
-  private shouldInstall: boolean | undefined = false;
+  protected shouldInstall: boolean | undefined = false;
 
-  private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
+  protected spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
+
+  // Bind helper functions.
+  public _createDrupalProject = createDrupalProject.bind(this);
+  public _injectPlatformConfig = injectPlatformConfig.bind(this);
+  public _renameWebRoot = renameWebRoot.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -63,7 +65,7 @@ class Drupal8 extends Generator {
       getLatestDrupal8CliTag(),
     ]);
     this.debug(
-      format.debug('Loaded latest Drupal (%s) and Drush (%s) tags.'),
+      'Loaded latest Drupal (%s) and Drush (%s) tags.',
       latestDrupalTag,
       latestDrushTag,
     );
@@ -79,13 +81,13 @@ class Drupal8 extends Generator {
       useGesso,
       shouldInstallDrupal,
       drupalProjectType,
-    } = await promptOrUninteractive.call(this, [
+    } = await this.promptOrUninteractive([
       {
         type: 'input',
         name: 'documentRoot',
         validate: name => name !== '' && validFilename(name),
         message: 'What is the document root?',
-        default: 'public',
+        default: 'web',
         store: true,
       },
       {
@@ -159,8 +161,8 @@ class Drupal8 extends Generator {
         linkedFiles: ['services/drupal/.env'],
         uninteractive: this.options.uninteractive,
       };
-      this.debug(
-        format.info('Composing with Capistrano generator using options: %O'),
+      this.info(
+        'Composing with Capistrano generator using options: %O',
         capistranoOptions,
       );
       this.composeWith(this.options.capistrano, capistranoOptions);
@@ -174,7 +176,7 @@ class Drupal8 extends Generator {
         uninteractive: this.options.uninteractive,
       };
       this.debug(
-        format.debug('Composing with Gesso generator using options: %O'),
+        'Composing with Gesso generator using options: %O',
         gessoOptions,
       );
       this.composeWith(
@@ -278,6 +280,42 @@ class Drupal8 extends Generator {
     });
 
     cliEditor.addComposer('services/drupal');
+
+    const codacyService = {
+      image: 'codacy/codacy-analysis-cli:latest',
+      environment: {
+        CODACY_CODE: '$PWD',
+      },
+      command: 'analyze',
+      volumes: [
+        createBindMount('$PWD', '$PWD'),
+        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
+        createBindMount('/tmp', '/tmp'),
+      ],
+    };
+
+    // Create additional services to run Codacy locally.
+    cliEditor.addService('codacy', codacyService);
+    cliEditor.addService('phpcs', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
+      command: '',
+    });
+    cliEditor.addService('phpmd', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
+      command: '',
+    });
+    cliEditor.addService('eslint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
+      command: '',
+    });
+    cliEditor.addService('stylelint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
+      command: '',
+    });
   }
 
   /**
@@ -288,73 +326,26 @@ class Drupal8 extends Generator {
       return;
     }
 
-    // Create the service directory if it doesn't exist.
-    // If the services directory doesn't exist, Docker fails since it can't mount
-    // it as a volume mount.
-    if (!this.existsDestination('services')) {
-      this.debug(
-        format.info('Creating services directory at %s.'),
-        this.destinationPath('services'),
-      );
-      try {
-        await mkdir(this.destinationPath('services'), { recursive: true });
-      } catch (err) {
-        this.log(
-          format.error('Failed to create services directory at %s.'),
-          this.destinationPath('services'),
-        );
-        if (this.options.debug) {
-          // Show the contents of the directory for debugging.
-          // @todo Output the content of this with more debugging message context
-          //   around it.
-          this.spawnCommandSync('ls', ['-al']);
-        }
-        this.env.error(err);
-      }
-    }
-
     // Check if the special web root renaming will be required.
     // This will throw an error if this will cause incompatibilities.
     const needsDocRootRename = this._needsDocRootRename();
 
-    const drupalRoot = this.destinationPath('services/drupal');
+    this.info('Creating Drupal project.');
+    await this._createDrupalProject();
 
-    this.debug(format.info('Triggering Drupal project scaffolding.'));
-    await this.spawnComposer(
-      [
-        'create-project',
-        this.projectType,
-        'drupal',
-        '--stability',
-        'dev',
-        '--no-interaction',
-        '--ignore-platform-reqs',
-        '--no-install',
-      ],
-      {
-        cwd: this.destinationPath('services'),
-      },
-    ).catch(() =>
-      this.env.error(
-        new Error(
-          format.error.bold('Composer `create-project` command failed.'),
-        ),
-      ),
-    );
+    const drupalRoot = this.destinationPath('services/drupal');
 
     // The project scaffolding tools assume the web root should be named `web`,
     // so various references need to be replaced with the designated rename if
     // this is not the name selected for the project.
     if (needsDocRootRename) {
       this.debug('Replacing docroot references in generated files.');
-      await renameWebRoot(this.documentRoot, drupalRoot);
+      await this._renameWebRoot(this.documentRoot, drupalRoot);
     }
 
     // Inject platform configuration to the generated composer.json file.
-    this.debug(
-      format.info('Injecting platform configuration into composer.json.'),
-    );
-    await injectPlatformConfig(`${drupalRoot}/composer.json`);
+    this.info('Injecting platform configuration into composer.json.');
+    await this._injectPlatformConfig(`${drupalRoot}/composer.json`);
   }
 
   /**
@@ -388,8 +379,8 @@ class Drupal8 extends Generator {
     }
 
     // Install required dependencies to avoid Gesso crashing when enabled
-    this.debug(
-      format.info('Adding Gesso Composer dependencies: %s'),
+    this.info(
+      'Adding Gesso Composer dependencies: %s',
       gessoDrupalDependencies.join(', '),
     );
     await this.spawnComposer(
@@ -406,9 +397,7 @@ class Drupal8 extends Generator {
     ).catch(() => {
       this.env.error(
         new Error(
-          format.error.bold(
-            'Composer installation of Gesso dependencies failed.',
-          ),
+          color.error('Composer installation of Gesso dependencies failed.'),
         ),
       );
     });
@@ -418,16 +407,62 @@ class Drupal8 extends Generator {
   // directory (services/drupal) exists and is not empty.
   // This means that we can't run when the Dockerfile is written out by the generator during the
   // writing phase, despite the `installing' phase being the more natural choice.
-  async default(): Promise<void> {
+  public async default(): Promise<void> {
     await this._scaffoldDrupal();
 
     if (this.useGesso) {
-      this.debug(format.info('Installing Gesso dependencies.'));
+      this.info('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
   }
 
   public writing(): void {
+    this._writeDockerFiles();
+    this._writeDockerIgnore();
+    this._writeCodeQualityConfig();
+
+    this.debug('Copying .env template file to %s.', 'services/drupal/.env');
+    this.fs.copy(
+      this.templatePath('_env'),
+      this.destinationPath('services/drupal/.env'),
+    );
+
+    this.debug(
+      'Writing .gitkeep file to %s.',
+      'services/drupal/config/.gitkeep',
+    );
+    this.fs.write(
+      this.destinationPath('services/drupal/config/.gitkeep'),
+      configGitKeepContents,
+    );
+  }
+
+  public async install(): Promise<void> {
+    if (this.options.skipInstall) {
+      this.info(
+        'Skipping final Composer installation due to `--skip-install` option.',
+      );
+      return;
+    }
+
+    // Run final installation of all Composer dependencies now that all
+    // requirements have been assembled.
+    this.info('Running final Composer installation.');
+    await this.spawnComposer(['install', '--ignore-platform-reqs'], {
+      cwd: this.destinationPath('services/drupal'),
+    }).catch(() => {
+      this.env.error(
+        new Error(
+          color.error('Final installation of Composer dependencies failed.'),
+        ),
+      );
+    });
+  }
+
+  /**
+   * Create necessary Docker files.
+   */
+  private _writeDockerFiles(): void {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
 
     // The Pantheon template doesn't create a load.environment.php file, so we have to
@@ -450,7 +485,7 @@ class Drupal8 extends Generator {
     });
 
     this.debug(
-      format.debug('Writing Drupal Dockerfile to %s.'),
+      'Writing Drupal Dockerfile to %s.',
       'services/drupal/Dockerfile',
     );
     this.fs.write(
@@ -458,60 +493,11 @@ class Drupal8 extends Generator {
       drupalDockerfile.render(),
     );
 
-    this.debug(
-      format.debug('Writing Drush Dockerfile to %s.'),
-      'services/drush/Dockerfile',
-    );
+    this.debug('Writing Drush Dockerfile to %s.', 'services/drush/Dockerfile');
     this.fs.write(
       this.destinationPath('services/drush/Dockerfile'),
       drushDockerfile.render(),
     );
-
-    this._writeDockerIgnore();
-
-    this.debug(
-      format.debug('Copying .env template file to %s.'),
-      'services/drupal/.env',
-    );
-    this.fs.copy(
-      this.templatePath('_env'),
-      this.destinationPath('services/drupal/.env'),
-    );
-
-    this.debug(
-      format.debug('Writing .gitkeep file to %s.'),
-      'services/drupal/config/.gitkeep',
-    );
-    this.fs.write(
-      this.destinationPath('services/drupal/config/.gitkeep'),
-      configGitKeepContents,
-    );
-  }
-
-  public async install(): Promise<void> {
-    if (this.options.skipInstall) {
-      this.debug(
-        format.info(
-          'Skipping final Composer installation due to `--skip-install` option.',
-        ),
-      );
-      return;
-    }
-
-    // Run final installation of all Composer dependencies now that all
-    // requirements have been assembled.
-    this.debug(format.info('Running final Composer installation.'));
-    await this.spawnComposer(['install', '--ignore-platform-reqs'], {
-      cwd: this.destinationPath('services/drupal'),
-    }).catch(() => {
-      this.env.error(
-        new Error(
-          format.error.bold(
-            'Final installation of Composer dependencies failed.',
-          ),
-        ),
-      );
-    });
   }
 
   /**
@@ -531,7 +517,7 @@ class Drupal8 extends Generator {
         this.existsDestination(`services/drupal/${gessoDrupalPath}/.gitignore`)
       ) {
         this.debug(
-          format.debug('Adding contents of %s to the .dockerignore file.'),
+          'Adding contents of %s to the .dockerignore file.',
           `services/drupal/${gessoDrupalPath}/.gitignore`,
         );
         drupalDockerIgnore.addContentsOfFile({
@@ -542,10 +528,8 @@ class Drupal8 extends Generator {
           path: gessoDrupalPath,
         });
       } else {
-        this.log(
-          format.warning(
-            'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
-          ),
+        this.warning(
+          'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
           `services/drupal/${gessoDrupalPath}/.gitignore`,
         );
       }
@@ -554,7 +538,7 @@ class Drupal8 extends Generator {
     // Incorporate gitignore rules.
     if (this.existsDestination('services/drupal/.gitignore')) {
       this.debug(
-        format.debug('Adding contents of %s to the .dockerignore file.'),
+        'Adding contents of %s to the .dockerignore file.',
         'services/drupal/.gitignore',
       );
       drupalDockerIgnore.addContentsOfFile({
@@ -569,7 +553,7 @@ class Drupal8 extends Generator {
     // template being rendered since template content cannot be rendered
     // to a string and appended using the IgnoreEditor solution.
     this.debug(
-      format.debug('Rendering .dockerignore template to %s.'),
+      'Rendering .dockerignore template to %s.',
       'services/drupal/.dockerignore',
     );
     this.renderTemplate(
@@ -578,6 +562,46 @@ class Drupal8 extends Generator {
       {
         documentRoot: this.documentRoot,
         inheritedRules: drupalDockerIgnore.serialize(),
+      },
+    );
+  }
+
+  /**
+   * Write code quality configuration files for the project.
+   */
+  private _writeCodeQualityConfig(): void {
+    this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
+    this.renderTemplate(
+      this.templatePath('_codacy.yml.ejs'),
+      this.destinationPath('.codacy.yml'),
+      {
+        documentRoot: this.documentRoot,
+        useGesso: this.useGesso,
+        isPantheon: this.projectType === pantheonProject,
+      },
+    );
+
+    this.debug(
+      'Rendering phpcs.xml.dist template to %s.',
+      'services/drupal/phpcs.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('phpcs.xml.dist.ejs'),
+      this.destinationPath('services/drupal/phpcs.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
+
+    this.debug(
+      'Rendering .phpmd.xml.dist template to %s.',
+      'services/drupal/.phpmd.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('_phpmd.xml.dist.ejs'),
+      this.destinationPath('services/drupal/.phpmd.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
       },
     );
   }

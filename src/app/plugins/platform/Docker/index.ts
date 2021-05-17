@@ -2,7 +2,7 @@ import assert from 'assert-plus';
 import dedent from 'dedent';
 import path from 'path';
 import Generator from 'yeoman-generator';
-import { promptOrUninteractive } from '../../../../util';
+import { WSGenerator } from '../../../../wsGenerator';
 
 import discoverModules from '../../../discoverModules';
 import IgnoreEditor from '../../../IgnoreEditor';
@@ -30,7 +30,7 @@ const overrideIntro = dedent`
   # Use this file to temporarily customize services (e.g., to expose new ports).
 `;
 
-class Docker extends Generator {
+class Docker extends WSGenerator {
   private readonly editor = new ComposeEditor({ intro: composeIntro });
   private readonly cliEditor = new ComposeEditor({ intro: cliIntro });
 
@@ -61,7 +61,7 @@ class Docker extends Generator {
       [cmsAnswerKey]: cmsType,
       [searchAnswerKey]: searchType,
       [cacheAnswerKey]: cacheType,
-    } = await promptOrUninteractive.call(this, [
+    } = await this.promptOrUninteractive([
       {
         type: 'list',
         name: cmsAnswerKey,

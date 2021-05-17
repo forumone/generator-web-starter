@@ -1,6 +1,6 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import Generator from 'yeoman-generator';
+import { WSGenerator } from '../../../../../../../wsGenerator';
 import decompress from 'decompress';
 import fetch from 'node-fetch';
 import { URL } from 'url';
@@ -20,11 +20,10 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
-import { promptOrUninteractive } from '../../../../../../../util';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
-class WordPress extends Generator {
+class WordPress extends WSGenerator {
   // Written out in initializing phase.
   private latestWpTag!: string;
   private latestWpCliTag!: string;
@@ -40,7 +39,7 @@ class WordPress extends Generator {
 
   private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
-  async initializing() {
+  public async initializing(): Promise<void> {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
       getLatestWordPressTag(),
       getLatestWordPressCliTag(),
@@ -51,7 +50,7 @@ class WordPress extends Generator {
     this.options.force = true;
   }
 
-  async prompting() {
+  public async prompting(): Promise<void> {
     const {
       documentRoot,
       wpStarter,
@@ -59,13 +58,13 @@ class WordPress extends Generator {
       shouldInstallWordPress,
       useGesso,
       useCapistrano,
-    } = await promptOrUninteractive.call(this, [
+    } = await this.promptOrUninteractive([
       {
         type: 'input',
         name: 'documentRoot',
         validate: name => name !== '' && validFilename(name),
         message: 'What is the document root?',
-        default: 'public',
+        default: 'web',
         store: true,
       },
       {
@@ -158,7 +157,7 @@ class WordPress extends Generator {
     }
   }
 
-  configuring() {
+  public configuring(): void {
     this.debug(
       'Copying nginx config template to %s.',
       'services/nginx/default.conf',
@@ -262,12 +261,58 @@ class WordPress extends Generator {
     });
 
     if (this.usesWpStarter) {
-      this.debug('Adding composer cli service.');
+      this.debug('Adding Composer CLI service.');
       cliEditor.addComposer('services/wordpress');
     }
+
+    // Add Codacy configuration.
+    const codacyService = {
+      image: 'codacy/codacy-analysis-cli:latest',
+      environment: {
+        CODACY_CODE: '$PWD',
+      },
+      command: 'analyze',
+      volumes: [
+        createBindMount('$PWD', '$PWD'),
+        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
+        createBindMount('/tmp', '/tmp'),
+      ],
+    };
+
+    // Create additional services to run Codacy locally.
+    this.debug('Adding Codacy CLI service.');
+    cliEditor.addService('codacy', codacyService);
+
+    this.debug('Adding Codacy phpcs service.');
+    cliEditor.addService('phpcs', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
+      command: '',
+    });
+
+    this.debug('Adding Codacy phpmd service.');
+    cliEditor.addService('phpmd', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
+      command: '',
+    });
+
+    this.debug('Adding Codacy eslint service.');
+    cliEditor.addService('eslint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
+      command: '',
+    });
+
+    this.debug('Adding Codacy stylelint service.');
+    cliEditor.addService('stylelint', {
+      ...codacyService,
+      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
+      command: '',
+    });
   }
 
-  async writing() {
+  public async writing(): Promise<void> {
     // For project not using wp-starter, don't bother writing out composer.json
     // or a .env file.
     if (this.usesWpStarter) {
@@ -341,9 +386,51 @@ class WordPress extends Generator {
         { documentRoot: this.documentRoot },
       );
     }
+
+    this._writeCodeQualityConfig();
   }
 
-  private async _installWordPress() {
+  /**
+   * Write code quality configuration files for the project.
+   */
+  private _writeCodeQualityConfig(): void {
+    this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
+    this.renderTemplate(
+      this.templatePath('_codacy.yml.ejs'),
+      this.destinationPath('.codacy.yml'),
+      {
+        documentRoot: this.documentRoot,
+        useGesso: this.usesGesso,
+      },
+    );
+
+    this.debug(
+      'Rendering phpcs.xml.dist template to %s.',
+      'services/wordpress/phpcs.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('phpcs.xml.dist.ejs'),
+      this.destinationPath('services/wordpress/phpcs.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+        useGesso: this.usesGesso,
+      },
+    );
+
+    this.debug(
+      'Rendering .phpmd.xml.dist template to %s.',
+      'services/wordpress/.phpmd.xml.dist',
+    );
+    this.renderTemplate(
+      this.templatePath('_phpmd.xml.dist.ejs'),
+      this.destinationPath('services/wordpress/.phpmd.xml.dist'),
+      {
+        documentRoot: this.documentRoot,
+      },
+    );
+  }
+
+  private async _installWordPress(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -368,7 +455,7 @@ class WordPress extends Generator {
   /**
    * Install plugin from WordPress Packagist with Composer.
    */
-  private async _installWithComposer(pluginName: string) {
+  private async _installWithComposer(pluginName: string): Promise<void> {
     const packageName = `wpackagist-plugin/${pluginName}`;
     this.debug(
       'Spawning Composer command to install WordPress plugin %s.',
@@ -385,7 +472,7 @@ class WordPress extends Generator {
   /**
    * Install plugin from WordPress plugin repo as a zip.
    */
-  private async _installFromWPRepo(pluginName: string) {
+  private async _installFromWPRepo(pluginName: string): Promise<void> {
     this.debug('Installing plugin %s from repo.', pluginName);
     const endpoint = new URL('https://downloads.wordpress.org');
     endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
@@ -414,7 +501,7 @@ class WordPress extends Generator {
     await decompress(buffer, destinationPath, { strip: 1 });
   }
 
-  private async _installGessoDependencies() {
+  private async _installGessoDependencies(): Promise<void> {
     if (!this.shouldInstall) {
       return;
     }
@@ -430,7 +517,7 @@ class WordPress extends Generator {
     }
   }
 
-  async install() {
+  public async install(): Promise<void> {
     this.debug('Installing WordPress.');
     await this._installWordPress();
 

@@ -1,0 +1,48 @@
+---
+engines:
+  phpcs:
+    enabled: true
+    php_version: 7.4
+    base_sub_dir: services/drupal
+  phpmd:
+    enabled: true
+    php_version: 7.4
+    base_sub_dir: services/drupal
+  <%_ if (useGesso) { _%>
+  eslint:
+    enabled: true
+    # Restrict parsing into the Gesso directory where a config file exists.
+    base_sub_dir: services/drupal/<%= documentRoot %>/themes/gesso
+  stylelint:
+    enabled: true
+    # Restrict parsing into the Gesso directory where a config file exists.
+    base_sub_dir: services/drupal/<%= documentRoot %>/themes/gesso
+  <%_ } _%>
+languages:
+  php:
+    # Recognize various Drupal custom file extensions.
+    extensions:
+      - '.php'
+      - '.module'
+      - '.inc'
+      - '.install'
+      - '.profile'
+      - '.theme'
+      - '.test'
+  ruby:
+    # Capfile needs to be specified explicitly due to its unique name.
+    extensions:
+      - '.rb'
+      - '.rake'
+      - 'Capfile'
+exclude_paths:
+  - '.buildkite/artifacts/**'
+  - 'services/drupal/vendor/**'
+  - 'services/drupal/<%= documentRoot %>/core/**'
+  - 'services/drupal/<%= documentRoot %>/libraries/**'
+  - 'services/drupal/<%= documentRoot %>/**/contrib/**'
+  <%_ if (isPantheon) { _%>
+  # Ignore issues pre-existing within the Pantheon project template.
+  - 'services/drupal/scripts/composer/ScriptHandler.php'
+  - 'services/drupal/web/sites/default/settings.pantheon.php'
+  <%_ } _%>

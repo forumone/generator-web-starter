@@ -11,7 +11,6 @@ import {
   ManifestAwareGenerator,
   ManifestAwareOptions,
 } from '../manifest/manifestAwareGenerator';
-import { promptOrUninteractive } from '../util';
 
 interface BranchMapping {
   readonly source: string;
@@ -69,7 +68,7 @@ class BuildkitePipeline extends ManifestAwareGenerator {
    * Execute the configuration phase of this generator.
    */
   async prompting() {
-    const answers = await promptOrUninteractive.call(this, [
+    const answers = await this.promptOrUninteractive([
       {
         name: 'serviceDirectory',
         message: 'What directory is the application in?',

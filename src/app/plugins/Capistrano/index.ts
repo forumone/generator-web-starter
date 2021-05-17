@@ -1,7 +1,6 @@
-import Generator from 'yeoman-generator';
-import { promptOrUninteractive } from '../../../util';
+import { WSGenerator } from '../../../wsGenerator';
 
-class Capistrano extends Generator {
+class Capistrano extends WSGenerator {
   private deployMethod!: string;
   private repository!: string;
   private keepReleases!: number;
@@ -11,7 +10,7 @@ class Capistrano extends Generator {
   }
 
   async configuring() {
-    const answers = await promptOrUninteractive.call(this, [
+    const answers = await this.promptOrUninteractive([
       {
         type: 'list',
         name: 'capistranoDeployMethod',
