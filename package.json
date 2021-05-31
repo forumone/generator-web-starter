@@ -26,7 +26,7 @@
     "test": "jest --ci"
   },
   "dependencies": {
-    "@octokit/rest": "~16.3.0",
+    "@octokit/rest": "~18.5.5",
     "@types/semver": "~7.3.6",
     "assert-plus": "~1.0.0",
     "d3-array": "~2.12.1",
