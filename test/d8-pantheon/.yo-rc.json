@@ -3,7 +3,7 @@
     "promptValues": {
       "name": "d8-pantheon",
       "platform": "Docker",
-      "dockerCms": "Drupal8",
+      "dockerCms": "Drupal",
       "dockerSearch": "None",
       "dockerCache": "None",
       "documentRoot": "web",
@@ -11,7 +11,8 @@
       "useCapistrano": false,
       "shouldInstallDrupal": true,
       "gessoShouldInstall": true,
-      "drupalProjectType": "pantheon-systems/example-drops-8-composer"
+      "drupalProjectType": "drupal8",
+      "hostingService": "pantheon"
     },
     "projectName": "d8-pantheon"
   }
