@@ -2,6 +2,7 @@ import decompress from 'decompress';
 import fetch from 'node-fetch';
 import { posix } from 'path';
 import { URL } from 'url';
+import { existsSync, promises as fs } from 'fs';
 
 export interface InstallGessoOptions {
   repository: string;
@@ -31,7 +32,19 @@ async function installGesso({
 
   const buffer = await response.buffer();
 
-  await decompress(buffer, target, { strip: 1 });
+  await decompress(buffer, target, {
+    strip: 1,
+    // Filter out files used for development of Gesso itself.
+    filter: file =>
+      posix.basename(file.path).indexOf('docker-compose') !== 0 &&
+      posix.dirname(file.path).indexOf('.buildkite') === -1,
+  });
+
+  // Remove the .buildkite directory.
+  const buildkiteDir = posix.join(target, '.buildkite');
+  if (existsSync(buildkiteDir)) {
+    await fs.rmdir(buildkiteDir);
+  }
 }
 
 export default installGesso;
