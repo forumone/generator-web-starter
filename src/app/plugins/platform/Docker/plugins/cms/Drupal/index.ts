@@ -370,28 +370,6 @@ export default class Drupal extends PhpCmsGenerator {
     }
   }
 
-  /**
-   * Test if the web root will need to be renamed to match requests.
-   *
-   * The project templates assume the web root should be named `web`, so
-   * if the request is to name it otherwise some manual adjustment will be
-   * needed.
-   */
-  private _needsDocRootRename(): boolean {
-    const needsRename = this.documentRoot !== 'web';
-
-    // Crash early if the user asked for a non-'web' root for a Pantheon project.
-    // This will help prevent a lot of headaches due to misalignment with the platform's
-    // requirements.
-    if (this.hostingService === HostingType.Pantheon && needsRename) {
-      throw new Error(
-        `Pantheon projects do not support '${this.documentRoot}' as the document root.`,
-      );
-    }
-
-    return needsRename;
-  }
-
   public writing(): void {
     this._writeDockerFiles();
     this._writeCodeQualityConfig();
