@@ -18,6 +18,7 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
+import { projectUpstreams } from '../../../phpCmsGenerator';
 import {
   CmsType,
   PhpCmsGenerator,
@@ -29,6 +30,8 @@ const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 class WordPress extends PhpCmsGenerator {
   cmsType = CmsType.WordPress;
   servicePath = `services/${this.cmsType}`;
+  projectType = ProjectType.WordPress;
+  projectUpstream = projectUpstreams[ProjectType.WordPress];
 
   // Written out in initializing phase.
   latestWpTag!: string;
@@ -36,8 +39,6 @@ class WordPress extends PhpCmsGenerator {
 
   // Assigned to in prompting phase
   documentRoot = 'web';
-  projectType!: ProjectType.WordPress;
-  projectUpstream!: string;
 
   useWpStarter: boolean | undefined = true;
   useWpCfm: boolean | undefined = true;
@@ -287,10 +288,7 @@ class WordPress extends PhpCmsGenerator {
     });
   }
 
-  /**
-   * Complete scaffolding and customization steps for the Drupal service directory.
-   */
-  protected async _doScaffold(): Promise<void> {
+  public async scaffolding(): Promise<void> {
     this.info('Creating WordPress project.');
     await this._createComposerProject();
 
@@ -303,10 +301,6 @@ class WordPress extends PhpCmsGenerator {
       this.debug('Replacing docroot references in generated files.');
       await this._renameWebRoot(this.documentRoot, webRoot);
     }
-  }
-
-  public async scaffolding(): Promise<void> {
-    await this._scaffoldProject();
   }
 
   public async writing(): Promise<void> {
