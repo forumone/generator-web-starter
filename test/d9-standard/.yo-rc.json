@@ -1,7 +1,7 @@
 {
   "generator-web-starter": {
     "promptValues": {
-      "name": "d8-standard",
+      "name": "d9-standard",
       "platform": "Docker",
       "dockerCms": "Drupal",
       "dockerSearch": "None",
@@ -11,9 +11,9 @@
       "useCapistrano": false,
       "shouldInstallDrupal": true,
       "gessoShouldInstall": true,
-      "drupalProjectType": "drupal8",
+      "drupalProjectType": "drupal9",
       "hostingService": "forumone"
     },
-    "projectName": "d8-standard"
+    "projectName": "d9-standard"
   }
 }

@@ -1,11 +1,8 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import dedent from 'dedent';
-import IgnoreEditor from '../../../../../../IgnoreEditor';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestDrupal8Tag from '../../../registry/getLatestDrupal8Tag';
 import getLatestDrupal8CliTag from '../../../registry/getLatestDrupal8CliTag';
-import spawnComposer from '../../../spawnComposer';
 import {
   enableXdebug,
   enableXdebugProfiler,
@@ -13,51 +10,40 @@ import {
 } from '../../../xdebug';
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
-import { gessoDrupalPath } from '../../gesso/constants';
 import {
   createDrupalProject,
-  injectPlatformConfig,
   renameWebRoot,
+  standardizeComposerJson,
 } from './installUtils';
 import { color } from '../../../../../../../log';
-import { WSGenerator } from '../../../../../../../wsGenerator';
+import {
+  CmsType,
+  HostingType,
+  PhpCmsGenerator,
+  ProjectType,
+  projectUpstreams,
+} from '../../../phpCmsGenerator';
 
-const drupalProject = 'drupal-composer/drupal-project:8.x-dev';
-type DrupalProject = typeof drupalProject;
+/**
+ * Drupal CMS project generator.
+ */
+export default class Drupal extends PhpCmsGenerator {
+  cmsType = CmsType.Drupal;
+  servicePath = `services/${this.cmsType}`;
 
-const pantheonProject = 'pantheon-systems/example-drops-8-composer';
-type PantheonProject = typeof pantheonProject;
-
-type Project = PantheonProject | DrupalProject;
-
-const gessoDrupalDependencies: ReadonlyArray<string> = [
-  'drupal/components',
-  'drupal/twig_field_value',
-  'drupal/twig_tweak:^2.9',
-];
-
-const configGitKeepContents = dedent`
-  This file is used for your Drupal 8 configuration.
-`;
-
-class Drupal8 extends WSGenerator {
   // Assigned to in initializing phase
-  protected latestDrupalTag!: string;
-  protected latestDrushTag!: string;
+  latestDrupalTag!: string;
+  latestDrushTag!: string;
 
   // Assigned to in prompting phase
-  protected documentRoot!: string;
-  protected projectType!: Project;
-  protected useGesso: boolean | undefined;
-
-  protected shouldInstall: boolean | undefined = false;
-
-  protected spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
+  documentRoot = 'web';
+  projectType!: ProjectType.Drupal8 | ProjectType.Drupal9;
+  projectUpstream!: string;
 
   // Bind helper functions.
   public _createDrupalProject = createDrupalProject.bind(this);
-  public _injectPlatformConfig = injectPlatformConfig.bind(this);
   public _renameWebRoot = renameWebRoot.bind(this);
+  public _standardizeComposerJson = standardizeComposerJson.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -81,6 +67,7 @@ class Drupal8 extends WSGenerator {
       useGesso,
       shouldInstallDrupal,
       drupalProjectType,
+      hostingService,
     } = await this.promptOrUninteractive([
       {
         type: 'input',
@@ -107,11 +94,11 @@ class Drupal8 extends WSGenerator {
       {
         type: 'confirm',
         name: 'shouldInstallDrupal',
-        message: 'Install Drupal 8?',
+        message: 'Install Drupal?',
         store: true,
         default: (answers: { documentRoot: string }) => {
           const targetPath = this.destinationPath(
-            'services/drupal',
+            this.servicePath,
             answers.documentRoot,
           );
 
@@ -127,66 +114,113 @@ class Drupal8 extends WSGenerator {
         // (they don't know about the 'choice' property)
         choices: [
           {
-            name: `Drupal Project (${drupalProject})`,
-            value: drupalProject,
-            short: 'Drupal Project',
+            name: `Drupal 8 Project (${projectUpstreams[ProjectType.Drupal8]})`,
+            value: ProjectType.Drupal8,
+            short: 'Drupal 8 Project',
           } as { name: string; value: string },
           {
-            name: `Pantheon (${pantheonProject})`,
-            value: pantheonProject,
-            short: 'Pantheon',
+            name: `Drupal 9 Project (${projectUpstreams[ProjectType.Drupal9]})`,
+            value: ProjectType.Drupal9,
+            short: 'Drupal 9 Project',
           } as { name: string; value: string },
         ],
         when: answers => answers.shouldInstallDrupal,
+      },
+      {
+        type: 'list',
+        name: 'hostingService',
+        message: 'Select the hosting service to prepare for if known:',
+        store: true,
+        // NB. `as' casts below needed to dodge a deficiency in the Inquirer types
+        // (they don't know about the 'choice' property)
+        choices: [
+          {
+            name: `Forum One Hosting`,
+            value: HostingType.F1,
+          } as { name: string; value: string },
+          {
+            name: `Pantheon Hosting`,
+            value: HostingType.Pantheon,
+          } as { name: string; value: string },
+          {
+            name: `Other Hosting`,
+            value: HostingType.Other,
+          } as { name: string; value: string },
+          {
+            name: `Unknown`,
+            value: HostingType.Unknown,
+          } as { name: string; value: string },
+        ],
       },
     ]);
 
     this.documentRoot = documentRoot;
     this.shouldInstall = shouldInstallDrupal;
     this.projectType = drupalProjectType;
+    this.projectUpstream = projectUpstreams[this.projectType];
+    this.hostingService = hostingService;
     this.useGesso = useGesso;
+    this.useCapistrano = useCapistrano;
+  }
 
-    if (useCapistrano) {
-      const capistranoOptions = {
-        platform: 'drupal8',
-        name: this.options.name,
-        webroot: documentRoot,
-        appWebroot: posix.join('services/drupal', documentRoot),
-        config: {
-          drupal_features: false,
-        },
-        linkedDirectories: [
-          posix.join('services/drupal', documentRoot, 'sites/default/files'),
-        ],
-        linkedFiles: ['services/drupal/.env'],
-        uninteractive: this.options.uninteractive,
-      };
-      this.info(
-        'Composing with Capistrano generator using options: %O',
-        capistranoOptions,
-      );
-      this.composeWith(this.options.capistrano, capistranoOptions);
-    }
+  protected _useCapistrano(): void {
+    const capistranoOptions = {
+      platform: 'drupal8',
+      name: this.options.name,
+      webroot: this.documentRoot,
+      appWebroot: posix.join(this.servicePath, this.documentRoot),
+      config: {
+        drupal_features: false,
+      },
+      linkedDirectories: [
+        posix.join(this.servicePath, this.documentRoot, 'sites/default/files'),
+      ],
+      linkedFiles: [`${this.servicePath}/.env`],
+      uninteractive: this.options.uninteractive,
+    };
+    this.info('Composing with the Capistrano generator.', capistranoOptions);
+    this.composeWith(this.options.capistrano, capistranoOptions);
+  }
 
-    if (useGesso) {
-      const gessoOptions = {
-        documentRoot: this.documentRoot,
-        composeEditor: this.options.composeEditor,
-        composeCliEditor: this.options.composeCliEditor,
-        uninteractive: this.options.uninteractive,
-      };
-      this.debug(
-        'Composing with Gesso generator using options: %O',
-        gessoOptions,
-      );
-      this.composeWith(
-        require.resolve('../../gesso/GessoDrupal8'),
-        gessoOptions,
-      );
-    }
+  protected _useGesso(): void {
+    const gessoOptions = {
+      documentRoot: this.documentRoot,
+      composeEditor: this.options.composeEditor,
+      composeCliEditor: this.options.composeCliEditor,
+      uninteractive: this.options.uninteractive,
+    };
+    this.debug('Composing with the Gesso generator.', gessoOptions);
+    this.composeWith(require.resolve('../../gesso/GessoDrupal8'), gessoOptions);
   }
 
   public configuring(): void {
+    if (this.useCapistrano) {
+      this._useCapistrano();
+    }
+
+    if (this.useGesso) {
+      this._useGesso();
+    }
+
+    this._prepareDockerComposeServices();
+    this._prepareCodacyComposeServices();
+
+    if (this.useGesso) {
+      this.additionalComposerDependencies.push(
+        'drupal/components',
+        'drupal/twig_field_value',
+      );
+
+      // Pin the twig_tweak version for Drupal 8.
+      if (this.projectType === ProjectType.Drupal8) {
+        this.additionalComposerDependencies.push('drupal/twig_tweak:^2.9');
+      } else {
+        this.additionalComposerDependencies.push('drupal/twig_tweak');
+      }
+    }
+  }
+
+  protected _prepareDockerComposeServices(): void {
     this.fs.copyTpl(
       this.templatePath('nginx.conf.ejs'),
       this.destinationPath('services/nginx/default.conf'),
@@ -208,7 +242,7 @@ class Drupal8 extends WSGenerator {
     const filesystemVolumeName = editor.ensureVolume('fs-data');
 
     const hostDrupalPath = `./${posix.join(
-      'services/drupal',
+      this.servicePath,
       this.documentRoot,
     )}`;
 
@@ -239,8 +273,8 @@ class Drupal8 extends WSGenerator {
       'exec php-fpm',
     ].join('\n');
 
-    editor.addService('drupal', {
-      build: { context: './services/drupal', target: 'dev' },
+    editor.addService(this.cmsType, {
+      build: { context: `./${this.servicePath}`, target: 'dev' },
       command: ['sh', '-c', drupalEntryCommand],
       depends_on: ['mysql'],
       environment: {
@@ -248,7 +282,7 @@ class Drupal8 extends WSGenerator {
         ...xdebugEnvironment,
       },
       volumes: [
-        createBindMount('./services/drupal', '/var/www/html'),
+        createBindMount(`./${this.servicePath}`, '/var/www/html'),
         {
           type: 'volume',
           source: filesystemVolumeName,
@@ -270,7 +304,7 @@ class Drupal8 extends WSGenerator {
       entrypoint: ['/var/www/html/vendor/bin/drush'],
       working_dir: varHtmlPath,
       volumes: [
-        createBindMount('./services/drupal', '/var/www/html'),
+        createBindMount(`./${this.servicePath}`, '/var/www/html'),
         {
           type: 'volume',
           source: filesystemVolumeName,
@@ -279,7 +313,7 @@ class Drupal8 extends WSGenerator {
       ],
     });
 
-    cliEditor.addComposer('services/drupal');
+    cliEditor.addComposer(this.servicePath);
 
     const codacyService = {
       image: 'codacy/codacy-analysis-cli:latest',
@@ -321,31 +355,19 @@ class Drupal8 extends WSGenerator {
   /**
    * Complete scaffolding and customization steps for the Drupal service directory.
    */
-  private async _scaffoldDrupal(): Promise<void> {
-    if (!this.shouldInstall) {
-      return;
-    }
-
-    // Check if the special web root renaming will be required.
-    // This will throw an error if this will cause incompatibilities.
-    const needsDocRootRename = this._needsDocRootRename();
-
+  protected async _doScaffold(): Promise<void> {
     this.info('Creating Drupal project.');
     await this._createDrupalProject();
 
-    const drupalRoot = this.destinationPath('services/drupal');
+    const drupalRoot = this.destinationPath(this.servicePath);
 
     // The project scaffolding tools assume the web root should be named `web`,
     // so various references need to be replaced with the designated rename if
     // this is not the name selected for the project.
-    if (needsDocRootRename) {
+    if (this._needsDocRootRename()) {
       this.debug('Replacing docroot references in generated files.');
       await this._renameWebRoot(this.documentRoot, drupalRoot);
     }
-
-    // Inject platform configuration to the generated composer.json file.
-    this.info('Injecting platform configuration into composer.json.');
-    await this._injectPlatformConfig(`${drupalRoot}/composer.json`);
   }
 
   /**
@@ -361,7 +383,7 @@ class Drupal8 extends WSGenerator {
     // Crash early if the user asked for a non-'web' root for a Pantheon project.
     // This will help prevent a lot of headaches due to misalignment with the platform's
     // requirements.
-    if (this.projectType === pantheonProject && needsRename) {
+    if (this.hostingService === HostingType.Pantheon && needsRename) {
       throw new Error(
         `Pantheon projects do not support '${this.documentRoot}' as the document root.`,
       );
@@ -370,71 +392,23 @@ class Drupal8 extends WSGenerator {
     return needsRename;
   }
 
-  /**
-   * Install additional dependencies to support Gesso.
-   */
-  private async _installGessoDependencies(): Promise<void> {
-    if (!this.shouldInstall) {
-      return;
-    }
-
-    // Install required dependencies to avoid Gesso crashing when enabled
-    this.info(
-      'Adding Gesso Composer dependencies: %s',
-      gessoDrupalDependencies.join(', '),
-    );
-    await this.spawnComposer(
-      [
-        'require',
-        ...gessoDrupalDependencies,
-        '--ignore-platform-reqs',
-        '--no-scripts',
-        '--no-install',
-      ],
-      {
-        cwd: this.destinationPath('services/drupal'),
-      },
-    ).catch(() => {
-      this.env.error(
-        new Error(
-          color.error('Composer installation of Gesso dependencies failed.'),
-        ),
-      );
-    });
-  }
-
-  // We have to run the drupal installation here because drupal-scaffold will fail if the target
-  // directory (services/drupal) exists and is not empty.
-  // This means that we can't run when the Dockerfile is written out by the generator during the
-  // writing phase, despite the `installing' phase being the more natural choice.
-  public async default(): Promise<void> {
-    await this._scaffoldDrupal();
-
-    if (this.useGesso) {
-      this.info('Installing Gesso dependencies.');
-      await this._installGessoDependencies();
-    }
-  }
-
   public writing(): void {
     this._writeDockerFiles();
-    this._writeDockerIgnore();
     this._writeCodeQualityConfig();
 
-    this.debug('Copying .env template file to %s.', 'services/drupal/.env');
+    this.debug('Copying .env template file to %s.', `${this.servicePath}/.env`);
     this.fs.copy(
       this.templatePath('_env'),
-      this.destinationPath('services/drupal/.env'),
+      this.destinationPath(`${this.servicePath}/.env`),
     );
+  }
 
-    this.debug(
-      'Writing .gitkeep file to %s.',
-      'services/drupal/config/.gitkeep',
-    );
-    this.fs.write(
-      this.destinationPath('services/drupal/config/.gitkeep'),
-      configGitKeepContents,
-    );
+  public async scaffolding(): Promise<void> {
+    await this._scaffoldProject();
+  }
+
+  public async default(): Promise<void> {
+    this._standardizeComposerJson();
   }
 
   public async install(): Promise<void> {
@@ -449,7 +423,7 @@ class Drupal8 extends WSGenerator {
     // requirements have been assembled.
     this.info('Running final Composer installation.');
     await this.spawnComposer(['install', '--ignore-platform-reqs'], {
-      cwd: this.destinationPath('services/drupal'),
+      cwd: this.destinationPath(this.servicePath),
     }).catch(() => {
       this.env.error(
         new Error(
@@ -469,7 +443,7 @@ class Drupal8 extends WSGenerator {
     // account for that lest the Docker build fail (or worse, we remove the ability to load
     // env vars when using drupal-composer).
     const sourceFiles =
-      this.projectType === drupalProject ? ['load.environment.php'] : [];
+      this.projectType === ProjectType.Drupal8 ? ['load.environment.php'] : [];
 
     const drupalDockerfile = createDrupalDockerfile({
       memcached: needsMemcached,
@@ -486,10 +460,10 @@ class Drupal8 extends WSGenerator {
 
     this.debug(
       'Writing Drupal Dockerfile to %s.',
-      'services/drupal/Dockerfile',
+      `${this.servicePath}/Dockerfile`,
     );
     this.fs.write(
-      this.destinationPath('services/drupal/Dockerfile'),
+      this.destinationPath(`${this.servicePath}/Dockerfile`),
       drupalDockerfile.render(),
     );
 
@@ -499,112 +473,4 @@ class Drupal8 extends WSGenerator {
       drushDockerfile.render(),
     );
   }
-
-  /**
-   * Assemble multiple sources for dockerignore rules.
-   *
-   * Assemble multiple sources for dockerignore rules since nested
-   * dockerignore files are not respected.
-   *
-   * @todo Add support to help maintain existing custom rules.
-   */
-  private _writeDockerIgnore(): void {
-    const drupalDockerIgnore = new IgnoreEditor();
-
-    // Bubble up Gesso dockerignore rules.
-    if (this.useGesso) {
-      if (
-        this.existsDestination(`services/drupal/${gessoDrupalPath}/.gitignore`)
-      ) {
-        this.debug(
-          'Adding contents of %s to the .dockerignore file.',
-          `services/drupal/${gessoDrupalPath}/.gitignore`,
-        );
-        drupalDockerIgnore.addContentsOfFile({
-          content: this.readDestination(
-            `services/drupal/${gessoDrupalPath}/.gitignore`,
-          ),
-          heading: 'Gesso Assets',
-          path: gessoDrupalPath,
-        });
-      } else {
-        this.warning(
-          'Gesso was selected for use, but the .gitignore file at %s could not be found. There may be an error.',
-          `services/drupal/${gessoDrupalPath}/.gitignore`,
-        );
-      }
-    }
-
-    // Incorporate gitignore rules.
-    if (this.existsDestination('services/drupal/.gitignore')) {
-      this.debug(
-        'Adding contents of %s to the .dockerignore file.',
-        'services/drupal/.gitignore',
-      );
-      drupalDockerIgnore.addContentsOfFile({
-        content: this.readDestination('services/drupal/.gitignore'),
-        heading: 'Drupal',
-        path: '/',
-      });
-    }
-
-    // Add Web Starter custom rules.
-    // Serialize the drupalDockerIgnore content for inclusion into the
-    // template being rendered since template content cannot be rendered
-    // to a string and appended using the IgnoreEditor solution.
-    this.debug(
-      'Rendering .dockerignore template to %s.',
-      'services/drupal/.dockerignore',
-    );
-    this.renderTemplate(
-      this.templatePath('_dockerignore.ejs'),
-      this.destinationPath('services/drupal/.dockerignore'),
-      {
-        documentRoot: this.documentRoot,
-        inheritedRules: drupalDockerIgnore.serialize(),
-      },
-    );
-  }
-
-  /**
-   * Write code quality configuration files for the project.
-   */
-  private _writeCodeQualityConfig(): void {
-    this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
-    this.renderTemplate(
-      this.templatePath('_codacy.yml.ejs'),
-      this.destinationPath('.codacy.yml'),
-      {
-        documentRoot: this.documentRoot,
-        useGesso: this.useGesso,
-        isPantheon: this.projectType === pantheonProject,
-      },
-    );
-
-    this.debug(
-      'Rendering phpcs.xml.dist template to %s.',
-      'services/drupal/phpcs.xml.dist',
-    );
-    this.renderTemplate(
-      this.templatePath('phpcs.xml.dist.ejs'),
-      this.destinationPath('services/drupal/phpcs.xml.dist'),
-      {
-        documentRoot: this.documentRoot,
-      },
-    );
-
-    this.debug(
-      'Rendering .phpmd.xml.dist template to %s.',
-      'services/drupal/.phpmd.xml.dist',
-    );
-    this.renderTemplate(
-      this.templatePath('_phpmd.xml.dist.ejs'),
-      this.destinationPath('services/drupal/.phpmd.xml.dist'),
-      {
-        documentRoot: this.documentRoot,
-      },
-    );
-  }
 }
-
-export = Drupal8;

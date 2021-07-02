@@ -27,6 +27,7 @@ declare -A test_scenarios=(
   # [test_directory]=<label>
   ['d8-standard']='D8: Standard'
   ['d8-pantheon']='D8: Pantheon'
+  ['d9-standard']='D9: Standard'
   ['wp-standard']='WP: Standard'
 )
 
