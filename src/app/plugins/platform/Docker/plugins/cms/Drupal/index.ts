@@ -10,11 +10,6 @@ import {
 } from '../../../xdebug';
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
-import {
-  createDrupalProject,
-  renameWebRoot,
-  standardizeComposerJson,
-} from './installUtils';
 import { color } from '../../../../../../../log';
 import {
   CmsType,
@@ -39,11 +34,6 @@ export default class Drupal extends PhpCmsGenerator {
   documentRoot = 'web';
   projectType!: ProjectType.Drupal8 | ProjectType.Drupal9;
   projectUpstream!: string;
-
-  // Bind helper functions.
-  public _createDrupalProject = createDrupalProject.bind(this);
-  public _renameWebRoot = renameWebRoot.bind(this);
-  public _standardizeComposerJson = standardizeComposerJson.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -357,7 +347,7 @@ export default class Drupal extends PhpCmsGenerator {
    */
   protected async _doScaffold(): Promise<void> {
     this.info('Creating Drupal project.');
-    await this._createDrupalProject();
+    await this._createComposerProject();
 
     const drupalRoot = this.destinationPath(this.servicePath);
 

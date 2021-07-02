@@ -2,6 +2,11 @@ import ComposeEditor, { createBindMount } from './ComposeEditor';
 import spawnComposer from './spawnComposer';
 import { color } from '../../../../log';
 import { WSGenerator } from '../../../../wsGenerator';
+import {
+  createComposerProject,
+  renameWebRoot,
+  standardizeComposerJson,
+} from './composerInstallUtils';
 
 export enum CmsType {
   Drupal = 'drupal',
@@ -44,6 +49,11 @@ export abstract class PhpCmsGenerator extends WSGenerator {
   protected additionalComposerDependencies: string[] = [];
 
   protected spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
+
+  // Bind helper functions.
+  public _createComposerProject = createComposerProject.bind(this);
+  public _renameWebRoot = renameWebRoot.bind(this);
+  public _standardizeComposerJson = standardizeComposerJson.bind(this);
 
   protected abstract _prepareDockerComposeServices(): void;
 
