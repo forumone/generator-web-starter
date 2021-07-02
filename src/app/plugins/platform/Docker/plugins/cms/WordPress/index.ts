@@ -166,15 +166,12 @@ class WordPress extends PhpCmsGenerator {
   }
 
   public configuring(): void {
-    this.debug(
-      'Copying nginx config template to %s.',
-      'services/nginx/default.conf',
-    );
-    this.fs.copyTpl(
-      this.templatePath('nginx.conf.ejs'),
-      this.destinationPath('services/nginx/default.conf'),
-      { documentRoot: this.documentRoot },
-    );
+    this._prepareDockerComposeServices();
+    this._prepareCodacyComposeServices();
+  }
+
+  protected _prepareDockerComposeServices(): void {
+    const editor = this.options.composeEditor as ComposeEditor;
 
     // Both WordPress and nginx containers use /var/www/html as the root of the app,
     // so these paths can be shared between both service definitions in this file.
@@ -183,31 +180,12 @@ class WordPress extends PhpCmsGenerator {
     // Path to WordPress uploads
     const uploadPath = posix.join(varHtmlPath, 'wp-content/uploads');
 
-    const editor = this.options.composeEditor as ComposeEditor;
-
     // Volumes needed by WordPress (and shared with nginx).
     // * fs-data: sites/default/files
     //   Needed so that we can persist saved files across containers.
     const filesystemVolume = editor.ensureVolume('fs-data');
 
-    this.debug('Adding Nginx service.');
-    editor.addNginxService({
-      depends_on: ['wordpress'],
-      volumes: [
-        createBindMount(
-          './services/nginx/default.conf',
-          '/etc/nginx/conf.d/default.conf',
-          { readOnly: true },
-        ),
-        createBindMount('./services/wordpress', '/var/www/html'),
-        {
-          type: 'volume',
-          source: filesystemVolume,
-          target: uploadPath,
-          read_only: true,
-        },
-      ],
-    });
+    this._addNginxService(editor, uploadPath, filesystemVolume);
 
     // Set up the environment variables to be read in config.
     const initialEnvironment = {
@@ -272,52 +250,63 @@ class WordPress extends PhpCmsGenerator {
       this.debug('Adding Composer CLI service.');
       cliEditor.addComposer('services/wordpress');
     }
+  }
 
-    // Add Codacy configuration.
-    const codacyService = {
-      image: 'codacy/codacy-analysis-cli:latest',
-      environment: {
-        CODACY_CODE: '$PWD',
-      },
-      command: 'analyze',
+  protected _addNginxService(
+    editor: ComposeEditor,
+    uploadPath: string,
+    filesystemVolume: string,
+  ): void {
+    this.debug(
+      'Copying nginx config template to %s.',
+      'services/nginx/default.conf',
+    );
+    this.fs.copyTpl(
+      this.templatePath('nginx.conf.ejs'),
+      this.destinationPath('services/nginx/default.conf'),
+      { documentRoot: this.documentRoot },
+    );
+
+    this.debug('Adding Nginx service.');
+    editor.addNginxService({
+      depends_on: ['wordpress'],
       volumes: [
-        createBindMount('$PWD', '$PWD'),
-        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
-        createBindMount('/tmp', '/tmp'),
+        createBindMount(
+          './services/nginx/default.conf',
+          '/etc/nginx/conf.d/default.conf',
+          { readOnly: true },
+        ),
+        createBindMount('./services/wordpress', '/var/www/html'),
+        {
+          type: 'volume',
+          source: filesystemVolume,
+          target: uploadPath,
+          read_only: true,
+        },
       ],
-    };
-
-    // Create additional services to run Codacy locally.
-    this.debug('Adding Codacy CLI service.');
-    cliEditor.addService('codacy', codacyService);
-
-    this.debug('Adding Codacy phpcs service.');
-    cliEditor.addService('phpcs', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
-      command: '',
     });
+  }
 
-    this.debug('Adding Codacy phpmd service.');
-    cliEditor.addService('phpmd', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
-      command: '',
-    });
+  /**
+   * Complete scaffolding and customization steps for the Drupal service directory.
+   */
+  protected async _doScaffold(): Promise<void> {
+    this.info('Creating WordPress project.');
+    await this._createComposerProject();
 
-    this.debug('Adding Codacy eslint service.');
-    cliEditor.addService('eslint', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
-      command: '',
-    });
+    const webRoot = this.destinationPath(this.servicePath);
 
-    this.debug('Adding Codacy stylelint service.');
-    cliEditor.addService('stylelint', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
-      command: '',
-    });
+    // The project scaffolding tools assume the web root should be named `web`,
+    // so various references need to be replaced with the designated rename if
+    // this is not the name selected for the project.
+    if (this._needsDocRootRename()) {
+      this.debug('Replacing docroot references in generated files.');
+      await this._renameWebRoot(this.documentRoot, webRoot);
+    }
+  }
+
+  public async scaffolding(): Promise<void> {
+    await this._scaffoldProject();
   }
 
   public async writing(): Promise<void> {
@@ -399,18 +388,6 @@ class WordPress extends PhpCmsGenerator {
       this.destinationPath('services/wp-cli/Dockerfile'),
       cliDockerfile.render(),
     );
-
-    // For projects NOT using the WPStarter, add a wp-cli.yml file.
-    if (!this.usesWpStarter) {
-      this.debug('Creating wp-cli.yml file since WpStarter is not being used.');
-      this.fs.copyTpl(
-        this.templatePath('wp-cli-nostarter.yml.ejs'),
-        this.destinationPath('services/wordpress/wp-cli.yml'),
-        { documentRoot: this.documentRoot },
-      );
-    }
-
-    this._writeCodeQualityConfig();
   }
 
   /**
