@@ -1,6 +1,5 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import { WSGenerator } from '../../../../../../../wsGenerator';
 import decompress from 'decompress';
 import fetch from 'node-fetch';
 import { URL } from 'url';
@@ -8,7 +7,6 @@ import { URL } from 'url';
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestWordPressCliTag from '../../../registry/getLatestWordPressCliTag';
 import getLatestWordPressTag from '../../../registry/getLatestWordPressTag';
-import spawnComposer from '../../../spawnComposer';
 import {
   enableXdebug,
   enableXdebugProfiler,
@@ -20,30 +18,40 @@ import getHashes from './getHashes';
 import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
+import {
+  CmsType,
+  PhpCmsGenerator,
+  ProjectType,
+} from '../../../phpCmsGenerator';
 
 const gessoWPDependencies: ReadonlyArray<string> = ['timber-library'];
 
-class WordPress extends WSGenerator {
+class WordPress extends PhpCmsGenerator {
+  cmsType = CmsType.WordPress;
+  servicePath = `services/${this.cmsType}`;
+
   // Written out in initializing phase.
-  private latestWpTag!: string;
-  private latestWpCliTag!: string;
+  latestWpTag!: string;
+  latestWpCliTag!: string;
 
-  // Assigned to in prompting phase.
-  private documentRoot!: string;
+  // Assigned to in prompting phase
+  documentRoot = 'web';
+  projectType!: ProjectType.WordPress;
+  projectUpstream!: string;
 
-  private usesWpStarter: boolean | undefined = true;
-  private usesWpCfm: boolean | undefined = true;
-  private usesGesso: boolean | undefined = true;
-
-  private shouldInstall: boolean | undefined = false;
-
-  private spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
+  useWpStarter: boolean | undefined = true;
+  useWpCfm: boolean | undefined = true;
 
   public async initializing(): Promise<void> {
     const [latestWpTag, latestWpCliTag] = await Promise.all([
       getLatestWordPressTag(),
       getLatestWordPressCliTag(),
     ]);
+    this.debug(
+      'Loaded latest WordPress (%s) and WP-CLI (%s) tags.',
+      latestWpTag,
+      latestWpCliTag,
+    );
 
     this.latestWpCliTag = latestWpCliTag;
     this.latestWpTag = latestWpTag;
@@ -111,9 +119,9 @@ class WordPress extends WSGenerator {
 
     this.documentRoot = documentRoot;
     this.shouldInstall = shouldInstallWordPress;
-    this.usesWpStarter = wpStarter;
-    this.usesWpCfm = wpCfm;
-    this.usesGesso = useGesso;
+    this.useWpStarter = wpStarter;
+    this.useWpCfm = wpCfm;
+    this.useGesso = useGesso;
 
     if (useCapistrano) {
       const capistranoOptions = {
@@ -123,7 +131,7 @@ class WordPress extends WSGenerator {
         webroot: documentRoot,
         uninteractive: this.options.uninteractive,
         config: {
-          wordpress_wpcfm: Boolean(this.usesWpCfm),
+          wordpress_wpcfm: Boolean(this.useWpCfm),
         },
         linkedDirectories: [
           `services/wordpress/${documentRoot}/wp-content/uploads`,
@@ -260,7 +268,7 @@ class WordPress extends WSGenerator {
       ],
     });
 
-    if (this.usesWpStarter) {
+    if (this.useWpStarter) {
       this.debug('Adding Composer CLI service.');
       cliEditor.addComposer('services/wordpress');
     }
@@ -315,7 +323,7 @@ class WordPress extends WSGenerator {
   public async writing(): Promise<void> {
     // For project not using wp-starter, don't bother writing out composer.json
     // or a .env file.
-    if (this.usesWpStarter) {
+    if (this.useWpStarter) {
       this.debug('Rewriting services/wordpress/composer.json.');
       this.fs.extendJSON(
         this.destinationPath('services/wordpress/composer.json'),
@@ -348,14 +356,29 @@ class WordPress extends WSGenerator {
       }
     }
 
+    // For projects NOT using the WPStarter, add a wp-cli.yml file.
+    if (!this.useWpStarter) {
+      this.debug('Creating wp-cli.yml file since WpStarter is not being used.');
+      this.fs.copyTpl(
+        this.templatePath('wp-cli-nostarter.yml.ejs'),
+        this.destinationPath('services/wordpress/wp-cli.yml'),
+        { documentRoot: this.documentRoot },
+      );
+    }
+
+    this._writeDockerFiles();
+    this._writeCodeQualityConfig();
+  }
+
+  private _writeDockerFiles(): void {
     const needsMemcached = this.options.plugins.cache === 'Memcache';
 
     const wpDockerfile = createWordPressDockerfile({
       tag: this.latestWpTag,
       memcached: needsMemcached,
       documentRoot: this.documentRoot,
-      gesso: Boolean(this.usesGesso),
-      composer: Boolean(this.usesWpStarter),
+      gesso: Boolean(this.useGesso),
+      composer: Boolean(this.useWpStarter),
     });
 
     this.debug(
@@ -393,14 +416,14 @@ class WordPress extends WSGenerator {
   /**
    * Write code quality configuration files for the project.
    */
-  private _writeCodeQualityConfig(): void {
+  protected _writeCodeQualityConfig(): void {
     this.debug('Rendering .codacy.yml template to %s.', '.codacy.yml');
     this.renderTemplate(
       this.templatePath('_codacy.yml.ejs'),
       this.destinationPath('.codacy.yml'),
       {
         documentRoot: this.documentRoot,
-        useGesso: this.usesGesso,
+        useGesso: this.useGesso,
       },
     );
 
@@ -413,7 +436,7 @@ class WordPress extends WSGenerator {
       this.destinationPath('services/wordpress/phpcs.xml.dist'),
       {
         documentRoot: this.documentRoot,
-        useGesso: this.usesGesso,
+        useGesso: this.useGesso,
       },
     );
 
@@ -435,7 +458,7 @@ class WordPress extends WSGenerator {
       return;
     }
 
-    if (this.usesWpStarter) {
+    if (this.useWpStarter) {
       const wpRoot = this.destinationPath('services/wordpress');
       this.debug('Spawning Composer install command in %s.', wpRoot);
       await this.spawnComposer(['install'], {
@@ -506,7 +529,7 @@ class WordPress extends WSGenerator {
       return;
     }
 
-    const install: (pluginName: string) => Promise<void> = this.usesWpStarter
+    const install: (pluginName: string) => Promise<void> = this.useWpStarter
       ? pluginName => this._installWithComposer(pluginName)
       : pluginName => this._installFromWPRepo(pluginName);
 
@@ -521,7 +544,7 @@ class WordPress extends WSGenerator {
     this.debug('Installing WordPress.');
     await this._installWordPress();
 
-    if (this.usesGesso) {
+    if (this.useGesso) {
       this.debug('Installing Gesso dependencies.');
       await this._installGessoDependencies();
     }
@@ -555,11 +578,11 @@ class WordPress extends WSGenerator {
     } = {
       customRules: [],
       documentRoot: this.documentRoot,
-      usesGesso: this.usesGesso,
-      usesWpCfm: this.usesWpCfm,
+      usesGesso: this.useGesso,
+      usesWpCfm: this.useWpCfm,
     };
 
-    if (this.usesGesso) {
+    if (this.useGesso) {
       const path = posix.join(this.documentRoot, 'wp-content/themes/gesso');
       templateVars.gessoPath = `${path}`;
     }

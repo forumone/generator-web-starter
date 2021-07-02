@@ -29,7 +29,7 @@ export enum HostingType {
 export const projectUpstreams: Record<ProjectType, string> = {
   [ProjectType.Drupal8]: 'forumone/drupal-project:8.x-dev',
   [ProjectType.Drupal9]: 'forumone/drupal-project:9.x-dev',
-  [ProjectType.WordPress]: '',
+  [ProjectType.WordPress]: 'forumone/wordpress-project',
 };
 
 export abstract class PhpCmsGenerator extends WSGenerator {
