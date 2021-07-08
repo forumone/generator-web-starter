@@ -62,7 +62,6 @@ class WordPress extends PhpCmsGenerator {
   public async prompting(): Promise<void> {
     const {
       documentRoot,
-      wpStarter,
       wpCfm,
       useGesso,
       useCapistrano,
@@ -77,17 +76,9 @@ class WordPress extends PhpCmsGenerator {
       },
       {
         type: 'confirm',
-        name: 'wpStarter',
-        message: 'Does this project use Composer and wp-starter?',
-        default: true,
-        store: true,
-      },
-      {
-        type: 'confirm',
         name: 'wpCfm',
         message: 'Does this project use WP-CFM?',
         default: true,
-        when: answers => answers.wpStarter,
         store: true,
       },
       {
@@ -108,7 +99,7 @@ class WordPress extends PhpCmsGenerator {
 
     this.documentRoot = documentRoot;
     this.shouldInstall = false;
-    this.useWpStarter = wpStarter;
+    this.useWpStarter = true;
     this.useWpCfm = wpCfm;
     this.useGesso = useGesso;
 
@@ -127,7 +118,7 @@ class WordPress extends PhpCmsGenerator {
           `services/wordpress/${documentRoot}/wp-content/upgrade`,
           `services/wordpress/${documentRoot}/wp-content/wflogs`,
         ],
-        linkedFiles: wpStarter ? ['services/wordpress/.env'] : [],
+        linkedFiles: this.useWpStarter ? ['services/wordpress/.env'] : [],
       };
       this.debug(
         'Composing with Capistrano generator using options: %O',
