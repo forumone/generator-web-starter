@@ -1,8 +1,5 @@
 import { posix } from 'path';
 import validFilename from 'valid-filename';
-import decompress from 'decompress';
-import fetch from 'node-fetch';
-import { URL } from 'url';
 
 import ComposeEditor, { createBindMount } from '../../../ComposeEditor';
 import getLatestWordPressCliTag from '../../../registry/getLatestWordPressCliTag';
@@ -14,8 +11,6 @@ import {
 } from '../../../xdebug';
 
 import createComposerFile from './createComposerFile';
-import getHashes from './getHashes';
-import installWordPressSource from './installWordPressSource';
 import createWordPressDockerfile from './createWordPressDockerfile';
 import createWordPressCliDockerfile from './createWordPressCliDockerfile';
 import { projectUpstreams } from '../../../phpCmsGenerator';
@@ -226,10 +221,8 @@ class WordPress extends PhpCmsGenerator {
       ],
     });
 
-    if (this.useWpStarter) {
-      this.debug('Adding Composer CLI service.');
-      cliEditor.addComposer('services/wordpress');
-    }
+    this.debug('Adding Composer CLI service.');
+    cliEditor.addComposer('services/wordpress');
   }
 
   protected _addNginxService(
@@ -283,49 +276,22 @@ class WordPress extends PhpCmsGenerator {
   }
 
   public async writing(): Promise<void> {
-    // For project not using wp-starter, don't bother writing out composer.json
-    // or a .env file.
-    if (this.useWpStarter) {
-      this.debug('Rewriting services/wordpress/composer.json.');
-      this.fs.extendJSON(
-        this.destinationPath('services/wordpress/composer.json'),
-        createComposerFile(this.options.name, this.documentRoot),
-      );
+    this.debug('Rewriting services/wordpress/composer.json.');
+    this.fs.extendJSON(
+      this.destinationPath('services/wordpress/composer.json'),
+      createComposerFile(this.options.name, this.documentRoot),
+    );
 
-      const dotenvPath = this.destinationPath('services/wordpress/.env');
-      if (!this.fs.exists(dotenvPath)) {
-        this.debug('Copying .env template to %s.', dotenvPath);
-        this.fs.copy(this.templatePath('_env'), dotenvPath);
-      }
-
-      const prodEnvPath = `${dotenvPath}.production`;
-      if (!this.fs.exists(prodEnvPath)) {
-        this.debug('Copying .env.production template to %s.', prodEnvPath);
-        this.fs.copy(this.templatePath('_env.production'), prodEnvPath);
-      }
-    } else {
-      const wpConfigPath = this.destinationPath(
-        'services/wordpress',
-        this.documentRoot,
-        'wp-config.php',
-      );
-
-      if (!this.fs.exists(wpConfigPath)) {
-        this.debug('Copying wp-config.php template to %s.', wpConfigPath);
-        this.fs.copyTpl(this.templatePath('wp-config.php.ejs'), wpConfigPath, {
-          hashes: await getHashes(),
-        });
-      }
+    const dotenvPath = this.destinationPath('services/wordpress/.env');
+    if (!this.fs.exists(dotenvPath)) {
+      this.debug('Copying .env template to %s.', dotenvPath);
+      this.fs.copy(this.templatePath('_env'), dotenvPath);
     }
 
-    // For projects NOT using the WPStarter, add a wp-cli.yml file.
-    if (!this.useWpStarter) {
-      this.debug('Creating wp-cli.yml file since WpStarter is not being used.');
-      this.fs.copyTpl(
-        this.templatePath('wp-cli-nostarter.yml.ejs'),
-        this.destinationPath('services/wordpress/wp-cli.yml'),
-        { documentRoot: this.documentRoot },
-      );
+    const prodEnvPath = `${dotenvPath}.production`;
+    if (!this.fs.exists(prodEnvPath)) {
+      this.debug('Copying .env.production template to %s.', prodEnvPath);
+      this.fs.copy(this.templatePath('_env.production'), prodEnvPath);
     }
 
     this._writeDockerFiles();
@@ -408,21 +374,11 @@ class WordPress extends PhpCmsGenerator {
       return;
     }
 
-    if (this.useWpStarter) {
-      const wpRoot = this.destinationPath('services/wordpress');
-      this.debug('Spawning Composer install command in %s.', wpRoot);
-      await this.spawnComposer(['install'], {
-        cwd: wpRoot,
-      });
-    } else {
-      const wpRoot = this.destinationPath(
-        'services/wordpress',
-        this.documentRoot,
-      );
-
-      this.debug('Installing WordPress source in %s.', wpRoot);
-      await installWordPressSource(wpRoot);
-    }
+    const wpRoot = this.destinationPath('services/wordpress');
+    this.debug('Spawning Composer install command in %s.', wpRoot);
+    await this.spawnComposer(['install'], {
+      cwd: wpRoot,
+    });
   }
 
   /**
@@ -435,43 +391,11 @@ class WordPress extends PhpCmsGenerator {
       packageName,
     );
     await this.spawnComposer(
-      ['require', packageName, '--ignore-platform-reqs'],
+      ['require', packageName, '--ignore-platform-reqs', '--no-install'],
       {
         cwd: this.destinationPath('services/wordpress'),
       },
     );
-  }
-
-  /**
-   * Install plugin from WordPress plugin repo as a zip.
-   */
-  private async _installFromWPRepo(pluginName: string): Promise<void> {
-    this.debug('Installing plugin %s from repo.', pluginName);
-    const endpoint = new URL('https://downloads.wordpress.org');
-    endpoint.pathname = posix.join('plugin', `${pluginName}.latest-stable.zip`);
-    const response = await fetch(String(endpoint));
-    if (!response.ok) {
-      const { status, statusText, url } = response;
-      throw new Error(`fetch(${url}): ${status} ${statusText}`);
-    }
-
-    const buffer = await response.buffer();
-
-    const destinationPath = posix.join(
-      'services',
-      'wordpress',
-      this.documentRoot,
-      'wp-content',
-      'plugins',
-      pluginName,
-    );
-
-    this.debug(
-      'Decompressing downloaded plugin from %s to %s.',
-      endpoint.pathname,
-      destinationPath,
-    );
-    await decompress(buffer, destinationPath, { strip: 1 });
   }
 
   private async _installGessoDependencies(): Promise<void> {
@@ -479,14 +403,10 @@ class WordPress extends PhpCmsGenerator {
       return;
     }
 
-    const install: (pluginName: string) => Promise<void> = this.useWpStarter
-      ? pluginName => this._installWithComposer(pluginName)
-      : pluginName => this._installFromWPRepo(pluginName);
-
     // Install required dependencies to avoid Gesso crashing when enabled.
     for (const plugin of gessoWPDependencies) {
       this.debug('Installing Gesso dependency %s.', plugin);
-      await install(plugin);
+      await this._installWithComposer(plugin);
     }
   }
 
