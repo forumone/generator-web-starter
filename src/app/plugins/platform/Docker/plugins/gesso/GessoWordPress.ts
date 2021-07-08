@@ -6,7 +6,7 @@ const GessoWordPress = createGessoGenerator({
     branch: '4.x',
     repository: 'gesso-wp',
   },
-  installPhase: 'default',
+  installPhase: 'install',
   serviceName: 'wordpress',
   themeDirectory: gessoWordPressPath,
 });
