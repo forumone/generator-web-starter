@@ -64,7 +64,6 @@ class WordPress extends PhpCmsGenerator {
       documentRoot,
       wpStarter,
       wpCfm,
-      shouldInstallWordPress,
       useGesso,
       useCapistrano,
     } = await this.promptOrUninteractive([
@@ -105,21 +104,10 @@ class WordPress extends PhpCmsGenerator {
         default: true,
         store: true,
       },
-      {
-        type: 'confirm',
-        name: 'shouldInstallWordPress',
-        message: 'Install WordPress?',
-        store: true,
-        default: () => {
-          const servicePath = this.destinationPath('services/wordpress');
-          return !this.fs.exists(servicePath);
-        },
-        when: !this.options.skipInstall,
-      },
     ]);
 
     this.documentRoot = documentRoot;
-    this.shouldInstall = shouldInstallWordPress;
+    this.shouldInstall = false;
     this.useWpStarter = wpStarter;
     this.useWpCfm = wpCfm;
     this.useGesso = useGesso;
