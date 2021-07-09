@@ -14,7 +14,7 @@ export interface InstallGessoOptions {
 async function installGesso(
   this: WSGenerator,
   { branch, repository, targetPath: target }: InstallGessoOptions,
-) {
+): Promise<void> {
   const endpoint = new URL('https://github.com');
   endpoint.pathname = posix.join(
     'forumone',
