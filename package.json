@@ -72,7 +72,7 @@
     "@types/tmp": "^0.0.33",
     "@types/yeoman-generator": "~4.11.4",
     "@typescript-eslint/eslint-plugin": "^2.1.0",
-    "@typescript-eslint/parser": "^2.1.0",
+    "@typescript-eslint/parser": "^4.28.2",
     "eslint": "^6.3.0",
     "eslint-config-prettier": "^6.12.0",
     "eslint-plugin-prettier": "^3.1.0",
