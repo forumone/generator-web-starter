@@ -51,3 +51,7 @@ exclude_paths:
   - 'services/drupal/scripts/composer/ScriptHandler.php'
   - 'services/drupal/web/sites/default/settings.pantheon.php'
   <%_ } _%>
+  <%_ if (useGesso) { _%>
+  # Ignore issues pre-existing within Gesso third-party libraries or forks.
+  - 'services/drupal/<%= documentRoot %>/themes/gesso/js/libraries/*'
+  <%_ } _%>
