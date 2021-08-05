@@ -13,6 +13,7 @@ engines:
     exclude_paths:
       - 'source/**'
   <%_ if (useGesso) { _%>
+      - services/wordpress/<%= documentRoot %>/wp-content/themes/gesso/**/*.js
   eslint:
     enabled: true
     # Restrict parsing into the Gesso directory where a config file exists.
@@ -37,3 +38,7 @@ exclude_paths:
   - 'services/wordpress/**/node_modules/**
   - 'services/wordpress/**/dist/**
   - 'services/wordpress/**/test/**
+  <%_ if (useGesso) { _%>
+  # Ignore issues pre-existing within Gesso third-party libraries or forks.
+  - 'services/wordpress/<%= documentRoot %>/wp-content/themes/gesso/js/libraries/*'
+  <%_ } _%>
