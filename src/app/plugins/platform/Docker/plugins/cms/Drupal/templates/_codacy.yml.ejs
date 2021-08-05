@@ -11,7 +11,7 @@ engines:
   <%_ if (useGesso) { _%>
     # Let ESLint rather than PHPMD handle JS linting in Gesso.
     exclude_paths:
-      - services/drupal/<%= documentRoot %>/themes/gesso/**/*.js
+      - 'services/drupal/<%= documentRoot %>/themes/gesso/**/*.js'
   eslint:
     enabled: true
     # Restrict parsing into the Gesso directory where a config file exists.
