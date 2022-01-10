@@ -83,7 +83,7 @@
     "gulp-filter": "^6.0.0",
     "gulp-sourcemaps": "^3.0.0",
     "gulp-typescript": "^5.0.1",
-    "jest": "^24.9.0",
+    "jest": "^27.4.7",
     "prettier": "^1.19.1",
     "ts-jest": "^26.5.5",
     "typescript": "^3.3.4000"
