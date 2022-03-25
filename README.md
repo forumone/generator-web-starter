@@ -1,3 +1,5 @@
+*Note: at the time of this writing Forum One has switched to DDev for local development.  This repo is no longer being used or maintained and you should reference either https://github.com/forumone/drupal-project or https://github.com/forumone/wordpress-project to start a new project.*
+
 # generator-web-starter
 
 The Web Starter Kit is a [Yeoman](http://yeoman.io/) generator developed and maintained by [Forum One](http://forumone.com/). It allows you to:
