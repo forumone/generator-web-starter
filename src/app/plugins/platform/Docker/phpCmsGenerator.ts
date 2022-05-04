@@ -1,13 +1,12 @@
-import { posix } from 'path';
 import ComposeEditor, { createBindMount } from './ComposeEditor';
 import spawnComposer from './spawnComposer';
-import {
-  enableXdebug,
-  enableXdebugProfiler,
-  xdebugEnvironment,
-} from './xdebug';
 import { color } from '../../../../log';
 import { WSGenerator } from '../../../../wsGenerator';
+import {
+  createComposerProject,
+  renameWebRoot,
+  standardizeComposerJson,
+} from './composerInstallUtils';
 
 export enum CmsType {
   Drupal = 'drupal',
@@ -30,7 +29,7 @@ export enum HostingType {
 export const projectUpstreams: Record<ProjectType, string> = {
   [ProjectType.Drupal8]: 'forumone/drupal-project:8.x-dev',
   [ProjectType.Drupal9]: 'forumone/drupal-project:9.x-dev',
-  [ProjectType.WordPress]: '',
+  [ProjectType.WordPress]: 'forumone/wordpress-project',
 };
 
 export abstract class PhpCmsGenerator extends WSGenerator {
@@ -51,137 +50,12 @@ export abstract class PhpCmsGenerator extends WSGenerator {
 
   protected spawnComposer: typeof spawnComposer = spawnComposer.bind(this);
 
-  protected _prepareDockerComposeServices(): void {
-    this.fs.copyTpl(
-      this.templatePath('nginx.conf.ejs'),
-      this.destinationPath('services/nginx/default.conf'),
-      { documentRoot: this.documentRoot },
-    );
+  // Bind helper functions.
+  public _createComposerProject = createComposerProject.bind(this);
+  public _renameWebRoot = renameWebRoot.bind(this);
+  public _standardizeComposerJson = standardizeComposerJson.bind(this);
 
-    // Both Drupal and nginx containers use /var/www/html as the root of the app,
-    // so these paths can be shared between both service definitions in this file.
-    const varHtmlPath = posix.join('/var/www/html/', this.documentRoot);
-
-    // Path to Drupal uploads (when not using s3fs)
-    const uploadPath = posix.join(varHtmlPath, 'sites/default/files');
-
-    const editor = this.options.composeEditor as ComposeEditor;
-
-    // Volumes needed by Drupal, shared with nginx.
-    // * fs-data: sites/default/files
-    //   Needed so that we can persist saved files across containers.
-    const filesystemVolumeName = editor.ensureVolume('fs-data');
-
-    const hostDrupalPath = `./${posix.join(
-      this.servicePath,
-      this.documentRoot,
-    )}`;
-
-    editor.addNginxService({
-      depends_on: ['drupal'],
-      volumes: [
-        createBindMount(
-          './services/nginx/default.conf',
-          '/etc/nginx/conf.d/default.conf',
-          { readOnly: true },
-        ),
-        createBindMount(hostDrupalPath, varHtmlPath),
-        {
-          type: 'volume',
-          source: filesystemVolumeName,
-          target: uploadPath,
-          read_only: true,
-        },
-      ],
-    });
-
-    // Use an array here because, for some odd reason, dedent gets confused about how
-    // string indentation works otherwise.
-    const drupalEntryCommand = [
-      `chmod -R 0777 ${uploadPath}`,
-      enableXdebug,
-      enableXdebugProfiler,
-      'exec php-fpm',
-    ].join('\n');
-
-    editor.addService(this.cmsType, {
-      build: { context: `./${this.servicePath}`, target: 'dev' },
-      command: ['sh', '-c', drupalEntryCommand],
-      depends_on: ['mysql'],
-      environment: {
-        SMTPHOST: 'mailhog:1025',
-        ...xdebugEnvironment,
-      },
-      volumes: [
-        createBindMount(`./${this.servicePath}`, '/var/www/html'),
-        {
-          type: 'volume',
-          source: filesystemVolumeName,
-          target: uploadPath,
-        },
-      ],
-    });
-
-    editor.addMysqlService();
-    editor.addMailhogService();
-
-    const cliEditor = this.options.composeCliEditor as ComposeEditor;
-
-    // Build custom container for drush 9
-    cliEditor.addService('drush', {
-      build: './services/drush',
-      // Pass --root to the entrypoint so that Drush can both see the full Drupal
-      // install and know where the site's root actually is.
-      entrypoint: ['/var/www/html/vendor/bin/drush'],
-      working_dir: varHtmlPath,
-      volumes: [
-        createBindMount(`./${this.servicePath}`, '/var/www/html'),
-        {
-          type: 'volume',
-          source: filesystemVolumeName,
-          target: uploadPath,
-        },
-      ],
-    });
-
-    cliEditor.addComposer(this.servicePath);
-
-    const codacyService = {
-      image: 'codacy/codacy-analysis-cli:latest',
-      environment: {
-        CODACY_CODE: '$PWD',
-      },
-      command: 'analyze',
-      volumes: [
-        createBindMount('$PWD', '$PWD'),
-        createBindMount('/var/run/docker.sock', '/var/run/docker.sock'),
-        createBindMount('/tmp', '/tmp'),
-      ],
-    };
-
-    // Create additional services to run Codacy locally.
-    cliEditor.addService('codacy', codacyService);
-    cliEditor.addService('phpcs', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpcs',
-      command: '',
-    });
-    cliEditor.addService('phpmd', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t phpmd',
-      command: '',
-    });
-    cliEditor.addService('eslint', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t eslint',
-      command: '',
-    });
-    cliEditor.addService('stylelint', {
-      ...codacyService,
-      entrypoint: '/opt/codacy/bin/codacy-analysis-cli analyze -t stylelint',
-      command: '',
-    });
-  }
+  protected abstract _prepareDockerComposeServices(): void;
 
   protected _prepareCodacyComposeServices(): void {
     const cliEditor = this.options.composeCliEditor as ComposeEditor;
@@ -273,6 +147,28 @@ export abstract class PhpCmsGenerator extends WSGenerator {
         ),
       );
     });
+  }
+
+  /**
+   * Test if the web root will need to be renamed to match requests.
+   *
+   * The project templates assume the web root should be named `web`, so
+   * if the request is to name it otherwise some manual adjustment will be
+   * needed.
+   */
+  protected _needsDocRootRename(): boolean {
+    const needsRename = this.documentRoot !== 'web';
+
+    // Crash early if the user asked for a non-'web' root for a Pantheon project.
+    // This will help prevent a lot of headaches due to misalignment with the platform's
+    // requirements.
+    if (this.hostingService === HostingType.Pantheon && needsRename) {
+      throw new Error(
+        `Pantheon projects do not support '${this.documentRoot}' as the document root.`,
+      );
+    }
+
+    return needsRename;
   }
 
   // We have to run the drupal installation here because drupal-scaffold will fail if the target

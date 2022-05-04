@@ -10,11 +10,6 @@ import {
 } from '../../../xdebug';
 import createDrupalDockerfile from './createDrupalDockerfile';
 import createDrushDockerfile from './createDrushDockerfile';
-import {
-  createDrupalProject,
-  renameWebRoot,
-  standardizeComposerJson,
-} from './installUtils';
 import { color } from '../../../../../../../log';
 import {
   CmsType,
@@ -39,11 +34,6 @@ export default class Drupal extends PhpCmsGenerator {
   documentRoot = 'web';
   projectType!: ProjectType.Drupal8 | ProjectType.Drupal9;
   projectUpstream!: string;
-
-  // Bind helper functions.
-  public _createDrupalProject = createDrupalProject.bind(this);
-  public _renameWebRoot = renameWebRoot.bind(this);
-  public _standardizeComposerJson = standardizeComposerJson.bind(this);
 
   public async initializing(): Promise<void> {
     const [latestDrupalTag, latestDrushTag] = await Promise.all([
@@ -357,7 +347,7 @@ export default class Drupal extends PhpCmsGenerator {
    */
   protected async _doScaffold(): Promise<void> {
     this.info('Creating Drupal project.');
-    await this._createDrupalProject();
+    await this._createComposerProject();
 
     const drupalRoot = this.destinationPath(this.servicePath);
 
@@ -368,28 +358,6 @@ export default class Drupal extends PhpCmsGenerator {
       this.debug('Replacing docroot references in generated files.');
       await this._renameWebRoot(this.documentRoot, drupalRoot);
     }
-  }
-
-  /**
-   * Test if the web root will need to be renamed to match requests.
-   *
-   * The project templates assume the web root should be named `web`, so
-   * if the request is to name it otherwise some manual adjustment will be
-   * needed.
-   */
-  private _needsDocRootRename(): boolean {
-    const needsRename = this.documentRoot !== 'web';
-
-    // Crash early if the user asked for a non-'web' root for a Pantheon project.
-    // This will help prevent a lot of headaches due to misalignment with the platform's
-    // requirements.
-    if (this.hostingService === HostingType.Pantheon && needsRename) {
-      throw new Error(
-        `Pantheon projects do not support '${this.documentRoot}' as the document root.`,
-      );
-    }
-
-    return needsRename;
   }
 
   public writing(): void {

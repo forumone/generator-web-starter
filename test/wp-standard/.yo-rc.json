@@ -4,19 +4,15 @@
       "name": "wp-standard",
       "platform": "Docker",
       "dockerCms": "WordPress",
-      "dockerSearch": "Elasticsearch",
-      "dockerCache": "Memcache",
-      "documentRoot": "public",
+      "dockerSearch": "None",
+      "dockerCache": "None",
+      "documentRoot": "web",
       "wpStarter": true,
       "wpCfm": true,
       "useGesso": true,
-      "useCapistrano": true,
-      "shouldInstallWordPress": true,
-      "esTag": "7.9.3",
-      "gessoShouldInstall": true,
-      "capistranoDeployMethod": "rsync",
-      "capistranoReleases": 3,
-      "capistranoRepository": "git@github"
+      "useCapistrano": false,
+      "shouldInstallWordPress": false,
+      "gessoShouldInstall": true
     },
     "projectName": "wp-standard"
   }

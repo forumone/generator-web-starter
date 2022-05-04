@@ -173,20 +173,26 @@ function createGessoGenerator({
 
     private async _installGesso() {
       if (!this.shouldInstall) {
+        this.debug('Skipping Gesso installation.');
         return;
       }
 
-      await installGesso({ ...git, targetPath: this._getTargetThemePath() });
+      await installGesso.call(this, {
+        ...git,
+        targetPath: this._getTargetThemePath(),
+      });
     }
 
     async default() {
       if (installPhase === 'default') {
+        this.debug('Installing gesso within the "default" phase.');
         return this._installGesso();
       }
     }
 
     async install() {
       if (installPhase === 'install') {
+        this.debug('Installing gesso within the "install" phase.');
         return this._installGesso();
       }
     }

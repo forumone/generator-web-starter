@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
-import Drupal from '.';
-import { color } from '../../../../../../../log';
+import { color } from '../../../../log';
 import { ChildProcess } from 'child_process';
+import { PhpCmsGenerator } from './phpCmsGenerator';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ComposerJson = { [x: string]: any };
@@ -25,9 +25,9 @@ async function replaceIn(
  * Apply replacements to rename the web root in generated files.
  */
 export async function renameWebRoot(
-  this: Drupal,
+  this: PhpCmsGenerator,
   documentRoot: string,
-  drupalRoot: string,
+  webRoot: string,
 ): Promise<void> {
   this.debug(
     'Replacing docroot references from %s to %s.',
@@ -36,21 +36,17 @@ export async function renameWebRoot(
   );
   await Promise.all([
     replaceIn(
-      path.join(drupalRoot, 'composer.json'),
+      path.join(webRoot, 'composer.json'),
       /web\//g,
       `${documentRoot}/`,
     ),
+    replaceIn(path.join(webRoot, '.gitignore'), /web\//g, `${documentRoot}/`),
     replaceIn(
-      path.join(drupalRoot, '.gitignore'),
-      /web\//g,
-      `${documentRoot}/`,
-    ),
-    replaceIn(
-      path.join(drupalRoot, 'scripts/composer/ScriptHandler.php'),
+      path.join(webRoot, 'scripts/composer/ScriptHandler.php'),
       /\/web/g,
       `/${documentRoot}`,
     ),
-    replaceIn(path.join(drupalRoot, 'README.md'), /web/g, documentRoot),
+    replaceIn(path.join(webRoot, 'README.md'), /web/g, documentRoot),
   ]);
 }
 
@@ -60,8 +56,8 @@ export async function renameWebRoot(
  * @param cwd
  * @returns
  */
-async function installDrupalProject(
-  this: Drupal,
+async function installComposerProject(
+  this: PhpCmsGenerator,
   cwd: string,
 ): Promise<void | ChildProcess> {
   return this.spawnComposer(
@@ -86,12 +82,12 @@ async function installDrupalProject(
 }
 
 /**
- * Install the Drupal project files in place.
+ * Install the Composer project files in place.
  *
  * @param this
  */
-export async function createDrupalProject(
-  this: Drupal,
+export async function createComposerProject(
+  this: PhpCmsGenerator,
 ): Promise<void | ChildProcess> {
   // Create the service directory if it doesn't exist.
   // If the services directory doesn't exist, Docker fails since it can't mount
@@ -119,8 +115,8 @@ export async function createDrupalProject(
   }
 
   const cwd = this.destinationPath(this.servicePath);
-  this.info('Triggering Drupal project scaffolding in %s.', cwd);
-  return installDrupalProject.call(this, cwd);
+  this.info('Triggering Composer project scaffolding in %s.', cwd);
+  return installComposerProject.call(this, cwd);
 }
 
 /**
@@ -165,13 +161,15 @@ function addPlatformRequirements(composer: ComposerJson): void {
 function addProjectName(composer: ComposerJson, projectName: string): void {
   if (
     composer.name === 'forumone/drupal-project' ||
-    composer.name === 'drupal-composer/drupal-project'
+    composer.name === 'forumone/wordpress-project'
   ) {
     composer.name = `forumone/${projectName}`;
   }
 }
 
-export async function standardizeComposerJson(this: Drupal): Promise<void> {
+export async function standardizeComposerJson(
+  this: PhpCmsGenerator,
+): Promise<void> {
   const composerPath = `${this.servicePath}/composer.json`;
   const composer: ComposerJson = JSON.parse(
     await readFile(composerPath, 'utf-8'),
